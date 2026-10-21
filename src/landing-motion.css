@@ -320,3 +320,6 @@ html:has(.mx-root) { scrollbar-color: #3a3631 #08090c; background: #08090c; }
   .mx-static-act { grid-template-columns: 1fr; padding-top: 18svh; }
   .mx-foot span:last-child { margin-left: 0; }
 }
+.mx-session { display: flex; align-items: center; gap: 6px; }
+.mx-logout { background: none; border: 0; padding: 9px 12px; border-radius: 999px; color: var(--muted); font-size: 14px; cursor: pointer; transition: color 0.2s, background 0.2s; }
+.mx-logout:hover { color: var(--paper); background: rgba(244, 239, 230, 0.08); }

@@ -56,8 +56,55 @@ export function validateGenerated(packet, variant) {
         issues.map((i) => i.message).join(" "),
     );
 }
-export async function reviewGenerated(packet, versions, model) {
-  for (const variant of versions) validateGenerated(packet, variant);
+const CRITERIA = ["coherent", "brandAligned", "evidenceSupported", "complete"];
+const mechanicalIssues = (packet, variant) => {
+  try {
+    validateGenerated(packet, variant);
+    return [];
+  } catch (e) {
+    return [e.message.replace(/^Conteúdo rejeitado na checagem: /, "")];
+  }
+};
+const reviewIssues = (review) =>
+  review.issues.length ? review.issues : CRITERIA.some((k) => !review[k]) ? [review.reason] : [];
+
+// The writer rewrites against the editor's notes; a revision that comes back malformed is ignored.
+async function revise(packet, variant, issues, model) {
+  const video = Array.isArray(variant.scenes);
+  const result = await model(
+    "Atue como Copywriter/Ghostwriter revisando a própria peça. " +
+      BRAND_WRITING +
+      ` Corrija exatamente os problemas apontados pelo editor, sem criar outros: remova ou atenue afirmações que a fonte não sustenta, mantenha formato, estratégia${video ? ", número de cenas e soma das durações" : ""}. Retorne ${video ? "{scenes:[{duration:number,speech,visual}],sourceIds:string[],facts:[{sourceId,excerpt}]}" : "{body,sourceIds:string[],facts:[{sourceId,excerpt}]}"}.`,
+    { packet, peca: variant, problemas: issues },
+  );
+  const next = { ...variant, sourceIds: Array.isArray(result.sourceIds) && result.sourceIds.length ? result.sourceIds : variant.sourceIds, facts: Array.isArray(result.facts) ? result.facts : variant.facts };
+  if (video) {
+    const scenes = result.scenes;
+    const valid = Array.isArray(scenes) && scenes.length && scenes.every((c) => Number.isFinite(c.duration) && c.duration > 0 && c.speech?.trim() && c.visual?.trim());
+    return valid ? { ...next, scenes, body: scenes.map((c, i) => `CENA ${i + 1} · ${c.duration}s\nFala: ${c.speech}\nDireção: ${c.visual}`).join("\n\n") } : variant;
+  }
+  return typeof result.body === "string" && result.body.trim() ? { ...next, body: result.body } : variant;
+}
+
+export async function reviewGenerated(packet, versions, model, { rounds = 2 } = {}) {
+  let current = versions;
+  for (let round = 0; ; round++) {
+    const reviews = await critique(packet, current, model);
+    const pending = current.map((v, i) => [...mechanicalIssues(packet, v), ...reviewIssues(reviews[i])]);
+    if (pending.every((p) => !p.length) || round === rounds) {
+      // Mechanical failures that survive every rewrite are never handed over as AI work.
+      const broken = current.map((v) => mechanicalIssues(packet, v)).find((m) => m.length);
+      if (broken) throw new Error("Conteúdo rejeitado na checagem: " + broken.join(" "));
+      return current.map((variant, i) => ({
+        ...variant,
+        editorialReview: { ...reviews[i], mode: "provider", rounds: round + 1, passed: !pending[i].length, pending: pending[i], humanReviewPending: true },
+      }));
+    }
+    current = await Promise.all(current.map((v, i) => (pending[i].length ? revise(packet, v, pending[i], model) : v)));
+  }
+}
+
+async function critique(packet, versions, model) {
   const result = await model(
     "Atue como editor crítico independente do redator. " +
       BRAND_WRITING +
@@ -72,13 +119,11 @@ export async function reviewGenerated(packet, versions, model) {
     throw new Error(
       "A revisão editorial não avaliou todas as versões. Nenhum conteúdo foi liberado.",
     );
-  return versions.map((variant, index) => {
+  return versions.map((_, index) => {
     const review = result.reviews.find((r) => r.index === index);
     if (
       !review ||
-      ["coherent", "brandAligned", "evidenceSupported", "complete"].some(
-        (k) => typeof review[k] !== "boolean",
-      ) ||
+      CRITERIA.some((k) => typeof review[k] !== "boolean") ||
       !review.reason?.trim() ||
       !Array.isArray(review.issues) ||
       review.issues.some((i) => typeof i !== "string")
@@ -86,23 +131,6 @@ export async function reviewGenerated(packet, versions, model) {
       throw new Error(
         "Parecer editorial incompleto. Nenhum conteúdo foi liberado.",
       );
-    if (
-      ["coherent", "brandAligned", "evidenceSupported", "complete"].some(
-        (k) => !review[k],
-      ) ||
-      review.issues.length
-    )
-      throw new Error(
-        "A revisão editorial pediu ajustes: " +
-          [review.reason, ...review.issues].join(" "),
-      );
-    return {
-      ...variant,
-      editorialReview: {
-        ...review,
-        mode: "provider",
-        humanReviewPending: true,
-      },
-    };
+    return review;
   });
 }

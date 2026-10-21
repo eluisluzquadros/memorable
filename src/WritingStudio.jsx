@@ -646,13 +646,28 @@ export function WritingStudio() {
               Editar orientação
             </button>
           </div>
-          {draft.editorialReview && (
-            <p className="ws-review-note">
-              <Check size={17} />
-              Revisão editorial por IA concluída. A conferência dos fatos e a
-              aprovação humana continuam pendentes.
-            </p>
-          )}
+          {draft.editorialReview &&
+            (draft.editorialReview.passed === false ? (
+              <div className="ws-review-note ws-review-pending" role="status">
+                <p>
+                  O editor ainda aponta {draft.editorialReview.pending.length}{" "}
+                  {draft.editorialReview.pending.length === 1 ? "ajuste" : "ajustes"} depois de{" "}
+                  {draft.editorialReview.rounds - 1} {draft.editorialReview.rounds - 1 === 1 ? "reescrita" : "reescritas"} automáticas. Corrija antes de enviar para revisão:
+                </p>
+                <ul>
+                  {draft.editorialReview.pending.map((issue) => (
+                    <li key={issue}>{issue}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="ws-review-note">
+                <Check size={17} />
+                Aprovado pelo editor crítico
+                {draft.editorialReview.rounds > 1 ? ` após ${draft.editorialReview.rounds - 1} ${draft.editorialReview.rounds - 1 === 1 ? "reescrita" : "reescritas"}` : ""}.
+                A conferência dos fatos e a aprovação humana continuam pendentes.
+              </p>
+            ))}
           {generated.length > 1 && (
             <div className="ws-tabs" role="group" aria-label="Versões">
               {generated.map((v, i) => (

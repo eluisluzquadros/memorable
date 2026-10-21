@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 const children = [
-  spawn(process.execPath, ["server/runtime.mjs"], {
+  // Server-side keys come from an optional, git-ignored .env next to package.json.
+  spawn(process.execPath, ["--env-file-if-exists=.env", "server/runtime.mjs"], {
     stdio: "inherit",
     windowsHide: true,
   }),

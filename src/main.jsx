@@ -1,5 +1,6 @@
 import { Connections, MediaStudio } from "./Connections";
 import { ChannelImport } from "./ChannelImport";
+import { isClassicHash } from "./routes.mjs";
 import { queueIdea } from './writing-queue.mjs';
 import { SourceRole } from './SourceRole';
 import { SecondBrain } from './SecondBrain';
@@ -210,10 +211,8 @@ function Dialog({ title, children, onClose, wide = false }) {
   );
 }
 
-// The cinematic landing is the home page; the classic one lives at #classica with its own anchors.
-const CLASSIC_HASHES = ['#classica', '#como-funciona', '#seu-time', '#modelos', '#main-content', '#landing-questions-title'];
 const readRoute = () => {
-  const route = location.hash.startsWith('#app/') ? location.hash.slice(5) : CLASSIC_HASHES.some(h => location.hash.startsWith(h)) ? 'landing' : 'motion';
+  const route = location.hash.startsWith('#app/') ? location.hash.slice(5) : isClassicHash(location.hash) ? 'landing' : 'motion';
   return route === 'pesquisar' ? 'guardar' : route;
 };
 function App({ account, initialData, persist, syncStatus, onLogout }) {
@@ -577,7 +576,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
         <Landing />
       ) : route === "motion" ? (
         <React.Suspense fallback={<div className="mx-loading" />}>
-          <LandingMotion />
+          <LandingMotion account={account} onLogout={onLogout} />
         </React.Suspense>
       ) : (
         <div data-tour-active={tourOpen} className={`app-shell ${sidebarHidden ? 'sidebar-hidden' : ''}`}>

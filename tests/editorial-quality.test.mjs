@@ -133,27 +133,47 @@ test("brand-free, repetitive, placeholder and boilerplate content cannot be retu
     assert.throws(() =>
       validateGenerated(packet, { body, sourceIds: [source.id] }),
     );
-  await assert.rejects(
-    () =>
-      reviewGenerated(
-        packet,
-        [{ body: carousel, sourceIds: [source.id] }],
-        async () => ({
-          reviews: [
-            {
-              index: 0,
-              coherent: false,
-              brandAligned: true,
-              evidenceSupported: true,
-              complete: true,
-              reason: "A ideia não se desenvolve.",
-              issues: ["Progressão insuficiente."],
-            },
-          ],
-        }),
-      ),
-    /pediu ajustes/,
+  // An editor who keeps objecting gets rewrites first; leftover notes travel with the draft.
+  let calls = 0;
+  const flagged = await reviewGenerated(
+    packet,
+    [{ body: carousel, sourceIds: [source.id] }],
+    async () => {
+      calls++;
+      return {
+        reviews: [
+          {
+            index: 0,
+            coherent: false,
+            brandAligned: true,
+            evidenceSupported: true,
+            complete: true,
+            reason: "A ideia não se desenvolve.",
+            issues: ["Progressão insuficiente."],
+          },
+        ],
+      };
+    },
   );
+  assert.equal(calls, 5);
+  assert.equal(flagged[0].editorialReview.passed, false);
+  assert.deepEqual(flagged[0].editorialReview.pending, ["Progressão insuficiente."]);
+  assert.equal(flagged[0].editorialReview.rounds, 3);
+  // A rewrite that fixes the editor's note is reviewed again and passes.
+  const revised = carousel.replace("Dados globais. Risco local.", "Dados globais, risco local: o que muda na sua carteira.");
+  const fixed = await reviewGenerated(
+    packet,
+    [{ body: carousel, sourceIds: [source.id] }],
+    async (system, data) =>
+      /revisando a própria peça/.test(system)
+        ? { body: revised, sourceIds: [source.id] }
+        : data.versions[0].body === revised
+          ? acceptedReviews(data.versions)
+          : { reviews: [{ index: 0, coherent: true, brandAligned: true, evidenceSupported: false, complete: true, reason: "Tela 1 exagera.", issues: ["Tela 1 exagera."] }] },
+  );
+  assert.equal(fixed[0].body, revised);
+  assert.equal(fixed[0].editorialReview.passed, true);
+  assert.equal(fixed[0].editorialReview.rounds, 2);
   await assert.rejects(
     () =>
       reviewGenerated(

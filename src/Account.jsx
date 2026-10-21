@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import AuthPage from './AuthPage';
 import { Brand } from './Landing';
 import { accountWriter as makeAccountWriter } from './account-persistence.mjs';
+import { isClassicHash } from './routes.mjs';
 async function api(url, options) { const response=await fetch(url,options);let data;try{data=await response.json();}catch{throw new Error('Serviço local indisponível. Execute npm run dev:full.');}if(!response.ok)throw new Error(data.error || 'Não foi possível concluir.');return data; }
 export const accountWriter = (revision,report,userId) => makeAccountWriter(revision,report,userId,api);
 export function AccountRoot({ Component }) {
@@ -21,5 +22,5 @@ export function AccountRoot({ Component }) {
  if(checking)return <main className="account-loading"><Brand/><p role="status">Preparando seu espaço…</p></main>;
  const alerts=<>{notice&&<aside className="account-notice" role="alert">{notice}{session&&<button onClick={logout} disabled={leaving}>Tentar sair novamente</button>}</aside>}{recovery&&<aside className="account-notice">Cópia de recuperação de {recovery.name}.<button onClick={exportRecovery}>Exportar alterações não salvas</button></aside>}</>;
  if(route.startsWith('#auth'))return <>{alerts}<AuthPage onAuthenticated={login} user={session?.user} onLogout={logout} leaving={leaving} request={api}/></>;
- return <>{alerts}{session&&!route.startsWith('#app/')&&<div className="account-sessionbar"><span>Conectado como <b>{session.user.name}</b></span><a href="#app/painel">Meu espaço</a><a href="#auth">Conta</a><button onClick={logout} disabled={leaving}>Sair da conta</button></div>}<Component key={session?.user.id || 'demo'} account={session?.user} initialData={session?.data.state} persist={session?.writer.enqueue} syncStatus={status} onLogout={logout}/></>;
+ return <>{alerts}{session&&isClassicHash(route)&&<div className="account-sessionbar"><span>Conectado como <b>{session.user.name}</b></span><a href="#app/painel">Meu espaço</a><a href="#auth">Conta</a><button onClick={logout} disabled={leaving}>Sair da conta</button></div>}<Component key={session?.user.id || 'demo'} account={session?.user} initialData={session?.data.state} persist={session?.writer.enqueue} syncStatus={status} onLogout={logout}/></>;
 }

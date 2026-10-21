@@ -319,7 +319,7 @@ function CityScreens({ t, still = false }) {
   );
 }
 
-function HeroCopy() {
+function HeroCopy({ account }) {
   return (
     <div className="mx-hero-copy">
       <div className="mx-select">
@@ -342,8 +342,8 @@ function HeroCopy() {
         <a className="mx-cta" href="#app/painel">
           Ver o fluxo funcionando <ArrowUpRight size={18} aria-hidden="true" />
         </a>
-        <a className="mx-ghost" href="#auth">
-          Criar conta
+        <a className="mx-ghost" href={account ? "#app/painel" : "#auth"}>
+          {account ? "Meu espaço" : "Criar conta"}
         </a>
       </div>
     </div>
@@ -368,7 +368,7 @@ function ActCopy({ act }) {
 
 const figureAlt = "Gestora de marketing sentada em uma cadeira cromada, em estúdio escuro";
 
-function Stage({ reduced }) {
+function Stage({ reduced, account }) {
   const stage = useRef(null);
   const sticky = useRef(null);
   const [act, setAct] = useState(0);
@@ -416,7 +416,7 @@ function Stage({ reduced }) {
             MEMORABLE
           </div>
           <img className="mx-figure" src="/motion/hero.webp" alt={figureAlt} width="1000" height="1500" />
-          <HeroCopy />
+          <HeroCopy account={account} />
           <span className="mx-demo-note">Dados de demonstração</span>
         </div>
         {ACTS.slice(1).map((a) => (
@@ -448,7 +448,7 @@ function Stage({ reduced }) {
           ))}
         </div>
         <img className="mx-figure" src="/motion/hero.webp" alt={figureAlt} width="1000" height="1500" fetchPriority="high" />
-        {act === 0 ? <HeroCopy /> : <ActCopy act={current} />}
+        {act === 0 ? <HeroCopy account={account} /> : <ActCopy act={current} />}
         <div className="mx-panels" key={`panels-${current.id}`}>
           <ActPanels id={current.id} />
         </div>
@@ -569,7 +569,7 @@ function Stack() {
   );
 }
 
-export default function LandingMotion() {
+export default function LandingMotion({ account, onLogout }) {
   const reduced = usePrefersReducedMotion();
   const [solidNav, setSolidNav] = useState(false);
   const scrollToId = (id) => document.getElementById(id)?.scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
@@ -600,12 +600,23 @@ export default function LandingMotion() {
           <button onClick={() => scrollToId("planos")}>Planos</button>
           <a href="#classica">Versão clássica</a>
         </nav>
-        <a className="mx-enter" href="#auth">
-          Entrar <ArrowUpRight size={15} aria-hidden="true" />
-        </a>
+        {account ? (
+          <div className="mx-session">
+            <a className="mx-enter" href="#app/painel">
+              Meu espaço <ArrowUpRight size={15} aria-hidden="true" />
+            </a>
+            <button className="mx-logout" onClick={onLogout}>
+              Sair
+            </button>
+          </div>
+        ) : (
+          <a className="mx-enter" href="#auth">
+            Entrar <ArrowUpRight size={15} aria-hidden="true" />
+          </a>
+        )}
       </header>
       <main>
-        <Stage reduced={reduced} />
+        <Stage reduced={reduced} account={account} />
         <Portfolio reduced={reduced} />
         <Stack />
         <section className="mx-close" aria-labelledby="close-title">

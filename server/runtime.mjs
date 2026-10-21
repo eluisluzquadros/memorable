@@ -4,11 +4,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { collectSources } from "./collector.mjs";
 import { extractBrand } from "./brand.mjs";
-import { generateSquad, generateVideoScripts, councilAI, providerReady, serverModelName, analyseRadar } from "./ai.mjs";
+import { generateSquad, generateVideoScripts, councilAI, providerReady, serverModelName, serverModel, allowedServerModel, analyseRadar } from "./ai.mjs";
 import { nextRadarRun, validateRadar } from "../src/operations.mjs";
 import { createAccounts, sessionCookie } from './accounts.mjs';
 import { createIntegrations } from './integrations.mjs';
 import { discoverChannel, importChannelItems } from './channels.mjs';
+import { createObservability } from './observability.mjs';
+import { LLM_CATALOG } from '../src/llm-catalog.mjs';
 import { ingestFile, ingestUrl, sourceKind } from './ingestion.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dataDir = path.join(root, ".runtime");
@@ -17,6 +19,24 @@ fs.mkdirSync(dataDir, { recursive: true });
 const legacyDb = path.join(dataDir, 'skyvidya.sqlite'), accountsDb = path.join(dataDir, 'memorable.sqlite');
 const accounts = createAccounts(fs.existsSync(accountsDb) || !fs.existsSync(legacyDb) ? accountsDb : legacyDb);
 const integrations = createIntegrations(dataDir);
+const observability = createObservability(dataDir);
+const modelChoice = () => { try { return providerReady() && !!allowedServerModel(LLM_CATALOG[0].id); } catch { return false; } };
+// Live OpenRouter prices refresh the catalog at most every six hours.
+let livePrices = { at: 0, byId: new Map() };
+async function catalogWithPrices() {
+  if (Date.now() - livePrices.at > 6 * 3600000) {
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/models', { signal: AbortSignal.timeout(15000) });
+      if (response.ok) livePrices = { at: Date.now(), byId: new Map((await response.json()).data.map(m => [m.id, m])) };
+    } catch { /* Keep the bundled prices when OpenRouter is unreachable. */ }
+  }
+  return LLM_CATALOG.map(m => {
+    const live = livePrices.byId.get(m.id);
+    return live
+      ? { ...m, input: Number(live.pricing?.prompt) * 1e6, output: Number(live.pricing?.completion) * 1e6, context: live.context_length, available: true, live: true }
+      : { ...m, available: livePrices.byId.size ? false : null, live: false };
+  });
+}
 const file = path.join(dataDir, "monitoring.json");
 let db = { schedules: {}, sources: [], runs: [] };
 try {
@@ -162,7 +182,12 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/text/status') {
       const user = accounts.lookup(req);
       const configured = user ? integrations.status(user.id).connections.filter(c => ['anthropic','openai','gemini'].includes(c.provider) && c.configured).map(c => c.provider) : [];
-      return send(res,200,{authenticated:!!user, serverModel:providerReady()?serverModelName():null, providers:[...(providerReady() ? ['server'] : []),...configured]});
+      return send(res,200,{authenticated:!!user, serverModel:providerReady()?serverModelName():null, modelChoice:modelChoice(), providers:[...(providerReady() ? ['server'] : []),...configured]});
+    }
+    if (req.method === 'GET' && url.pathname === '/api/models') return send(res,200,{ modelChoice:modelChoice(), defaultModel:providerReady()?serverModelName():null, models:await catalogWithPrices() });
+    if (req.method === 'GET' && url.pathname === '/api/observability') {
+      const user = accounts.lookup(req);
+      return send(res,200,observability.summary({ owner:user?.id || null, days:Math.min(365, Math.max(1, Number(url.searchParams.get('days')) || 30)) }));
     }
     if (req.method === "GET" && url.pathname === "/api/collected") {
       const workspace = url.searchParams.get("workspace");
@@ -177,10 +202,13 @@ const server = http.createServer(async (req, res) => {
       return send(res, 404, { error: "Rota não encontrada." });
     const input = await read(req);
     let writer;
-    if (['/api/squad','/api/council','/api/video-scripts/generate','/api/radar/analyse'].includes(url.pathname) && input.provider && input.provider !== 'server') {
+    if (['/api/squad','/api/council','/api/video-scripts/generate','/api/radar/analyse'].includes(url.pathname)) {
       const user = accounts.lookup(req);
-      if (!user) return send(res,401,{error:'Entre na sua conta e conecte Claude, OpenAI ou Gemini em Configurações.'});
-      writer = await integrations.writer(user.id,input.provider,input.model);
+      if (input.provider && input.provider !== 'server') {
+        if (!user) return send(res,401,{error:'Entre na sua conta e conecte Claude, OpenAI ou Gemini em Configurações.'});
+        writer = await integrations.writer(user.id,input.provider,input.model);
+      } else if (providerReady()) writer = serverModel(input.model);
+      if (writer) writer = observability.instrument(writer, { owner:user?.id || null, route:url.pathname, provider:input.provider || 'server' });
     }
     if (url.pathname === '/api/radar/analyse') return send(res,200,await analyseRadar(input.packet,writer));
     if (url.pathname === "/api/collected/remove") {

@@ -66,3 +66,6 @@
  .ws-setup .r-provider .field-pair { grid-template-columns: 1fr; }
  .ws-ideas article { padding: 20px; }
 }
+.ws-review-pending { display: block; background: #fff8ec; border: 1px solid #f0d9a8; color: #6b4a12; }
+.ws-review-pending p { margin: 0 0 6px; font-weight: 600; }
+.ws-review-pending ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 14px; }

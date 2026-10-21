@@ -5,3 +5,6 @@ qa
 *.log
 *.tsbuildinfo
 /qa-*.png
+.env
+.env.*
+!.env.example
