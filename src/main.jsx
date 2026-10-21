@@ -2299,6 +2299,46 @@ function ScheduleForm({ piece, onClose, onSave }) {
     </Dialog>
   );
 }
+// What the AI editor (and, in tests, a blind judge) said about the generated draft.
+function AiReview({ delivery }) {
+  const review = delivery.editorialReview;
+  const judge = delivery.blindJudge;
+  const scores = judge && [["Completude", judge.completude], ["Clareza", judge.clareza], ["Foco na marca", judge.foco_na_marca], ["Sustentação", judge.sustentacao], ["Originalidade", judge.originalidade]];
+  return (
+    <details className="ai-review" open={review.passed === false}>
+      <summary>
+        Revisão por IA · {review.passed === false ? `${review.pending.length} ${review.pending.length === 1 ? "pendência" : "pendências"} do editor` : "aprovada pelo editor"}
+        {delivery.model ? ` · ${delivery.model}` : ""}
+      </summary>
+      {delivery.importedFrom && <p className="ai-review-origin">{delivery.importedFrom}</p>}
+      {review.passed === false && (
+        <ul>
+          {review.pending.map((issue) => (
+            <li key={issue}>{issue}</li>
+          ))}
+        </ul>
+      )}
+      {judge && (
+        <div className="ai-review-judge">
+          <b>Juiz cego ({judge.model}) · {judge.publicavel ? "publicável" : "não publicável sem edição"}</b>
+          <dl>
+            {scores.map(([label, value]) => (
+              <div key={label}>
+                <dt>{label}</dt>
+                <dd>{value}/5</dd>
+              </div>
+            ))}
+          </dl>
+          <ul>
+            {(judge.problemas || []).map((p) => (
+              <li key={p}>{p}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </details>
+  );
+}
 function PieceDetail({
   piece,
   state,
@@ -2418,6 +2458,7 @@ function PieceDetail({
           </aside>
         </div>
         {!editing && <PieceCouncil piece={piece} />}
+        {!editing && piece.delivery?.editorialReview && <AiReview delivery={piece.delivery} />}
         {!editing && <PieceLineage piece={piece} />}
         {!editing && <PublicationControls piece={piece} />}
         {!editing && <details className="piece-media"><summary>Mídia</summary><p>O rascunho contém texto e direção de produção. Imagens e vídeos são gerados aqui, usando créditos do provedor. Áudio deve ser gravado a partir do roteiro; síntese de voz ainda não está integrada.</p><MediaStudio initialPrompt={piece.delivery?.visual||piece.body} /></details>}

@@ -1019,3 +1019,13 @@
 .pf-totals dd { margin: 0; font-family: var(--display); font-size: 24px; font-variant-numeric: tabular-nums; }
 .pf-learning { margin: 10px 0 0; font-style: italic; }
 @media (max-width: 800px) { .pf-columns { grid-template-columns: 1fr; } }
+
+/* AI editor and blind-judge notes on a piece */
+.ai-review { margin: 16px 0; padding: 14px 18px; border: 1px solid #f0d9a8; border-radius: 12px; background: #fffaf0; color: #5b4316; font-size: 14px; line-height: 1.55; }
+.ai-review summary { cursor: pointer; font-weight: 600; color: #4a3610; }
+.ai-review-origin { margin: 8px 0 0; color: #7a5d24; font-size: 13px; }
+.ai-review ul { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; }
+.ai-review-judge { margin-top: 14px; padding-top: 12px; border-top: 1px solid #f0d9a8; }
+.ai-review-judge dl { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 8px 0 0; }
+.ai-review-judge dt { font-size: 12px; color: #7a5d24; }
+.ai-review-judge dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
