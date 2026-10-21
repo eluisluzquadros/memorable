@@ -7,7 +7,12 @@ import {
   accessibleSources,
   variants,
 } from "../src/workflow.mjs";
-const author = () => ({ ...initialState(), role: "Aprovador" });
+import { evaluateCouncil, runCouncil } from "../src/operations.mjs";
+const author = () => {
+  const s = { ...initialState(), role: "Aprovador" };
+  s.pieces[0].council = evaluateCouncil(s, s.pieces[0]);
+  return s;
+};
 const future = () => new Date(Date.now() + 86400000 * 3).toISOString();
 test("Editor cannot approve; a missing source blocks reviewers too", () => {
   assert.throws(
@@ -41,7 +46,7 @@ test("editing approval cancels schedule and requires fresh review", () => {
   });
   s = { ...s, role: "Editor" };
   s = transition(s, "piece-1", "edit", {
-    body: "Texto revisado",
+    body: "Texto revisado: uma conversa clara começa por ouvir. Antes de explicar um termo técnico, entenda a dúvida e preserve o contexto da fonte. Registre também o que foi compreendido e quais pontos exigem uma explicação adicional, com linguagem acessível e sem prometer resultados. O que ainda precisa ficar claro?",
     sourceIds: ["rolim31"],
   });
   const p = s.pieces[0];
@@ -58,6 +63,7 @@ test("editing approval cancels schedule and requires fresh review", () => {
       }),
     /versão aprovada/,
   );
+  s.pieces[0] = runCouncil(s, s.pieces[0]).piece;
   s = transition(s, "piece-1", "review");
   s = transition({ ...s, role: "Aprovador" }, "piece-1", "approve");
   assert.equal(s.pieces[0].approvedRevision, 2);
@@ -87,7 +93,7 @@ test("rejection preserves reason, author and category", () => {
   assert.equal(s.pieces[0].status, "Ajustes");
   assert.equal(s.events[0].category, "Clareza");
   assert.match(s.events[0].event, /Explique o termo/);
-  assert.equal(s.events[0].author, "Beto");
+  assert.equal(s.events[0].author, "Aprovador");
 });
 test("workspace boundaries and reviewer edit restriction hold", () => {
   const s = initialState();
@@ -108,8 +114,8 @@ test("budget blocks creation but allows review and approvals", () => {
   s.budgets.bbmd = 0;
   assert.throws(() => createPiece(s, { title: "Tema", body: "Texto" }), /teto/);
   assert.equal(
-    transition({ ...s, role: "Aprovador" }, "piece-1", "approve").pieces[0]
-      .status,
+    transition({ ...author(), budgets: s.budgets }, "piece-1", "approve")
+      .pieces[0].status,
     "Aprovado",
   );
 });

@@ -1,44 +1,65 @@
-# Esteira · MVP de apresentação
+# Memorable AI-Powered Marketing
 
-Plataforma de operação de conteúdo com identidade independente, construída para demonstrar ao Grupo BBMD tanto adoção por assinatura/licenças quanto parceria estratégica. Aplicação React + Vite, em português, com persistência local no navegador.
+MVP para demonstrar ao Grupo BBMD uma operação editorial por marca: fontes, DNA, radar, campanhas, criação, revisão, distribuição e aprendizado.
 
 ## Executar
 
 ```sh
 npm install
-npm run dev
+npm run dev:full
 ```
 
-Abra a URL exibida. A apresentação está em `/`; a demonstração em `/#app/painel`. `npm run build` gera a versão estática em `dist`. `npm test` verifica as regras centrais de negócio. Os scripts de navegador usam o Chrome instalado no Windows.
+A interface abre em http://localhost:5173 e o serviço local em 127.0.0.1:5174. `npm run dev` executa apenas a interface; extração de DNA e coleta web precisam do serviço. `npm run build` gera a versão estática em dist. O build estático não hospeda as APIs.
 
-## Roteiro de apresentação (5–7 minutos)
+## Recursos demonstráveis
 
-1. Na landing, explore os cinco verbos e os modelos Assinatura e Parceria.
-2. Abra a demo. Selecione **Guardar**, abra **Conexão antes do argumento** e escolha **Criar a partir daqui**.
-3. Defina o assunto, formato, fonte, responsável e prazo. Explore três abordagens, edite uma e salve o rascunho.
-4. No detalhe da peça, envie para revisão. Feche e troque o papel no topo para **Aprovador**.
-5. Em **Aprovar**, confira o texto e as fontes, marque a conferência e aprove a versão. A peça sem fonte ilustra um bloqueio real.
-6. Defina uma data futura. Em **Publicar**, confira a agenda e exporte o texto.
-7. Abra **Caderno de decisões** e exporte o histórico. Edite a peça como Editor para mostrar a invalidação da aprovação e o cancelamento da agenda.
-8. No espaço **Podcast do grupo**, consulte os 31 episódios do acervo fornecido. Resumos, autoria e links são reais; as peças e custos iniciais são demonstrações.
+- Acervo por marca, biblioteca compartilhada, fontes com origem, validade e etiquetas.
+- DNA por site/documentação, cores e fontes com evidências, validação e aplicação ao contexto de criação.
+- Radar com fontes cadastráveis, pesos configuráveis, classificação local e coleta de páginas públicas no serviço local.
+- Campanhas com hipótese, evidência, oferta e sucesso esperado; snapshots de briefing por peça.
+- Três entradas de escrita, sete formatos, três abordagens locais e adaptador opcional de IA.
+- Conteúdo de origem e derivados relacionados, com conferência obrigatória após mudanças.
+- Kanban independente da aprovação; conselho local, revisão humana, histórico e aprovação vinculada à versão.
+- Agenda local, exportação e comprovante de publicação externa; alterações relevantes invalidam aprovações e agendamentos.
+- Critérios editoriais por formato, exemplos, exceções e retirada reversível.
+- Resultados manuais com evidência, revisão humana em minutos e custo informado; agregação por campanha.
 
-## O que funciona nesta entrega
+## IA
 
-- Seis espaços de marca, com acervos e peças filtrados, biblioteca compartilhada explícita e perfis de voz.
-- Acervo pesquisável por texto, detalhe, origem, marcação de resultado, importação TXT/MD e inclusão manual.
-- Radar demonstrativo explicável e conversão de oportunidade em briefing.
-- Três abordagens locais por formato, edição, fontes, responsável e prazo.
-- Revisão por papel demonstrativo; aprovação vinculada à versão; rejeição com critério e justificativa; histórico antes/depois.
-- Agenda local somente para a versão aprovada, exportação TXT/CSV/JSON, persistência após recarregar e reinicialização confirmada.
-- Métricas derivadas do estado, custo estimado por peça aprovada e teto por marca que bloqueia criação sem bloquear revisão.
-- Layouts desktop/mobile, fontes hospedadas com o produto e movimento reduzido.
+- **Por conta (recomendado):** em Configurações → Conexões, cole a chave da **Claude (Anthropic)**, OpenAI ou Gemini. A chave fica criptografada em `.runtime` e os agentes passam a escrever, revisar e analisar pautas com ela. O padrão para Claude é `claude-opus-5-5`.
+- **No servidor (vale para a demonstração sem login):** `ANTHROPIC_API_KEY` ativa Claude, e `MEMORABLE_CLAUDE_MODEL` troca o modelo. Também é possível usar um endpoint chat-completions com `MEMORABLE_AI_URL`, `MEMORABLE_AI_KEY` e `MEMORABLE_AI_MODEL`; os nomes antigos `SKYVIDYA_AI_*` continuam aceitos.
+- **Mídia:** Higgsfield por **MCP** (OAuth) ou por **API** (chave `ID:SECRET` da Higgsfield Cloud), além de OpenAI e Gemini. Cada geração consome créditos do provedor.
 
-## Limites da demonstração
+Sem provedor, a escrita local entrega apenas estrutura com campos a completar, nunca texto apresentado como IA. Os custos reais das chamadas não estão incluídos nos valores ilustrativos da demonstração.
 
-Não há servidor de dados, autenticação real, controle de acesso seguro, cobrança, geração de IA externa, busca semântica, varredura de redes nem publicação externa. A troca de papéis ilustra o processo. Dados pertencem a este navegador; não são sincronizados entre usuários. A agenda não executa posts. Custos são ilustrativos, sem chamadas ou cobranças. Nenhum selo de conformidade jurídica é prometido. O revisor humano verifica fatos, contexto e critérios.
+## Novidades de outubro/2026
 
-## Próxima implantação
+- **Landing cinematográfica** em `/#motion`: o fluxo como pitch em movimento. As imagens foram geradas com Higgsfield (`public/motion`) e o design está registrado em `DESIGN.md` (seção #motion).
+- **Canal inteiro como fonte:** em Pesquisar → Adicionar ao acervo → Canal inteiro, aceita YouTube (o canal todo, com título e descrição de cada vídeo), blogs (RSS, Atom ou sitemap) e Instagram (API oficial). O Vigiar acompanha o canal e importa só as novidades.
+- **Portfólio de cases** em `/#app/portfolio`: reúne peças aprovadas, fontes, aprovações e só os resultados com evidência. Exporta uma apresentação em HTML.
+- **Formatos do benchmark Higgsfield:** anúncio UGC, vídeo de produto, comercial, fotos de produto, fotos de imóvel e tour, site para negócio local, vídeo faceless para YouTube, thumbnail e produto digital, cada um com o método da skill correspondente (`src/playbooks.mjs`).
+- Validação: `npm test`, `scripts/editorial-journey-check.mjs`, `scripts/growth-features-check.mjs` e `scripts/motion-check.mjs`.
 
-Definir o modelo comercial e o piloto; confirmar aprovadores e marca do podcast; configurar identidade e permissões com autenticação individual; conectar o repositório oficial, provedor de IA e canais; implementar banco, filas, rastreabilidade e testes de autorização no servidor. Medir a linha de base antes de afirmar redução de tempo ou crescimento de produção.
+## Roteiro
 
-O nome **Esteira** é provisório, preservado dos MVPs. A direção visual e o método de revisão estão em `DESIGN.md` e `docs/BRIEF.md`. Os materiais originais permanecem em `../mvp`.
+1. Em Configurações, como Administrador, extrair e validar o DNA.
+2. Em Campanhas, definir público, problema, hipótese e critério de sucesso.
+3. Criar conteúdo, escolher fonte/prazo e desenvolver uma abordagem.
+4. Criar um desdobramento e consultar sua relação com a peça de origem.
+5. Avaliar pelo conselho, enviar à revisão humana e aprovar a versão conferida.
+6. Agendar localmente ou registrar uma publicação feita externamente.
+7. Registrar resultado, evidência e esforço; transformar uma correção em critério validado.
+
+## Validação
+
+`npm test` verifica regras de negócio. Scripts Playwright usam o Chrome instalado no Windows: `scripts/journey-check.mjs`, `scripts/review-one-check.mjs`, `scripts/brand-check.mjs`, `scripts/campaign-check.mjs` e `scripts/final-inspection.mjs`.
+
+## Limites
+
+Dados editoriais persistem neste navegador. Papéis são demonstrativos, não autenticação nem autorização de produção. O serviço local guarda coleta e rotinas em `.runtime`; continua dependendo do computador e processo ligados. Redes autenticadas, transcrição do YouTube, publicação social, cobrança e métricas integradas exigem implantação. O DNA não executa JavaScript, lê PDFs ou interpreta screenshots. A geração local estrutura texto; o conselho local não certifica qualidade factual ou conformidade jurídica. Não há comprovação de ROI nem atribuição causal de resultados.
+
+Veja `docs/IMPLEMENTACAO-DIAGNOSTICOS.md`, `../doc/MEMORABLE-SINERGIAS-E-EVOLUCAO.md` para decisões e pendências. A chave de armazenamento antiga é mantida para preservar dados anteriores. Os MVPs originais permanecem em `../mvp`.
+
+## Contas locais e SQLite
+
+A versão atual inclui cadastro/login em `/#auth` e persistência por conta em `.runtime/memorable.sqlite` (instalações antigas continuam usando `.runtime/skyvidya.sqlite`). Sem conta, permanece a demonstração em localStorage. A autenticação local não substitui ainda os papéis demonstrativos nem isola as rotinas compartilhadas de coleta. Detalhes, limites e preparação da migração para nuvem: `docs/AUTH-PERSISTENCIA-MOTION.md`.

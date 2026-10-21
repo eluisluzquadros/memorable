@@ -1,61 +1,15 @@
+import { workspaces } from './demo-workspaces.mjs';
 import podcastData from "./podcast-data.mjs";
+import { relationships, propagateChange } from "./strategy.mjs";
+import {
+  hydrateOperations,
+  sourceValid,
+  councilGate,
+  assertEditor,
+  safeUrl,
+} from "./operations.mjs";
 export const storageKey = "esteira-demo-v1";
-export const workspaces = [
-  {
-    id: "bbmd",
-    name: "BBMD Advogados",
-    initials: "BB",
-    color: "#214cff",
-    voice: "Claro, próximo e responsável",
-    audience: "Pessoas buscando informação jurídica",
-    budget: 300,
-  },
-  {
-    id: "ativos",
-    name: "2B Ativos Judiciais",
-    initials: "2B",
-    color: "#167154",
-    voice: "Objetivo, transparente e consultivo",
-    audience: "Titulares de créditos judiciais",
-    budget: 200,
-  },
-  {
-    id: "juris",
-    name: "2B Juris",
-    initials: "2J",
-    color: "#7852a5",
-    voice: "Técnico, didático e direto",
-    audience: "Profissionais do direito",
-    budget: 200,
-  },
-  {
-    id: "esfera",
-    name: "Esfera Legal",
-    initials: "EL",
-    color: "#8c5700",
-    voice: "Colaborativo e especializado",
-    audience: "Escritórios parceiros",
-    budget: 200,
-  },
-  {
-    id: "podcast",
-    name: "Podcast do grupo",
-    initials: "PO",
-    color: "#b14d42",
-    voice: "Conversacional, curioso e espontâneo",
-    audience: "Gestores e empreendedores",
-    budget: 150,
-  },
-  {
-    id: "pessoal",
-    name: "Marca pessoal",
-    initials: "MP",
-    color: "#4b6076",
-    voice: "Pessoal, seguro e acessível",
-    audience: "Comunidade do sócio",
-    budget: 150,
-  },
-];
+export { workspaces } from './demo-workspaces.mjs';
 const sourceText =
   "Conexão vem antes do argumento. A clareza gera vínculo, o vínculo gera segurança.";
 export function initialState() {
@@ -63,106 +17,109 @@ export function initialState() {
   const future = new Date(now.getTime() + 86400000 * 2)
     .toISOString()
     .slice(0, 10);
-  return {
-    version: 1,
-    workspace: "bbmd",
-    role: "Editor",
-    sources: workspaces
-      .flatMap((w) => [
+  return hydrateOperations(
+    {
+      version: 1,
+      workspace: "bbmd",
+      role: "Editor",
+      sources: workspaces
+        .flatMap((w) => [
+          {
+            id: `${w.id}-voice`,
+            workspace: w.id,
+            title: "Guia de voz e critérios editoriais",
+            type: "Documento",
+            origin: "Material demonstrativo · equipe de marketing",
+            url: "",
+            text: `Voz: ${w.voice}. Público: ${w.audience}. Priorizar linguagem clara, explicar termos técnicos, preservar contexto e nunca prometer resultados. Todo conteúdo deve passar por revisão humana.`,
+            citable: true,
+            shared: false,
+            date: now.toISOString(),
+            feedback: "",
+            demo: true,
+          },
+          ...(w.id === "podcast"
+            ? [
+                {
+                  id: "rolim31",
+                  workspace: "podcast",
+                  title: "Conexão antes do argumento",
+                  type: "Podcast",
+                  origin: "ROLIM TALKS 31 · Lucas Rolim",
+                  url: "https://youtu.be/m_Juu5wzSYk",
+                  text: sourceText,
+                  citable: true,
+                  shared: true,
+                  date: now.toISOString(),
+                  feedback: "",
+                  demo: false,
+                },
+              ]
+            : []),
+        ])
+        .concat(podcastData),
+      pieces: [
         {
-          id: `${w.id}-voice`,
-          workspace: w.id,
-          title: "Guia de voz e critérios editoriais",
-          type: "Documento",
-          origin: "Material demonstrativo · equipe de marketing",
-          url: "",
-          text: `Voz: ${w.voice}. Público: ${w.audience}. Priorizar linguagem clara, explicar termos técnicos, preservar contexto e nunca prometer resultados. Todo conteúdo deve passar por revisão humana.`,
-          citable: true,
-          shared: false,
-          date: now.toISOString(),
-          feedback: "",
-          demo: true,
+          id: "piece-1",
+          workspace: "bbmd",
+          title: "Clareza no primeiro atendimento",
+          format: "LinkedIn",
+          owner: "Editor",
+          deadline: future,
+          status: "Em revisão",
+          body: "Antes de explicar, escute.\n\nUma conversa clara começa pelo que a outra pessoa precisa entender. Trocar termos técnicos por exemplos concretos torna o atendimento mais acessível.\n\nNa sua próxima conversa, experimente perguntar: o que ainda não ficou claro?\n\nBase editorial: ROLIM TALKS 31, Lucas Rolim. Adaptação demonstrativa para revisão.",
+          sourceIds: ["rolim31"],
+          revision: 1,
+          approvedRevision: null,
+          approver: null,
+          cost: 0.18,
+          createdAt: now.toISOString(),
+          scheduledAt: null,
+          channel: null,
         },
-        ...(w.id === "podcast"
-          ? [
-              {
-                id: "rolim31",
-                workspace: "podcast",
-                title: "Conexão antes do argumento",
-                type: "Podcast",
-                origin: "ROLIM TALKS 31 · Lucas Rolim",
-                url: "https://youtu.be/m_Juu5wzSYk",
-                text: sourceText,
-                citable: true,
-                shared: true,
-                date: now.toISOString(),
-                feedback: "",
-                demo: false,
-              },
-            ]
-          : []),
-      ])
-      .concat(podcastData),
-    pieces: [
-      {
-        id: "piece-1",
-        workspace: "bbmd",
-        title: "Clareza no primeiro atendimento",
-        format: "LinkedIn",
-        owner: "Carol",
-        deadline: future,
-        status: "Em revisão",
-        body: "Antes de explicar, escute.\n\nUma conversa clara começa pelo que a outra pessoa precisa entender. Trocar termos técnicos por exemplos concretos torna o atendimento mais acessível.\n\nNa sua próxima conversa, experimente perguntar: o que ainda não ficou claro?\n\nBase editorial: ROLIM TALKS 31, Lucas Rolim. Adaptação demonstrativa para revisão.",
-        sourceIds: ["rolim31"],
-        revision: 1,
-        approvedRevision: null,
-        approver: null,
-        cost: 0.18,
-        createdAt: now.toISOString(),
-        scheduledAt: null,
-        channel: null,
-      },
-      {
-        id: "piece-2",
-        workspace: "bbmd",
-        title: "O que mudou nas últimas decisões?",
-        format: "Carrossel",
-        owner: "Lucas",
-        deadline: future,
-        status: "Em revisão",
-        body: "Rascunho demonstrativo: incluir explicação sobre decisões recentes. O material de origem ainda precisa ser anexado e conferido.",
-        sourceIds: [],
-        revision: 1,
-        approvedRevision: null,
-        approver: null,
-        cost: 0.12,
-        createdAt: now.toISOString(),
-        scheduledAt: null,
-        channel: null,
-      },
-      {
-        id: "piece-3",
-        workspace: "bbmd",
-        title: "Uma marca, um jeito de conversar",
-        format: "Reels",
-        owner: "Carol",
-        deadline: future,
-        status: "Rascunho",
-        body: "Cada conversa é uma oportunidade de explicar com clareza. Ajuste a linguagem ao público e mantenha o contexto.",
-        sourceIds: ["bbmd-voice"],
-        revision: 1,
-        approvedRevision: null,
-        approver: null,
-        cost: 0.09,
-        createdAt: now.toISOString(),
-        scheduledAt: null,
-        channel: null,
-      },
-    ],
-    events: [],
-    rules: [],
-    budgets: Object.fromEntries(workspaces.map((w) => [w.id, w.budget])),
-  };
+        {
+          id: "piece-2",
+          workspace: "bbmd",
+          title: "O que mudou nas últimas decisões?",
+          format: "Carrossel",
+          owner: "Editor",
+          deadline: future,
+          status: "Em revisão",
+          body: "Rascunho demonstrativo: incluir explicação sobre decisões recentes. O material de origem ainda precisa ser anexado e conferido.",
+          sourceIds: [],
+          revision: 1,
+          approvedRevision: null,
+          approver: null,
+          cost: 0.12,
+          createdAt: now.toISOString(),
+          scheduledAt: null,
+          channel: null,
+        },
+        {
+          id: "piece-3",
+          workspace: "bbmd",
+          title: "Uma marca, um jeito de conversar",
+          format: "Reels",
+          owner: "Editor",
+          deadline: future,
+          status: "Rascunho",
+          body: "Cada conversa é uma oportunidade de explicar com clareza. Ajuste a linguagem ao público e mantenha o contexto.",
+          sourceIds: ["bbmd-voice"],
+          revision: 1,
+          approvedRevision: null,
+          approver: null,
+          cost: 0.09,
+          createdAt: now.toISOString(),
+          scheduledAt: null,
+          channel: null,
+        },
+      ],
+      events: [],
+      rules: [],
+      budgets: Object.fromEntries(workspaces.map((w) => [w.id, w.budget])),
+    },
+    workspaces,
+  );
 }
 export function accessibleSources(state, workspace) {
   return state.sources.filter((s) => s.workspace === workspace || s.shared);
@@ -170,6 +127,7 @@ export function accessibleSources(state, workspace) {
 export function blockers(state, piece) {
   const sources = accessibleSources(state, piece.workspace);
   const issues = [];
+  if (piece.lineageReview) issues.push("Confira o conteúdo de origem antes de revisar este desdobramento.");
   if (!piece.body?.trim()) issues.push("Inclua o texto da peça.");
   if (!piece.owner?.trim()) issues.push("Defina um responsável.");
   if (!piece.deadline) issues.push("Defina o prazo.");
@@ -177,7 +135,7 @@ export function blockers(state, piece) {
     issues.push("Vincule ao menos uma fonte antes de enviar à revisão.");
   if (
     piece.sourceIds?.some(
-      (id) => !sources.some((s) => s.id === id && s.citable),
+      (id) => !sources.some((s) => s.id === id && sourceValid(s)),
     )
   )
     issues.push("Uma fonte vinculada não está disponível ou não é citável.");
@@ -205,6 +163,7 @@ export function transition(state, pieceId, action, payload = {}) {
       approver: null,
       scheduledAt: null,
       channel: null,
+      council: null,
     };
     next.id = p.id;
     next.workspace = p.workspace;
@@ -215,8 +174,9 @@ export function transition(state, pieceId, action, payload = {}) {
       throw new Error("Entre como Editor para enviar uma peça.");
     const b = blockers(state, p);
     if (b.length) throw new Error(b.join(" "));
-    if (p.status !== "Rascunho" && p.status !== "Ajustes")
+    if (!["Rascunho", "Ajustes", "Em conferência"].includes(p.status))
       throw new Error("A peça já saiu da escrita.");
+    if (state.schemaRevision >= 2) councilGate(state, p);
     next.status = "Em revisão";
     event = "Enviada para revisão humana.";
   } else if (action === "approve") {
@@ -226,9 +186,11 @@ export function transition(state, pieceId, action, payload = {}) {
       throw new Error("A peça precisa estar em revisão.");
     const b = blockers(state, p);
     if (b.length) throw new Error(b.join(" "));
+    if (state.schemaRevision >= 2) councilGate(state, p);
     next.status = "Aprovado";
+    next.sourceReview = false;
     next.approvedRevision = p.revision;
-    next.approver = payload.author || "Beto";
+    next.approver = payload.author || "Aprovador";
     event = "Aprovada após conferência humana.";
   } else if (action === "reject") {
     if (!["Aprovador", "Administrador"].includes(state.role))
@@ -242,10 +204,13 @@ export function transition(state, pieceId, action, payload = {}) {
     next.approver = null;
     event = `Ajustes solicitados: ${payload.reason.trim()}`;
   } else if (action === "schedule") {
+    if (state.role === "Observador")
+      throw new Error("Observadores não podem agendar conteúdos.");
     if (p.status !== "Aprovado" || p.approvedRevision !== p.revision)
       throw new Error("Só a versão aprovada pode entrar na agenda.");
     if (blockers(state, p).length)
       throw new Error("Resolva as pendências das fontes.");
+    if (state.schemaRevision >= 2) councilGate(state, p);
     if (
       !payload.date ||
       new Date(payload.date) <= new Date() ||
@@ -262,7 +227,34 @@ export function transition(state, pieceId, action, payload = {}) {
     next.scheduledAt = payload.date;
     next.channel = payload.channel;
     event = `Adicionada à agenda local: ${payload.channel}. Nenhuma publicação externa enviada.`;
+  } else if (action === "unschedule") {
+    assertEditor(state);
+    if (p.status !== "Agendado")
+      throw new Error("Esta peça não está agendada.");
+    next = { ...p, status: "Aprovado", scheduledAt: null, channel: null };
+    event =
+      "Agendamento local cancelado. A aprovação da versão foi preservada.";
+  } else if (action === "publish") {
+    assertEditor(state);
+    if (blockers(state, p).length) throw new Error("Resolva as pendências antes de registrar a publicação.");
+    if (state.schemaRevision >= 2) councilGate(state, p);
+    if (
+      !["Agendado", "Aprovado"].includes(p.status) ||
+      p.approvedRevision !== p.revision
+    )
+      throw new Error(
+        "Somente uma versão aprovada pode receber comprovante de publicação.",
+      );
+    next = {
+      ...p,
+      status: "Publicado",
+      liveUrl: safeUrl(payload.url),
+      publishedAt: new Date().toISOString(),
+    };
+    event =
+      "Publicação externa registrada manualmente com URL. Nenhum envio automático realizado.";
   } else throw new Error("Ação inválida.");
+  next.stageAt = new Date().toISOString();
   const entry = {
     id: crypto.randomUUID(),
     workspace: p.workspace,
@@ -271,7 +263,7 @@ export function transition(state, pieceId, action, payload = {}) {
     action,
     event,
     category: action === "reject" ? payload.category || "Outro" : undefined,
-    author: state.role === "Editor" ? "Carol" : "Beto",
+    author: state.role === "Editor" ? "Editor" : "Aprovador",
     at: new Date().toISOString(),
     revision: next.revision,
     before: action === "edit" ? p.body : undefined,
@@ -279,12 +271,13 @@ export function transition(state, pieceId, action, payload = {}) {
   };
   return {
     ...state,
-    pieces: state.pieces.map((x) => (x.id === p.id ? next : x)),
+    pieces: action === "edit" ? propagateChange(state.pieces.map((x) => (x.id === p.id ? next : x)), p.id) : state.pieces.map((x) => (x.id === p.id ? next : x)),
     events: [entry, ...state.events],
   };
 }
 export function createPiece(state, input) {
-  const w = workspaces.find((x) => x.id === state.workspace);
+  const w = (state.workspaces || workspaces).find((x) => x.id === state.workspace);
+  if(!w || w.archived) throw new Error('Espaço de trabalho indisponível. Recarregue sua conta.');
   const spent = state.pieces
     .filter((x) => x.workspace === state.workspace)
     .reduce((s, p) => s + p.cost, 0);
@@ -305,7 +298,7 @@ export function createPiece(state, input) {
     input.sourceIds.some(
       (id) =>
         !accessibleSources(state, state.workspace).some(
-          (s) => s.id === id && s.citable,
+          (s) => s.id === id && sourceValid(s),
         ),
     )
   )
@@ -315,13 +308,14 @@ export function createPiece(state, input) {
   if (!["Editor", "Administrador"].includes(state.role))
     throw new Error("Use o papel Editor para criar uma peça.");
   const p = {
+    ...relationships(state, input),
     id: crypto.randomUUID(),
     workspace: w.id,
     title: input.title,
     body: input.body,
     format: input.format,
     sourceIds: input.sourceIds,
-    owner: input.owner || "Carol",
+    owner: input.owner || "Editor",
     deadline: input.deadline,
     status: "Rascunho",
     revision: 1,
@@ -331,6 +325,9 @@ export function createPiece(state, input) {
     createdAt: new Date().toISOString(),
     scheduledAt: null,
     channel: null,
+    topicId: input.topicId,
+    delivery: input.delivery,
+    brief: input.brief,
   };
   return { ...state, pieces: [p, ...state.pieces] };
 }

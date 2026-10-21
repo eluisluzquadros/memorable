@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import ScrollStory from './ScrollStory';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -25,45 +26,45 @@ export function Brand({ small = false }) {
     <a
       className={`brand ${small ? "brand-small" : ""}`}
       href="#"
-      aria-label="Esteira, início"
+      aria-label="Memorable, início"
     >
       <span className="brand-mark" aria-hidden="true">
         <i />
         <i />
         <i />
       </span>
-      esteira<span className="brand-period">.</span>
+      Memorable<span className="brand-period">.</span>
     </a>
   );
 }
 const stages = [
   [
-    "Guardar",
-    "O conhecimento fica.",
-    "Reúna referências, roteiros e conversas em um acervo que sua equipe consegue usar.",
+    "Pesquisar",
+    "Reúna o material que alimenta a criação.",
+    "Guarde páginas, documentos, podcasts e canais inteiros — YouTube, blog ou perfil — de uma vez. Cada publicação vira referência com resumo e texto completo.",
     Bookmark,
   ],
   [
     "Vigiar",
-    "A próxima pauta aparece.",
-    "Transforme sinais dos seus canais e referências em assuntos com contexto.",
+    "Encontre pautas sem começar do zero.",
+    "Acompanhe canais e sites: as novas publicações entram sozinhas e viram pautas priorizadas pelo interesse do público e pela aderência à sua marca.",
     Radio,
   ],
   [
     "Escrever",
-    "Uma ideia ganha caminhos.",
-    "Explore três abordagens, preserve a fonte e encontre a voz certa para cada marca.",
+    "Transforme uma pauta em vários formatos.",
+    "O time de agentes escreve posts, carrosséis, roteiros, artigos, anúncios UGC e vídeos de produto com a voz da sua marca. Um conselho editorial reprova o que está fraco.",
     PenLine,
   ],
   [
     "Aprovar",
-    "O critério é da sua equipe.",
-    "Revise a peça, registre o que precisa mudar e mantenha cada decisão no histórico.",
+    "Receba conteúdo para decidir e aprovar.",
+    "Confira texto e fontes, peça ajustes e aprove a versão final. Os critérios validados orientam as próximas produções.",
     CheckCheck,
   ],
   [
     "Publicar",
-    "O aprovado encontra seu lugar.",
+    "Organize a entrega do conteúdo aprovado.",
     "Organize canal e horário. Leve a peça aprovada para a agenda ou exporte o conteúdo.",
     CalendarDays,
   ],
@@ -222,14 +223,17 @@ export default function Landing() {
             Como funciona
           </a>
           <a href="#seu-time" onClick={() => setMobileMenu(false)}>
-            Para o seu time
+            Para sua rotina
           </a>
           <a href="#modelos" onClick={() => setMobileMenu(false)}>
             Modelos de adoção
           </a>
+          <a href="#" onClick={() => setMobileMenu(false)}>
+            Ver em movimento
+          </a>
         </nav>
-        <a className="nav-entry" href="#app/painel">
-          Entrar na demo <ArrowUpRight size={16} />
+        <a className="nav-entry" href="#auth">
+          Entrar <ArrowUpRight size={16} />
         </a>
         <button
           className="mobile-nav-button icon-button"
@@ -244,36 +248,42 @@ export default function Landing() {
         <section className="hero" ref={hero}>
           <div className="hero-copy">
             <div className="hero-category">
-              <span /> INTELIGÊNCIA PARA O CONTEÚDO
+              <span /> AI-POWERED MARKETING
             </div>
             <h1>
-              Boas ideias.
+              Automatize a produção
               <br />
-              <span>Novos capítulos.</span>
+              <span>do seu conteúdo.</span>
             </h1>
             <p>
-              Transforme o conhecimento da sua equipe em conteúdo. Da primeira
-              referência à aprovação, em um só fluxo.
+              Viralize sua Marca com IA — da pesquisa à publicação, em um só
+              fluxo.
             </p>
+            <p className="hero-signature">
+              Memorable! O jeito certo de deixar sua marca no mundo.
+            </p>
+            <ul className="hero-outcomes"><li><Check size={17}/> Vigie canais e sites e receba pautas priorizadas.</li><li><Check size={17}/> Agentes escrevem cada formato com a voz da sua marca.</li><li><Check size={17}/> Você aprova; o trabalho vira portfólio de cases.</li></ul>
             <a href="#app/painel" className="button primary hero-cta">
-              Explorar demonstração <ArrowUpRight size={19} />
+              Ver o fluxo funcionando <ArrowUpRight size={19} />
             </a>
             <div className="hero-note">
-              Sua criatividade. Um processo à altura.
+              Demonstração sem cadastro. Conecte Claude, OpenAI ou Gemini para os agentes escreverem.
             </div>
           </div>
           <HeroSurface />
         </section>
+        <ScrollStory />
         <div className="brand-strip">
           <p>
-            Uma operação.
+            Para quem precisa
             <br />
-            <strong>A voz de cada marca.</strong>
+            <strong>produzir com constância.</strong>
           </p>
           <div>
-            <span>Equipes de marketing</span>
-            <span>Grupos empresariais</span>
-            <span>Agências & estúdios</span>
+            <span>Empreendedores</span>
+            <span>Criadores de conteúdo</span>
+            <span>Times de marketing</span>
+            <span>Agências e freelancers</span>
           </div>
           <Network size={29} />
         </div>
@@ -281,21 +291,21 @@ export default function Landing() {
           <div className="flow-sticky">
             <div className="flow-heading">
               <h2>
-                O trabalho avança.
+                Pesquisa, criação e aprovação.
                 <br />
-                <span>O contexto vai junto.</span>
+                <span>Um fluxo de produção.</span>
               </h2>
               <p>
-                Uma fonte, cinco etapas.
+                Configure o processo uma vez.
                 <br />
-                Nenhuma ideia começa do zero.
+                Reutilize o contexto a cada nova peça.
               </p>
             </div>
             <div className="flow-body">
               <div
                 className="flow-steps"
                 role="tablist"
-                aria-label="Etapas da esteira"
+                aria-label="Etapas da memorable"
               >
                 {stages.map(([name, title, desc, Icon], i) => (
                   <button
@@ -328,7 +338,7 @@ export default function Landing() {
                   <h3>{stages[stage][1]}</h3>
                   <p>{stages[stage][2]}</p>
                   <a
-                    href={`#app/${["guardar", "vigiar", "escrever", "aprovar", "publicar"][stage]}`}
+                    href={`#app/${["pesquisar", "vigiar", "escrever", "aprovar", "publicar"][stage]}`}
                   >
                     Experimentar esta etapa <ArrowRight size={18} />
                   </a>
@@ -357,9 +367,9 @@ export default function Landing() {
                         UMA FONTE, TRÊS ABORDAGENS
                       </span>
                       {[
-                        "Uma pergunta que aproxima",
-                        "Uma ideia, sem rodeios",
-                        "Um convite à reflexão",
+                        "Racional · explique com evidência",
+                        "Storytelling · desenvolva uma narrativa",
+                        "Quebra de objeção · responda à dúvida",
                       ].map((t, i) => (
                         <div className="variant-preview" key={t}>
                           <span>{String(i + 1).padStart(2, "0")}</span>
@@ -418,25 +428,24 @@ export default function Landing() {
               <Network size={27} />
             </span>
             <h2>
-              Muitas marcas.
+              Produzir conteúdo não precisa
               <br />
-              Nenhuma voz
-              <br />
-              <span>misturada.</span>
+              <span>ocupar toda a sua rotina.</span>
             </h2>
             <p>
-              Compartilhe a operação. Preserve a identidade, os critérios e o
-              espaço de cada time.
+              Para quem faz o marketing sozinho ou trabalha com uma equipe:
+              reúna o contexto, organize as tarefas recorrentes e concentre
+              sua atenção nas ideias e na revisão.
             </p>
           </div>
           <div className="team-editorial">
             <article>
               <span>01</span>
               <div>
-                <h3>O repertório pertence à equipe.</h3>
+                <h3>Comece pelo DNA da marca.</h3>
                 <p>
-                  Fontes, peças e decisões permanecem acessíveis. O trabalho de
-                  ontem alimenta o de amanhã.
+                  Informe o site ou cole a documentação. Confira cores e fontes
+                  encontradas, ajuste a voz e valide a identidade antes de usá-la.
                 </p>
               </div>
               <Bookmark size={22} />
@@ -444,10 +453,10 @@ export default function Landing() {
             <article>
               <span>02</span>
               <div>
-                <h3>Você sabe quem decide.</h3>
+                <h3>Aprove uma versão, com suas fontes.</h3>
                 <p>
-                  Responsável, prazo e aprovação visíveis. Cada etapa tem um
-                  próximo passo claro.
+                  Confira de onde veio a informação e registre os ajustes.
+                  Alterações na peça aprovada exigem uma nova revisão.
                 </p>
               </div>
               <ShieldCheck size={22} />
@@ -455,10 +464,10 @@ export default function Landing() {
             <article>
               <span>03</span>
               <div>
-                <h3>O custo acompanha a criação.</h3>
+                <h3>Transforme correções em critérios.</h3>
                 <p>
-                  Veja o consumo por marca e por peça. Defina limites antes de
-                  aumentar a produção.
+                  Valide as lições que devem orientar as próximas peças.
+                  Registre resultados para avaliar o que merece continuar.
                 </p>
               </div>
               <Layers size={22} />
@@ -470,12 +479,29 @@ export default function Landing() {
                 <i />
               </span>
               <p>
-                Menos recomeços.
-                <br />
-                <b>Mais trabalho que fica.</b>
+                <a href="#app/configuracoes">Conhecer o DNA da marca <ArrowUpRight size={16} /></a>
               </p>
             </div>
           </div>
+        </section>
+        <section className="landing-stack" aria-labelledby="landing-stack-title">
+          <h2 id="landing-stack-title">Uma assinatura no lugar de várias ferramentas.</h2>
+          <ul>
+            {[
+              ["Radar de pautas e canais vigiados", "ferramenta de tendências"],
+              ["Acervo com resumo e texto completo", "app de notas e leitura"],
+              ["Redação multiformato com a voz da marca", "assistente de escrita"],
+              ["Roteiros, anúncios UGC e vídeos de produto", "editor de roteiro e estúdio"],
+              ["Conselho editorial e aprovação por versão", "revisor, planilha e e-mail"],
+              ["Imagens e vídeos com Higgsfield", "estúdio de mídia"],
+              ["Agenda, exportação e portfólio de cases", "agendador e pasta de apresentações"],
+            ].map(([ours, theirs]) => (
+              <li key={ours}>
+                <b><Check size={16} /> {ours}</b>
+                <span>{theirs}</span>
+              </li>
+            ))}
+          </ul>
         </section>
         <section className="commercial-section" id="modelos">
           <div className="commercial-heading">
@@ -484,9 +510,8 @@ export default function Landing() {
               <br />O seu jeito de adotar.
             </h2>
             <p>
-              Comece pelo time. Construa a relação
-              <br />
-              que faz sentido para o negócio.
+              Comece com uma marca e um fluxo real. Meça tempo de revisão,
+              qualidade e custo antes de ampliar a operação.
             </p>
           </div>
           <div
@@ -500,7 +525,7 @@ export default function Landing() {
               onClick={() => setCommercial("subscription")}
               className={commercial === "subscription" ? "active" : ""}
             >
-              Assinatura para a equipe
+              Assinatura da plataforma
             </button>
             <button
               role="tab"
@@ -515,13 +540,13 @@ export default function Landing() {
             <div>
               <h3>
                 {commercial === "subscription"
-                  ? "O método entra na rotina."
-                  : "O grupo ajuda a escrever o próximo capítulo."}
+                  ? "Comece pelo conteúdo que você precisa produzir."
+                  : "Valide o produto. Participe da evolução."}
               </h3>
               <p>
                 {commercial === "subscription"
-                  ? "Acesso por assinatura, licenças para o time de marketing e espaços para cada marca. Uma plataforma comum, com a operação organizada à sua maneira."
-                  : "Uma proposta para organizações que desejam participar da evolução da plataforma, validar o método com sua equipe e discutir uma relação de longo prazo."}
+                  ? "Escolha o fluxo, os formatos e o volume de produção. A assinatura acompanha sua necessidade, trabalhando sozinho ou em equipe. Implantação, conexões e acompanhamento têm escopo definido na proposta."
+                  : "O Grupo BBMD pode iniciar um piloto com sua equipe e discutir uma parceria de desenvolvimento ou investimento. Objetivos, prioridades e direitos são definidos em proposta própria, com base na experiência de uso."}
               </p>
               <a className="button primary" href="#app/painel">
                 Explorar demonstração <ArrowUpRight size={19} />
@@ -530,9 +555,9 @@ export default function Landing() {
             <ul>
               {(commercial === "subscription"
                 ? [
-                    "Licenças de acesso por equipe",
-                    "Acervo e fluxo editorial por marca",
-                    "Critérios, custos e decisões visíveis",
+                    "Piloto: teste uma rotina real de produção",
+                    "Assinatura: capacidade de uso e integrações acordadas",
+                    "Expansão: mais volume, pessoas ou marcas, se precisar",
                   ]
                 : [
                     "Piloto com objetivos mensuráveis",
@@ -551,16 +576,23 @@ export default function Landing() {
             </ul>
           </div>
         </section>
+        <section className="landing-questions" aria-labelledby="landing-questions-title">
+          <h2 id="landing-questions-title">Como isso entra na sua rotina?</h2>
+          <details><summary>Serve para quem produz conteúdo sozinho?</summary><p>Sim. Comece com seu negócio, suas fontes e os formatos que você precisa publicar. Você pode planejar, revisar e aprovar no mesmo espaço. Equipes e múltiplas marcas são possibilidades de expansão.</p></details>
+          <details><summary>O que a automação faz e o que fica comigo?</summary><p>O fluxo reúne coleta de referências, preparação de pautas, criação e conferência. Você define público e objetivo, valida a identidade e aprova o conteúdo. Os critérios registrados acompanham as próximas produções.</p></details>
+          <details><summary>O que posso testar agora?</summary><p>Tudo: importar páginas, arquivos e canais inteiros, extrair o DNA do site, vigiar fontes, gerar com o time de agentes (com uma chave Claude, OpenAI ou Gemini em Configurações), passar pelo conselho, aprovar, agendar, exportar e montar cases no Portfólio. Imagens e vídeos usam sua conta Higgsfield. Publicação direta nas redes entra com a integração da implantação.</p></details>
+          <details><summary>Preciso criar uma campanha para cada post?</summary><p>Não. Vá direto a Escrever para uma peça avulsa. Use Campanhas quando vários conteúdos compartilham um objetivo e precisam ser avaliados em conjunto.</p></details>
+        </section>
         <section className="closing">
-          <p>O próximo capítulo começa com o que você já sabe.</p>
+          <p>Sua próxima pauta pode virar um fluxo de produção.</p>
           <a href="#app/painel">
-            Coloque uma ideia
+            Veja seu conteúdo
             <br />
-            em movimento.
+            sair do papel.
             <ArrowUpRight aria-hidden="true" />
           </a>
           <div className="closing-foot">
-            <span>ESTEIRA · POR SKYVIDYA</span>
+            <span>MEMORABLE · AI-POWERED MARKETING</span>
             <span>Demonstração disponível com o contexto Grupo BBMD.</span>
           </div>
         </section>

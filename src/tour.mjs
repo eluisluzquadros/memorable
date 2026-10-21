@@ -1,0 +1,17 @@
+export const TOUR_VERSION = 1;
+export const TOUR_STEPS = [
+  { title: 'Sua primeira ideia, de ponta a ponta.', label: 'Boas-vindas', route: null, text: 'Conheça o caminho entre uma referência e um conteúdo pronto para aprovação. Você pode sair a qualquer momento e repetir este tour pelo botão Tour guiado.', tips: ['O tour apenas apresenta as telas. Nenhuma fonte ou peça será criada.', 'Seu trabalho e seu espaço de trabalho são preservados.'] },
+  { title: 'Comece pelo contexto da marca.', label: 'Contexto', route: 'configuracoes', text: 'Defina público, voz e critérios editoriais da marca escolhida. Em Organização e marcas, você pode reunir várias marcas; a Visão do grupo acompanha a operação integrada.', tips: ['Revise a extração do DNA antes de aplicar a identidade.', 'Conecte um provedor de IA para usar a geração real.'] },
+  { title: 'Dê uma fonte à próxima ideia.', label: 'Pesquisar', route: 'guardar', text: 'Adicione um link ou arquivo e confira o conteúdo extraído, o resumo e as palavras-chave. As referências podem ser editadas e excluídas.', tips: ['Classifique produtos e materiais oficiais como fontes próprias.', 'Uma página bloqueada por login pode exigir conexão autorizada.'] },
+  { title: 'Transforme referências em pautas.', label: 'Vigiar', route: 'vigiar', text: 'O Radar ajuda a escolher o que merece virar conteúdo. Soluções próprias têm prioridade estratégica; a nota é um sinal de seleção, não uma avaliação da qualidade da empresa.', tips: ['A análise com IA depende de um provedor conectado.', 'Escolha uma pauta para levar seu contexto à escrita.'] },
+  { title: 'Escolha o formato. Oriente a criação.', label: 'Escrever', route: 'escrever', text: 'Escolha uma ideia, oriente a criação, revise o texto e só depois produza mídia. Selecionadas reúne suas escolhas; Sugestões reúne oportunidades do Radar.', tips: ['Uma versão é o padrão; você pode pedir até três.', 'Para vídeo, selecione duração e roteiro falado ou estrutura.', 'Os agentes escrevem com um provedor conectado. A opção manual abre apenas uma estrutura.'] },
+  { title: 'A decisão final continua com a equipe.', label: 'Aprovar', route: 'aprovar', text: 'Confira texto, fontes e critérios antes da aprovação. Pendências voltam à escrita com o motivo registrado.', tips: ['O papel de aprovador permite conferir e aprovar a versão.', 'Alterar uma peça aprovada exige uma nova revisão.'] },
+  { title: 'Organize o que vai ao ar.', label: 'Publicar', route: 'publicar', text: 'As peças aprovadas podem entrar na agenda local e ser exportadas para a operação de distribuição.', tips: ['Agendar nesta versão não publica automaticamente nas redes.', 'Registre a publicação efetiva e acompanhe resultados.'] },
+  { title: 'Faça o contexto evoluir.', label: 'Aprendizado', route: 'cerebro', text: 'O Segundo cérebro apresenta o contexto disponível e as conexões planejadas. No Caderno, a equipe pode transformar correções em critérios validados para novas criações.', tips: ['As integrações futuras estão sinalizadas como planejadas.', 'Campanhas agrupam conteúdos por objetivo; o Kanban acompanha o andamento.'] },
+];
+export function shouldOfferTour(preference, dismissedInSession) {
+  return !dismissedInSession && !preference?.dontShowAgain && !(preference?.version === TOUR_VERSION && preference.status === 'completed');
+}
+export function tourPreference(status, dontShowAgain) {
+  return { version: TOUR_VERSION, status, dontShowAgain: Boolean(dontShowAgain), updatedAt: new Date().toISOString() };
+}

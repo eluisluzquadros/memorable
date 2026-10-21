@@ -1,3 +1,12 @@
+import { Connections, MediaStudio } from "./Connections";
+import { ChannelImport } from "./ChannelImport";
+import { queueIdea } from './writing-queue.mjs';
+import { SourceRole } from './SourceRole';
+import { SecondBrain } from './SecondBrain';
+import { GuidedTour } from './GuidedTour';
+import { shouldOfferTour, tourPreference } from './tour.mjs';
+import { createAccountState, workspaceList, organizationType } from './account-state.mjs';
+import { OrganizationSettings, GroupOverview } from './Organization';
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
@@ -38,9 +47,15 @@ import {
   Filter,
   Play,
   HelpCircle,
+  Brain,
+  Building2,
+  Compass,
   LogOut,
+  Briefcase,
 } from "lucide-react";
+import { Portfolio } from "./Portfolio";
 import Landing, { Brand } from "./Landing";
+const LandingMotion = React.lazy(() => import("./LandingMotion"));
 import {
   initialState,
   workspaces,
@@ -51,16 +66,47 @@ import {
   variants,
   storageKey,
 } from "./workflow.mjs";
+import { AppContext } from "./context";
+import {
+  Radar,
+  Writer,
+  Kanban,
+  Squad,
+  VoiceSettings,
+  PieceCouncil,
+  MemoryRules,
+  MonitorSources,
+} from "./Advanced";
+import {
+  hydrateOperations,
+  runLocalRadar,
+  assertEditor,
+  assertAdmin,
+  sourceValid,
+  sourceCaptureProblem,
+  SOURCE_ROLES,
+} from "./operations.mjs";
 import "./styles.css";
+import "./review.css";
+import { SourceMetadata,SourceRefresh, PublicationControls, Results } from "./Continuity";
+import { Campaigns, PieceLineage } from "./Campaigns";
+import { AccountRoot } from './Account';
 
 const navItems = [
   ["painel", "Visão geral", LayoutDashboard],
-  ["guardar", "Guardar", Bookmark],
+  ["kanban", "Kanban", Layers],
+  ['grupo','Visão do grupo',Building2],
+  ["campanhas", "Campanhas", Layers],
+  ["guardar", "Pesquisar", Search],
   ["vigiar", "Vigiar", Radio],
   ["escrever", "Escrever", PenLine],
   ["aprovar", "Aprovar", CheckCheck],
   ["publicar", "Publicar", CalendarDays],
+  ["cerebro", "Segundo cérebro", Brain],
   ["caderno", "Caderno de decisões", BookOpen],
+  ["agentes", "Time de agentes", Users],
+  ["resultados", "Resultados", Coins],
+  ["portfolio", "Portfólio", Briefcase],
 ];
 const money = (n) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
@@ -80,6 +126,10 @@ const statusClass = (s) =>
     Agendado: "scheduled",
     Ajustes: "adjustment",
     Rascunho: "draft",
+    "Em conferência": "review",
+    Publicado: "approved",
+    Pedido: "draft",
+    "Pauta escolhida": "draft",
   })[s];
 const download = (name, content, type = "text/plain") => {
   const u = URL.createObjectURL(new Blob([content], { type }));
@@ -159,12 +209,19 @@ function Dialog({ title, children, onClose, wide = false }) {
     </dialog>
   );
 }
-const AppContext = React.createContext(null);
-function App() {
+
+// The cinematic landing is the home page; the classic one lives at #classica with its own anchors.
+const CLASSIC_HASHES = ['#classica', '#como-funciona', '#seu-time', '#modelos', '#main-content', '#landing-questions-title'];
+const readRoute = () => {
+  const route = location.hash.startsWith('#app/') ? location.hash.slice(5) : CLASSIC_HASHES.some(h => location.hash.startsWith(h)) ? 'landing' : 'motion';
+  return route === 'pesquisar' ? 'guardar' : route;
+};
+function App({ account, initialData, persist, syncStatus, onLogout }) {
   const [route, setRoute] = useState(
-    location.hash.startsWith("#app/") ? location.hash.slice(5) : "landing",
+    readRoute(),
   );
   const [state, setState] = useState(() => {
+    if(account) return initialData ? hydrateOperations(initialData,workspaceList(initialData,{includeArchived:true})) : createAccountState(account);
     try {
       const base = initialState();
       const s = JSON.parse(localStorage.getItem(storageKey));
@@ -172,35 +229,95 @@ function App() {
         Array.isArray(s.pieces) &&
         Array.isArray(s.sources) &&
         workspaces.some((w) => w.id === s.workspace)
-        ? {
-            ...base,
-            ...s,
-            sources: [
-              ...s.sources,
-              ...base.sources.filter(
-                (x) => !s.sources.some((y) => y.id === x.id),
-              ),
-            ],
-          }
+        ? hydrateOperations(
+            {
+              ...base,
+              ...s,
+              sources: [
+                ...s.sources,
+                ...base.sources.filter(
+                  (x) => !s.sources.some((y) => y.id === x.id),
+                ),
+              ],
+            },
+            workspaces,
+          )
         : base;
     } catch {
       return initialState();
     }
   });
+  const activeWorkspaces = workspaceList(state);
+  useEffect(() => {
+    const timer = setInterval(
+      () =>
+        setState((current) => {
+          if (current.role === "Observador") return current;
+          let next = current;
+          for (const [id, config] of Object.entries(current.radar)) {
+            if(!workspaceList(current).some(w=>w.id===id))continue;
+            if (
+              config.enabled &&
+              config.nextRun &&
+              new Date(config.nextRun) <= new Date()
+            ) {
+              const targets =
+                config.scope === "all" ? workspaceList(current).map((w) => w.id) : [id];
+              for (const target of targets)
+                next = runLocalRadar(next, target, true);
+            }
+          }
+          return next;
+        }),
+      30000,
+    );
+    return () => clearInterval(timer);
+  }, []);
   const [toast, setToast] = useState(null);
   const toastTimer = useRef();
   const [mobile, setMobile] = useState(false);
+  const [sidebarHidden, setSidebarHidden] = useState(() => {
+    try { return (localStorage.getItem('memorable-sidebar-hidden') ?? localStorage.getItem('skyvidya-sidebar-hidden')) === 'true'; } catch { return false; }
+  });
+  const toggleSidebar = () => setSidebarHidden(hidden => {
+    try { localStorage.setItem('memorable-sidebar-hidden', String(!hidden)); } catch {}
+    return !hidden;
+  });
   const [modal, setModal] = useState(null);
+  const [tourOpen, setTourOpen] = useState(false);
+  const tourActive = useRef(false), tourRestoring = useRef(false);
+  tourActive.current = tourOpen;
+  const tourOrigin = useRef(null);
+  const tourSessionKey = `memorable-tour-dismissed:${account?.id || 'demo'}`;
+  const tourDismissed = useRef(false);
+  const startTour = () => {
+    if (modal || selectedPiece || selectedSource) return;
+    tourOrigin.current = route;
+    setMobile(false);
+    setTourOpen(true);
+  };
+  const closeTour = (status, dontShowAgain) => {
+    tourDismissed.current = true;
+    try { sessionStorage.setItem(tourSessionKey, 'true'); } catch {}
+    setState(s => ({...s, onboarding:{...s.onboarding, tour:tourPreference(status,dontShowAgain)}}));
+    setTourOpen(false);
+    if(tourOrigin.current && tourOrigin.current !== 'landing') {
+      tourRestoring.current = route !== tourOrigin.current;
+      setRoute(tourOrigin.current);
+      goto(tourOrigin.current);
+    }
+  };
   const [query, setQuery] = useState("");
   const [sourceFilter, setSourceFilter] = useState("Todos");
   const [selectedPiece, setSelectedPiece] = useState(null);
   const [selectedSource, setSelectedSource] = useState(null);
   const [brief, setBrief] = useState({
-    title: "Clareza no primeiro atendimento",
+    title: account ? '' : 'Clareza no primeiro atendimento',
     format: "LinkedIn",
-    source: "rolim31",
+    versionCount: 1,
+    source: accessibleSources(state,state.workspace)[0]?.id || '',
     deadline: new Date(Date.now() + 86400000 * 2).toISOString().slice(0, 10),
-    owner: "Carol",
+    owner: "Editor",
   });
   const [generated, setGenerated] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -213,7 +330,8 @@ function App() {
   };
   useEffect(() => {
     try {
-      localStorage.setItem(storageKey, JSON.stringify(state));
+      if(account) persist(state);
+      else localStorage.setItem(storageKey, JSON.stringify(state));
     } catch {
       notify(
         "Não foi possível salvar no navegador. Exporte o caderno para preservar seu trabalho.",
@@ -223,14 +341,15 @@ function App() {
   }, [state]);
   useEffect(() => {
     const change = () => {
-      const next = location.hash.startsWith("#app/")
-        ? location.hash.slice(5)
-        : "landing";
+      const next = readRoute();
       setRoute(next);
       setMobile(false);
-      setQuery("");
-      setSourceFilter("Todos");
-      if (next !== "landing") window.scrollTo(0, 0);
+      if (!tourActive.current && !tourRestoring.current) {
+        setQuery("");
+        setSourceFilter("Todos");
+      }
+      tourRestoring.current = false;
+      if (!["landing", "motion"].includes(next)) window.scrollTo(0, 0);
     };
     window.addEventListener("hashchange", change);
     return () => window.removeEventListener("hashchange", change);
@@ -262,7 +381,7 @@ function App() {
     return () => window.removeEventListener("keydown", key);
   }, []);
   const workspace =
-    workspaces.find((w) => w.id === state.workspace) || workspaces[0];
+    activeWorkspaces.find((w) => w.id === state.workspace) || activeWorkspaces[0];
   const pieces = state.pieces.filter((p) => p.workspace === state.workspace);
   const sources = accessibleSources(state, state.workspace);
   const pending = pieces.filter((p) => p.status === "Em revisão");
@@ -272,7 +391,7 @@ function App() {
   const spent = pieces.reduce((s, p) => s + p.cost, 0);
   const events = state.events.filter((e) => e.workspace === state.workspace);
   const goto = (tab) => {
-    location.hash = `app/${tab}`;
+    location.hash = `app/${tab === 'guardar' ? 'pesquisar' : tab}`;
   };
   const changeWorkspace = (id) => {
     setState((s) => ({ ...s, workspace: id }));
@@ -284,6 +403,8 @@ function App() {
       ...b,
       title: "",
       source: accessibleSources(state, id)[0]?.id || "",
+      campaignId: '', parentId: null, thesis: '', angle: '', cta: '', audience: '', topicId: undefined, origin: 'manual',
+      experience: '', offer: '', inspirationId: '', handoffKey:null,queueId:null,
     }));
   };
   const doAction = (id, action, payload = {}) => {
@@ -296,7 +417,9 @@ function App() {
             ? "Ajuste registrado. A peça voltou para a escrita."
             : action === "schedule"
               ? "Peça adicionada à agenda local."
-              : "Peça enviada para revisão.",
+              : action === "review"
+                ? "Peça enviada para revisão."
+                : "Alteração registrada.",
       );
       return true;
     } catch (e) {
@@ -304,13 +427,30 @@ function App() {
       return false;
     }
   };
-  const selectTopic = (title, source) => {
-    setBrief((b) => ({ ...b, title, source }));
+  const selectTopic = (title, source, extra = {}) => {
+    let result;
+    try { result=queueIdea(state,title,source,extra); } catch(error){notify(error.message,true);return;}
+    setState(result.state);
+    setBrief((b) => ({
+      ...b,
+      title,
+      source,
+      thesis: "",
+      angle: "",
+      cta: "",
+      topicId: undefined,
+      campaignId: "",
+      parentId: null,
+      origin: "source",
+      ...extra,
+      queueId:result.item.id,
+      handoffKey:crypto.randomUUID(),
+    }));
     setGenerated(null);
     goto("escrever");
   };
   const pageTitle =
-    navItems.find((i) => i[0] === route)?.[1] || "Configurações";
+    navItems.find((i) => i[0] === route)?.[1] || (route==='organizacao'?'Organização e marcas':'Configurações');
   const pieceTable = (list, compact = false) => (
     <div className="table-wrap">
       <table className="piece-table">
@@ -385,12 +525,23 @@ function App() {
     (p) => p.id === selectedPiece && p.workspace === state.workspace,
   );
   const activeSource = sources.find((s) => s.id === selectedSource);
+  const contentRoute = tourOpen ? tourOrigin.current : route;
+  const renderPage = page => page === 'grupo' ? <GroupOverview/> : page === 'organizacao' ? <OrganizationSettings/> : page === 'painel' ? <Dashboard/> : page === 'guardar' ? <Guardar/> : page === 'vigiar' ? <Radar/> : page === 'escrever' ? <Writer/> : page === 'campanhas' ? <Campaigns/> : page === 'kanban' ? <Kanban/> : page === 'resultados' ? <Results/> : page === 'portfolio' ? <Portfolio/> : page === 'agentes' ? <Squad/> : page === 'aprovar' ? <Aprovar/> : page === 'publicar' ? <Publicar/> : page === 'caderno' ? <Caderno/> : page === 'cerebro' ? <SecondBrain/> : <Configuracoes/>;
+  useEffect(() => {
+    let dismissed = tourDismissed.current;
+    try { dismissed ||= sessionStorage.getItem(tourSessionKey) === 'true'; } catch {}
+    if(!['landing','motion'].includes(route) && !modal && !selectedPiece && !selectedSource && !tourOpen && shouldOfferTour(state.onboarding?.tour,dismissed)) {
+      tourOrigin.current = route;
+      setTourOpen(true);
+    }
+  },[route,modal,selectedPiece,selectedSource,tourOpen,state.onboarding?.tour]);
   return (
     <AppContext.Provider
       value={{
         toast,
         setToast,
         state,
+        account,
         setState,
         workspace,
         pieces,
@@ -401,6 +552,7 @@ function App() {
         sources,
         notify,
         goto,
+        changeWorkspace,
         setModal,
         setSelectedPiece,
         setSelectedSource,
@@ -418,12 +570,17 @@ function App() {
         setApprovalFilter,
         selectTopic,
         pieceTable,
+        doAction,
       }}
     >
       {route === "landing" ? (
         <Landing />
+      ) : route === "motion" ? (
+        <React.Suspense fallback={<div className="mx-loading" />}>
+          <LandingMotion />
+        </React.Suspense>
       ) : (
-        <div className="app-shell">
+        <div data-tour-active={tourOpen} className={`app-shell ${sidebarHidden ? 'sidebar-hidden' : ''}`}>
           <a
             href="#app-main"
             onClick={(e) => {
@@ -434,9 +591,10 @@ function App() {
           >
             Ir para o conteúdo
           </a>
-          <aside className={`sidebar ${mobile ? "sidebar-open" : ""}`}>
+          <aside id="platform-sidebar" className={`sidebar ${mobile ? "sidebar-open" : ""}`}>
             <div className="sidebar-logo">
               <Brand />
+              <button className="icon-button sidebar-toggle" onClick={toggleSidebar} aria-label="Ocultar menu lateral" aria-controls="platform-sidebar" aria-expanded={!sidebarHidden} title="Ocultar menu lateral"><ArrowLeft size={18} /></button>
               <button
                 className="icon-button mobile-only"
                 onClick={() => setMobile(false)}
@@ -446,7 +604,7 @@ function App() {
               </button>
             </div>
             <div className="organization-label">
-              GRUPO BBMD<span>DEMO</span>
+              {account ? state.organizationName : 'GRUPO BBMD'}<span>{account ? organizationType(state)==='group'?'GRUPO':'CONTA' : 'DEMO'}</span>
             </div>
             <div className="workspace-select-wrap">
               <span
@@ -456,13 +614,13 @@ function App() {
                 {workspace.initials}
               </span>
               <label>
-                <span>Espaço de trabalho</span>
+                <span>Marca / espaço de trabalho</span>
                 <select
                   aria-label="Espaço de trabalho"
                   value={state.workspace}
                   onChange={(e) => changeWorkspace(e.target.value)}
                 >
-                  {workspaces.map((w) => (
+                  {activeWorkspaces.map((w) => (
                     <option value={w.id} key={w.id}>
                       {w.name}
                     </option>
@@ -479,14 +637,13 @@ function App() {
               <kbd>⌃ K</kbd>
             </button>
             <nav aria-label="Plataforma">
-              {navItems.map(([id, name, Icon], i) => (
+              {navItems.filter(([id])=>id!=='grupo'||!account||organizationType(state)==='group').map(([id, name, Icon], i) => (
                 <React.Fragment key={id}>
-                  {i === 1 && (
-                    <div className="nav-group-label">SUA ESTEIRA</div>
-                  )}
-                  {i === 6 && <div className="nav-divider" />}
+                  {id === 'campanhas' && <div className="nav-group-label">PLANEJAMENTO</div>}
+                  {id === 'guardar' && <div className="nav-group-label">PRODUÇÃO DE CONTEÚDO</div>}
+                  {id === 'cerebro' && <div className="nav-group-label">CONTEXTO E APRENDIZADO</div>}
                   <a
-                    href={`#app/${id}`}
+                    href={`#app/${id === 'guardar' ? 'pesquisar' : id}`}
                     className={route === id ? "active" : ""}
                   >
                     <Icon size={19} />
@@ -499,6 +656,7 @@ function App() {
               ))}
             </nav>
             <div className="sidebar-bottom">
+              {account&&<a href="#app/organizacao" className={route==='organizacao'?'active':''}><Building2 size={19}/>Organização e marcas</a>}
               <a
                 className={route === "configuracoes" ? "active" : ""}
                 href="#app/configuracoes"
@@ -524,15 +682,15 @@ function App() {
               </div>
               <div className="user-profile">
                 <span className="avatar">
-                  {state.role === "Editor" ? "CA" : "BT"}
+                  {(account?.name || state.role).slice(0,2).toUpperCase()}
                 </span>
                 <div>
-                  <b>{state.role === "Editor" ? "Carol" : "Beto"}</b>
-                  <span>Equipe de marketing</span>
+                  <b>{account?.name || state.role}</b>
+                  <span>{account ? 'Sua conta' : 'Equipe de marketing'}</span>
                 </div>
-                <a href="#" aria-label="Voltar à apresentação">
+                {account ? <button className="icon-button" onClick={onLogout} aria-label="Sair da conta"><LogOut size={17}/></button> : <a href="#" aria-label="Voltar à apresentação">
                   <LogOut size={17} />
-                </a>
+                </a>}
               </div>
             </div>
           </aside>
@@ -545,6 +703,7 @@ function App() {
           )}
           <div className="app-content">
             <header className="app-topbar">
+              {sidebarHidden && <button className="icon-button sidebar-toggle" onClick={toggleSidebar} aria-label="Mostrar menu lateral" aria-controls="platform-sidebar" aria-expanded={false} title="Mostrar menu lateral"><Menu size={22} /></button>}
               <button
                 className="icon-button mobile-only"
                 onClick={() => setMobile(true)}
@@ -558,14 +717,16 @@ function App() {
                 <b>{pageTitle}</b>
               </div>
               <div className="topbar-right">
+                <button className="tour-launcher" onClick={startTour} aria-label="Tour guiado" title="Repetir tour guiado"><Compass size={17}/><span>Tour guiado</span></button>
+                {account ? <><span className="account-sync" role="status">{syncStatus}</span><button className="text-button" onClick={onLogout}>Sair da conta</button></> : <a className="text-button" href="#auth">Entrar / Criar conta</a>}
                 <span className="demo-indicator">
                   <span />
-                  Demonstração local
+                  {account ? account.name : 'Demonstração local'}
                 </span>
                 <label className="role-select">
                   <span>Papel</span>
                   <select
-                    aria-label="Papel na demonstração"
+                    aria-label={account ? 'Papel no espaço' : 'Papel na demonstração'}
                     value={state.role}
                     onChange={(e) =>
                       setState((s) => ({ ...s, role: e.target.value }))
@@ -574,6 +735,7 @@ function App() {
                     <option>Editor</option>
                     <option>Aprovador</option>
                     <option>Administrador</option>
+                    <option>Observador</option>
                   </select>
                 </label>
               </div>
@@ -582,36 +744,24 @@ function App() {
               id="app-main"
               tabIndex={-1}
               className="app-main"
-              key={route + "-" + state.workspace}
+              key={contentRoute + "-" + state.workspace}
+              hidden={tourOpen && route !== contentRoute}
+              style={tourOpen && route !== contentRoute ? {display:'none'} : undefined}
             >
-              {route === "painel" ? (
-                <Dashboard />
-              ) : route === "guardar" ? (
-                <Guardar />
-              ) : route === "vigiar" ? (
-                <Vigiar />
-              ) : route === "escrever" ? (
-                <Escrever />
-              ) : route === "aprovar" ? (
-                <Aprovar />
-              ) : route === "publicar" ? (
-                <Publicar />
-              ) : route === "caderno" ? (
-                <Caderno />
-              ) : (
-                <Configuracoes />
-              )}
+              {renderPage(contentRoute)}
             </main>
+            {tourOpen && route !== contentRoute && <main className="app-main" key={`tour-preview-${route}`}>{renderPage(route)}</main>}
             <footer className="app-footer">
               <span>
-                esteira.{" "}
+                Memorable.{" "}
                 <span>Inteligência no processo. Pessoas na decisão.</span>
               </span>
-              <span>Protótipo de validação · SkyVidya</span>
+              <span>Protótipo de validação · Memorable</span>
             </footer>
           </div>
         </div>
       )}
+      {tourOpen && !['landing','motion'].includes(route) && <GuidedTour preference={state.onboarding?.tour} goto={goto} onClose={closeTour}/>}
       {toast && (
         <div
           role="status"
@@ -639,12 +789,11 @@ function App() {
         >
           <div className="dialog-body">
             <p>
-              Experimente a Esteira com o contexto Grupo BBMD. As ações e o
-              histórico ficam salvos neste navegador.
+              {account ? 'Seu espaço reúne apenas o contexto e o conteúdo da sua conta. As alterações ficam salvas no serviço local.' : 'Experimente a Memorable com o contexto Grupo BBMD. As ações e o histórico ficam salvos neste navegador.'}
             </p>
             <ol className="help-steps">
               <li>
-                Escolha uma fonte em <b>Guardar</b>.
+                Encontre ou adicione uma fonte em <b>Pesquisar</b>.
               </li>
               <li>
                 Explore abordagens em <b>Escrever</b> e salve o rascunho.
@@ -660,8 +809,9 @@ function App() {
             <div className="quiet-note">
               <ShieldCheck size={20} />
               <p>
-                Sem IA, autenticação ou publicação externas conectadas. Custos e
-                papéis são demonstrativos.
+                IA opcional e coleta web dependem do serviço local. Publicação
+                nas redes e autenticação multiusuário ainda não estão
+                conectadas.
               </p>
             </div>
             <button
@@ -676,7 +826,7 @@ function App() {
           </div>
         </Dialog>
       )}
-      {modal === "reset" && (
+      {modal === "reset" && !account && (
         <Dialog
           title="Recomeçar a demonstração?"
           onClose={() => setModal(null)}
@@ -801,7 +951,22 @@ function App() {
             </div>
             <h2>{activeSource.title}</h2>
             <p className="source-origin">{activeSource.origin}</p>
-            <blockquote>{activeSource.text}</blockquote>
+            {sourceCaptureProblem(activeSource) && (
+              <div className="validation-warning">
+                <AlertTriangle size={18} />
+                <span><b>Conteúdo não aproveitável.</b> {sourceCaptureProblem(activeSource)} Edite e substitua pelo texto autorizado, ou exclua esta referência.</span>
+              </div>
+            )}
+            {(activeSource.summary || activeSource.keywords?.length) && <section className="source-insights" aria-label="Resumo">
+              <small>RESUMO</small>
+              {activeSource.summary && <p>{activeSource.summary}</p>}
+              {activeSource.keywords?.length > 0 && <div className="source-keywords">{activeSource.keywords.map(keyword => <span key={keyword}>{keyword}</span>)}</div>}
+              {activeSource.extraction?.method && <small>{activeSource.extraction.method} · {new Date(activeSource.extraction.extractedAt).toLocaleString('pt-BR')}</small>}
+            </section>}
+            <details className="source-transcript" open>
+              <summary>{activeSource.type === 'Vídeo' ? 'Transcrição completa' : 'Conteúdo completo'}</summary>
+              <div className="source-fulltext" role="region" tabIndex={0} aria-label="Texto completo da referência"><blockquote>{activeSource.transcript || activeSource.text}</blockquote></div>
+            </details>
             {activeSource.url && (
               <a
                 className="text-button"
@@ -812,6 +977,9 @@ function App() {
                 Abrir fonte original <ExternalLink size={16} />
               </a>
             )}
+            <SourceRefresh key={activeSource.id} source={activeSource}/>
+            <details className="source-settings"><summary>Classificar referência</summary><SourceRole source={activeSource}/></details>
+            <SourceMetadata key={`${activeSource.id}-${activeSource.extraction?.extractedAt||''}`} source={activeSource} />
             <div className="source-feedback">
               <span>Este material já foi usado?</span>
               {["Funcionou", "Não funcionou"].map((f) => (
@@ -819,6 +987,19 @@ function App() {
                   className={`button secondary ${activeSource.feedback === f ? "selected" : ""}`}
                   key={f}
                   onClick={() => {
+                    try {
+                      assertEditor(state);
+                    } catch (e) {
+                      notify(e.message, true);
+                      return;
+                    }
+                    if (activeSource.workspace !== state.workspace) {
+                      notify(
+                        "Abra o espaço de origem para avaliar este material.",
+                        true,
+                      );
+                      return;
+                    }
                     setState((s) => ({
                       ...s,
                       sources: s.sources.map((x) =>
@@ -853,7 +1034,7 @@ function App() {
               </button>
               <button
                 className="button primary"
-                disabled={!activeSource.citable}
+                disabled={!sourceValid(activeSource)}
                 onClick={() => {
                   selectTopic(activeSource.title, activeSource.id);
                   setSelectedSource(null);
@@ -1039,7 +1220,7 @@ function Dashboard() {
           <h2>Em produção</h2>
           <span>Responsáveis e próximos passos à vista.</span>
         </div>
-        <button className="text-button" onClick={() => goto("aprovar")}>
+        <button className="text-button" onClick={() => goto("kanban")}>
           Ver quadro <ArrowRight size={17} />
         </button>
       </div>
@@ -1048,7 +1229,7 @@ function Dashboard() {
       ) : (
         <Empty
           title="Sua primeira peça começa no acervo."
-          text="Escolha uma referência para colocar a esteira em movimento."
+          text="Escolha uma referência para começar a produção."
           action={() => goto("guardar")}
           label="Abrir acervo"
         />
@@ -1097,8 +1278,12 @@ function Guardar() {
   } = React.useContext(AppContext);
   const filtered = sources.filter(
     (s) =>
-      (sourceFilter === "Todos" || s.type === sourceFilter) &&
-      (s.title + " " + s.text + " " + s.origin)
+      (sourceFilter === "Todos" || s.type === sourceFilter ||
+       (sourceFilter === "Não citáveis" && !sourceValid(s)) ||
+       (sourceFilter === "Nunca usados" && !pieces.some(p=>p.sourceIds.includes(s.id))) ||
+       (sourceFilter === "Vence em breve" && s.validUntil && new Date(s.validUntil+'T23:59:59') <= new Date(Date.now()+7*86400000)) ||
+       (sourceFilter === "Biblioteca do grupo" && s.shared)) &&
+      (s.title + " " + s.text + " " + s.origin + " " + (s.tags||[]).join(' '))
         .toLowerCase()
         .includes(query.toLowerCase()),
   );
@@ -1106,8 +1291,8 @@ function Guardar() {
     <>
       <div className="page-heading">
         <div>
-          <h1>O conhecimento fica.</h1>
-          <p>Guarde hoje o que pode se tornar o próximo conteúdo.</p>
+          <h1>Pesquise. Encontre o próximo conteúdo.</h1>
+          <p>Importe sites, vídeos e documentos. Reúna evidências, ideias e referências para alimentar a criação.</p>
         </div>
         <button className="button primary" onClick={() => setModal("source")}>
           <Plus size={18} />
@@ -1128,7 +1313,7 @@ function Guardar() {
       </div>
       <div className="filter-bar">
         <div className="segmented">
-          {["Todos", "Documento", "Podcast", "Texto"].map((t) => (
+          {["Todos", "Web", "Vídeo", "Social", "Documento", "Podcast", "Texto", "Notícia", "Não citáveis", "Nunca usados", "Vence em breve", "Biblioteca do grupo"].map((t) => (
             <button
               key={t}
               onClick={() => setSourceFilter(t)}
@@ -1179,9 +1364,9 @@ function Guardar() {
                 </div>
               </div>
               <span
-                className={`source-citable ${s.citable ? "" : "uncitable"}`}
+                className={`source-citable ${sourceValid(s) ? "" : "uncitable"}`}
               >
-                {s.citable ? (
+                {sourceValid(s) ? (
                   <>
                     <Link size={14} />
                     Fonte vinculada
@@ -1189,7 +1374,7 @@ function Guardar() {
                 ) : (
                   <>
                     <AlertTriangle size={14} />
-                    Origem pendente
+                    {sourceCaptureProblem(s) ? "Conteúdo indisponível" : "Origem pendente"}
                   </>
                 )}
               </span>
@@ -1215,440 +1400,7 @@ function Guardar() {
           semântica será conectada na implantação.
         </p>
       </div>
-    </>
-  );
-}
-function Vigiar() {
-  const {
-    state,
-    setState,
-    workspace,
-    pieces,
-    pending,
-    approved,
-    spent,
-    events,
-    sources,
-    notify,
-    goto,
-    setModal,
-    setSelectedPiece,
-    setSelectedSource,
-    query,
-    setQuery,
-    sourceFilter,
-    setSourceFilter,
-    brief,
-    setBrief,
-    generated,
-    setGenerated,
-    busy,
-    setBusy,
-    approvalFilter,
-    setApprovalFilter,
-    selectTopic,
-    pieceTable,
-  } = React.useContext(AppContext);
-  const [filter, setFilter] = useState("Todas");
-  const topics = [
-    {
-      title: "Clareza no primeiro atendimento",
-      category: "Acervo próprio",
-      source: "rolim31",
-      reason:
-        "Sua biblioteca já contém uma conversa sobre clareza e confiança. É uma referência para abrir um novo conteúdo.",
-      score: "Alto",
-      type: "Oportunidade de reaproveitamento",
-    },
-    {
-      title: "Como a sua marca explica o que faz?",
-      category: "Acervo próprio",
-      source: `${workspace.id}-voice`,
-      reason:
-        "A voz da marca pede linguagem acessível. Um conteúdo de apresentação pode traduzir esse critério em prática.",
-      score: "Médio",
-      type: "Alinhamento com a voz da marca",
-    },
-    {
-      title: "O que seus concorrentes estão discutindo?",
-      category: "Concorrentes",
-      disabled: true,
-      type: "Fonte ainda não configurada",
-      reason:
-        "Adicione os perfis que o time deseja acompanhar. Nenhuma varredura externa está conectada nesta demo.",
-    },
-    {
-      title: "Quem amplia o repertório do time?",
-      category: "Referências",
-      disabled: true,
-      type: "Fonte ainda não configurada",
-      reason:
-        "Escolha criadores e publicações de referência para preparar o radar da operação.",
-    },
-  ];
-  return (
-    <>
-      <div className="page-heading">
-        <div>
-          <h1>A próxima pauta está por perto.</h1>
-          <p>Sinais do acervo para começar a semana com direção.</p>
-        </div>
-        <button
-          className="button secondary"
-          onClick={() => goto("configuracoes")}
-        >
-          <Settings size={17} />
-          Configurar fontes
-        </button>
-      </div>
-      <div className="radar-banner">
-        <div className="radar-graphic">
-          <Radio size={33} />
-        </div>
-        <div>
-          <h2>Um olhar novo para o que você já sabe.</h2>
-          <p>Oportunidades demonstrativas, com contexto e origem visíveis.</p>
-        </div>
-        <span>
-          CURADORIA
-          <br />
-          <b>DA EQUIPE</b>
-        </span>
-      </div>
-      <div className="filter-bar">
-        <div className="segmented">
-          {["Todas", "Acervo próprio", "Concorrentes", "Referências"].map(
-            (t) => (
-              <button
-                key={t}
-                className={filter === t ? "active" : ""}
-                onClick={() => setFilter(t)}
-              >
-                {t}
-              </button>
-            ),
-          )}
-        </div>
-      </div>
-      <div className="topic-list">
-        {topics
-          .filter((t) => filter === "Todas" || filter === t.category)
-          .map((t, i) => (
-            <article
-              className={`topic ${t.disabled ? "topic-disabled" : ""}`}
-              key={t.title}
-            >
-              <div className="topic-index">
-                {String(i + 1).padStart(2, "0")}
-              </div>
-              <div>
-                <div className="topic-kind">
-                  {t.category} <span>·</span> {t.type}
-                </div>
-                <h2>{t.title}</h2>
-                <p>{t.reason}</p>
-                {!t.disabled && (
-                  <div className="topic-reason">
-                    <Check size={15} />
-                    {t.score === "Alto" ? "Encaixe alto" : "Encaixe médio"} ·
-                    avaliação editorial de exemplo
-                  </div>
-                )}
-              </div>
-              <button
-                className={`button ${t.disabled ? "secondary" : "primary"}`}
-                onClick={() =>
-                  t.disabled
-                    ? goto("configuracoes")
-                    : selectTopic(t.title, t.source)
-                }
-              >
-                {t.disabled ? "Configurar" : "Criar a partir daqui"}
-                <ArrowUpRight size={17} />
-              </button>
-            </article>
-          ))}
-      </div>
-    </>
-  );
-}
-function Escrever() {
-  const {
-    state,
-    setState,
-    workspace,
-    pieces,
-    pending,
-    approved,
-    spent,
-    events,
-    sources,
-    notify,
-    goto,
-    setModal,
-    setSelectedPiece,
-    setSelectedSource,
-    query,
-    setQuery,
-    sourceFilter,
-    setSourceFilter,
-    brief,
-    setBrief,
-    generated,
-    setGenerated,
-    busy,
-    setBusy,
-    approvalFilter,
-    setApprovalFilter,
-    selectTopic,
-    pieceTable,
-  } = React.useContext(AppContext);
-  const currentSource = sources.find((s) => s.id === brief.source);
-  const [selectedVariant, setSelectedVariant] = useState(0);
-  const [draft, setDraft] = useState(generated?.[0]?.body || "");
-  const localGenerated = generated;
-  const generate = () => {
-    if (!brief.title.trim()) {
-      notify("Conte em poucas palavras qual é o assunto.", true);
-      return;
-    }
-    if (!currentSource?.citable) {
-      notify("Escolha uma fonte citável para começar.", true);
-      return;
-    }
-    if (!["Editor", "Administrador"].includes(state.role)) {
-      notify("Selecione o papel Editor para criar conteúdo.", true);
-      return;
-    }
-    if (spent + 0.18 > state.budgets[state.workspace]) {
-      notify(
-        "Teto estimado atingido. Ajuste o orçamento nas configurações.",
-        true,
-      );
-      return;
-    }
-    const result = variants(brief.title, currentSource, brief.format);
-    setGenerated(result);
-    setDraft(result[0].body);
-    setSelectedVariant(0);
-  };
-  const save = () => {
-    try {
-      const text = draft;
-      const next = createPiece(state, {
-        ...brief,
-        body: text,
-        sourceIds: [brief.source],
-      });
-      setState(next);
-      setGenerated(null);
-      setSelectedPiece(next.pieces[0].id);
-      notify("Rascunho salvo. Confira e envie para revisão.");
-    } catch (e) {
-      notify(e.message, true);
-    }
-  };
-  return (
-    <>
-      <div className="page-heading">
-        <div>
-          <h1>Dê um próximo capítulo à ideia.</h1>
-          <p>Uma referência, três caminhos. A escolha continua sendo sua.</p>
-        </div>
-        <span className="voice-label">
-          <span style={{ background: workspace.color }} />
-          {workspace.voice}
-        </span>
-      </div>
-      <div className="writer-layout">
-        <div className="brief-panel">
-          <div className="panel-top">
-            <h2>Seu ponto de partida</h2>
-            <PenLine size={20} />
-          </div>
-          <label>
-            O que vamos comunicar?
-            <textarea
-              rows={3}
-              value={brief.title}
-              onChange={(e) => {
-                setBrief({ ...brief, title: e.target.value });
-                setGenerated(null);
-              }}
-              placeholder="Ex.: clareza no primeiro atendimento"
-              maxLength={140}
-            />
-          </label>
-          <label>
-            Formato
-            <select
-              value={brief.format}
-              onChange={(e) => {
-                setBrief({ ...brief, format: e.target.value });
-                setGenerated(null);
-              }}
-            >
-              {["LinkedIn", "Reels", "Carrossel", "Legenda Instagram"].map(
-                (t) => (
-                  <option key={t}>{t}</option>
-                ),
-              )}
-            </select>
-          </label>
-          <label>
-            Referência do acervo
-            <select
-              value={brief.source}
-              onChange={(e) => {
-                setBrief({ ...brief, source: e.target.value });
-                setGenerated(null);
-              }}
-            >
-              <option value="">Selecione uma fonte</option>
-              {sources
-                .filter((s) => s.citable)
-                .map((s) => (
-                  <option value={s.id} key={s.id}>
-                    {s.title}
-                  </option>
-                ))}
-            </select>
-          </label>
-          {currentSource && (
-            <div className="source-excerpt">
-              <Link size={14} />
-              <p>
-                {currentSource.text.slice(0, 180)}
-                {currentSource.text.length > 180 ? "…" : ""}
-              </p>
-            </div>
-          )}
-          <div className="field-pair">
-            <label>
-              Responsável
-              <select
-                value={brief.owner}
-                onChange={(e) => setBrief({ ...brief, owner: e.target.value })}
-              >
-                {["Carol", "Lucas", "Designer"].map((n) => (
-                  <option key={n}>{n}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Prazo
-              <input
-                type="date"
-                value={brief.deadline}
-                onChange={(e) =>
-                  setBrief({ ...brief, deadline: e.target.value })
-                }
-                required
-              />
-            </label>
-          </div>
-          <button
-            className="button primary full-width"
-            disabled={busy || !currentSource}
-            onClick={generate}
-          >
-            {busy ? <span className="spinner" /> : <Layers size={18} />}{" "}
-            {busy ? "Preparando abordagens…" : "Explorar 3 abordagens"}
-          </button>
-          <p className="field-help">
-            Nesta demo, modelos de texto locais ilustram a criação. Nenhuma IA
-            externa é chamada.
-          </p>
-        </div>
-        <div className="writer-main">
-          {!localGenerated ? (
-            <div className="writer-empty">
-              <div className="writer-empty-symbol">
-                <PenLine size={42} />
-              </div>
-              <h2>
-                O conteúdo começa
-                <br />
-                com uma boa referência.
-              </h2>
-              <p>
-                Escolha o assunto, o formato e a fonte.
-                <br />
-                Vamos abrir três caminhos para a sua ideia.
-              </p>
-              <div className="writing-principles">
-                <span>
-                  <Link size={16} />
-                  Fonte preservada
-                </span>
-                <span>
-                  <Users size={16} />
-                  Revisão humana
-                </span>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div
-                className="variant-tabs"
-                role="tablist"
-                aria-label="Abordagens de escrita"
-              >
-                {localGenerated.map((v, i) => (
-                  <button
-                    key={v.strategy}
-                    className={selectedVariant === i ? "active" : ""}
-                    role="tab"
-                    aria-selected={selectedVariant === i}
-                    onClick={() => {
-                      setSelectedVariant(i);
-                      setDraft(v.body);
-                    }}
-                  >
-                    <span>ABORDAGEM {i + 1}</span>
-                    <b>{v.strategy}</b>
-                  </button>
-                ))}
-              </div>
-              <div className="editor-surface">
-                <div className="editor-toolbar">
-                  <span>
-                    {brief.format} <span>·</span> Texto editável
-                  </span>
-                  <span>{draft.length} caracteres</span>
-                </div>
-                <textarea
-                  aria-label="Editar abordagem"
-                  value={draft}
-                  onChange={(e) => {
-                    setDraft(e.target.value);
-                    setGenerated((g) =>
-                      g.map((v, i) =>
-                        i === selectedVariant
-                          ? { ...v, body: e.target.value }
-                          : v,
-                      ),
-                    );
-                  }}
-                  rows={15}
-                />
-                <div className="editor-source">
-                  <Link size={16} />
-                  <span>{currentSource?.origin}</span>
-                </div>
-              </div>
-              <div className="editor-bottom">
-                <p>
-                  Revise fatos, contexto e adequação à marca antes de enviar.
-                </p>
-                <button className="button primary" onClick={save}>
-                  Salvar rascunho <ArrowRight size={17} />
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+      <details className="research-monitoring"><summary>Acompanhar atualizações</summary><p>Importe uma referência no acervo e escolha se deseja consultá-la novamente. As atualizações alimentam o mesmo acervo e o Radar.</p><MonitorSources /></details>
     </>
   );
 }
@@ -1834,6 +1586,7 @@ function Publicar() {
     pieceTable,
   } = React.useContext(AppContext);
   const ready = pieces.filter((p) => p.status === "Aprovado");
+  const published = pieces.filter((p) => p.status === "Publicado");
   const scheduled = pieces
     .filter((p) => p.status === "Agendado")
     .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
@@ -1849,7 +1602,7 @@ function Publicar() {
           disabled={!scheduled.length}
           onClick={() => {
             download(
-              "esteira-agenda.csv",
+              "memorable-agenda.csv",
               "Título;Canal;Data\n" +
                 scheduled
                   .map((p) =>
@@ -1967,6 +1720,8 @@ function Publicar() {
           text="Aprove uma peça e defina o canal, a data e a hora do próximo capítulo."
         />
       )}
+      <div className="section-header"><h2>Publicações registradas <span className="count-label">{published.length}</span></h2></div>
+      {published.length ? pieceTable(published) : <p className="field-help">O time pode registrar a URL de uma publicação realizada fora da plataforma.</p>}
     </>
   );
 }
@@ -2012,7 +1767,7 @@ function Caderno() {
           className="button secondary"
           onClick={() => {
             download(
-              "esteira-caderno.json",
+              "memorable-caderno.json",
               JSON.stringify(
                 {
                   workspace: workspace.name,
@@ -2032,6 +1787,7 @@ function Caderno() {
           Exportar caderno
         </button>
       </div>
+      <MemoryRules />
       <div className="notebook-intro">
         <BookOpen size={30} />
         <p>
@@ -2109,6 +1865,7 @@ function Caderno() {
 function Configuracoes() {
   const {
     state,
+    account,
     setState,
     workspace,
     pieces,
@@ -2146,6 +1903,8 @@ function Configuracoes() {
           <p>Identidade, orçamento e conexões da operação.</p>
         </div>
       </div>
+      <VoiceSettings />
+      <Connections />
       <div className="settings-layout">
         <section className="settings-section">
           <h2>Identidade da marca</h2>
@@ -2158,26 +1917,26 @@ function Configuracoes() {
             </span>
             <div>
               <h3>{workspace.name}</h3>
-              <p>Grupo BBMD · espaço de demonstração</p>
+              <p>{account ? 'Espaço próprio da sua conta' : 'Grupo BBMD · espaço de demonstração'}</p>
             </div>
           </div>
           <dl>
             <div>
               <dt>Voz</dt>
-              <dd>{workspace.voice}</dd>
+              <dd>{state.voices[state.workspace].tone}</dd>
             </div>
             <div>
               <dt>Público</dt>
-              <dd>{workspace.audience}</dd>
+              <dd>{state.voices[state.workspace].audience}</dd>
             </div>
             <div>
               <dt>Critério editorial</dt>
               <dd>Fontes preservadas, linguagem clara e revisão humana.</dd>
             </div>
           </dl>
+          {account && <button className="button secondary" onClick={()=>goto('organizacao')}>Gerenciar organização e marcas <ArrowRight size={16}/></button>}
           <p className="field-help">
-            Perfis demonstrativos. A implantação define identidade, acessos e
-            critérios com cada equipe.
+            {account ? 'Defina identidade, público e critérios editoriais para orientar suas criações.' : 'Perfis demonstrativos. A implantação define identidade, acessos e critérios com cada equipe.'}
           </p>
         </section>
         <section className="settings-section">
@@ -2205,6 +1964,12 @@ function Configuracoes() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
+              try {
+                assertAdmin(state);
+              } catch (e) {
+                notify(e.message, true);
+                return;
+              }
               if (!Number.isFinite(Number(budget)) || Number(budget) < 0) {
                 notify("Informe um teto válido.", true);
                 return;
@@ -2241,38 +2006,16 @@ function Configuracoes() {
           </div>
           <small>Custos ilustrativos, sem cobrança real.</small>
         </section>
-        <section className="settings-section connections">
-          <h2>Conexões da plataforma</h2>
-          <p>
-            Os conectores serão configurados na implantação. A demo funciona sem
-            credenciais.
-          </p>
-          {[
-            ["Acervo", "SharePoint / Google Drive"],
-            ["Inteligência", "Gemini / provedor da equipe"],
-            ["Publicação", "Blotato / canais sociais"],
-            ["Radar", "Perfis próprios, concorrentes e referências"],
-          ].map(([name, service]) => (
-            <div className="connection-row" key={name}>
-              <span>
-                <b>{name}</b>
-                <small>{service}</small>
-              </span>
-              <span>Não conectado</span>
-            </div>
-          ))}
-        </section>
         <section className="settings-section">
-          <h2>Seu ambiente de demonstração</h2>
+          <h2>{account ? 'Dados da sua conta' : 'Seu ambiente de demonstração'}</h2>
           <p>
-            Dados locais neste navegador. A troca de papel ilustra o fluxo; não
-            é autenticação nem controle seguro de acesso.
+            {account ? 'Dados salvos no SQLite do serviço local e separados por conta. Os papéis ilustram responsabilidades editoriais dentro deste espaço.' : 'Dados locais neste navegador. A troca de papel ilustra o fluxo; não é autenticação nem controle seguro de acesso.'}
           </p>
           <button
             className="button secondary"
             onClick={() =>
               download(
-                "esteira-demo-backup.json",
+                account ? 'memorable-conta-backup.json' : 'memorable-demo-backup.json',
                 JSON.stringify(state, null, 2),
                 "application/json",
               )
@@ -2281,13 +2024,13 @@ function Configuracoes() {
             <Download size={17} />
             Exportar dados
           </button>
-          <button
+          {!account && <button
             className="text-button danger-text"
             onClick={() => setModal("reset")}
           >
             <RotateCcw size={16} />
             Reiniciar demonstração
-          </button>
+          </button>}
         </section>
       </div>
     </>
@@ -2302,17 +2045,79 @@ function SourceForm({ state, setState, notify, onClose }) {
     text: "",
     shared: false,
     type: "Texto",
+    editorialRole: 'reference',
+    whySaved: '',
+    pattern: '',
+    summary: "",
+    keywords: [],
+    transcript: "",
+    extraction: null,
   });
   const [error, setError] = useState("");
+  const [mode, setMode] = useState("single");
+  const [ingesting, setIngesting] = useState("");
   const fileRef = useRef();
+  const applyExtracted = (source) => {
+    setForm(current => ({ ...current, ...source, origin: current.origin || source.origin || "", title: current.title || source.title || "", url: current.url || source.url || "" }));
+    setError("");
+  };
+  const ingestUrl = async () => {
+    if (!form.url.trim()) return setError("Informe o link para extrair a fonte.");
+    setIngesting("url"); setError("");
+    try {
+      const response = await fetch('/api/ingest/url', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ url:form.url, title:form.title, origin:form.origin }) });
+      const source = await response.json();
+      if (!response.ok) throw new Error(source.error || 'Não foi possível extrair esta fonte.');
+      applyExtracted(source);
+    } catch (e) { setError(e.message); } finally { setIngesting(""); }
+  };
+  const ingestFile = async (file) => {
+    if (file.size > 25 * 1024 * 1024) return setError("Escolha um arquivo de até 25 MB.");
+    setIngesting("file"); setError("");
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      let binary = ""; for (let i=0; i<bytes.length; i+=0x8000) binary += String.fromCharCode(...bytes.subarray(i, i+0x8000));
+      const response = await fetch('/api/ingest/file', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name:file.name, mimeType:file.type || 'application/octet-stream', data:btoa(binary) }) });
+      const source = await response.json();
+      if (!response.ok) throw new Error(source.error || 'Não foi possível ler este arquivo.');
+      applyExtracted(source);
+    } catch (e) { setError(e.message); } finally { setIngesting(""); }
+  };
   return (
     <Dialog title="Adicionar ao acervo" onClose={onClose} wide>
+      <div className="source-mode" role="tablist" aria-label="O que adicionar">
+        <button type="button" role="tab" aria-selected={mode === "single"} className={mode === "single" ? "active" : ""} onClick={() => setMode("single")}>Uma publicação ou arquivo</button>
+        <button type="button" role="tab" aria-selected={mode === "channel"} className={mode === "channel" ? "active" : ""} onClick={() => setMode("channel")}>Canal inteiro</button>
+      </div>
+      {mode === "channel" ? (
+        <div className="dialog-body">
+          <ChannelImport state={state} setState={setState} notify={notify} onClose={onClose} />
+        </div>
+      ) : (
       <form
         className="dialog-body"
         onSubmit={(e) => {
           e.preventDefault();
+          try {
+            assertEditor(state);
+          } catch (e) {
+            setError(e.message);
+            return;
+          }
+          if (
+            state.sources.some(
+              (x) =>
+                (x.workspace === state.workspace || x.shared) &&
+                x.text.trim() === form.text.trim(),
+            )
+          ) {
+            setError(
+              "Este conteúdo já existe no acervo. Abra a referência existente.",
+            );
+            return;
+          }
           if (!form.title.trim() || !form.text.trim()) {
-            setError("Informe um título e inclua o conteúdo.");
+            setError("Extraia uma fonte ou informe título e conteúdo manualmente.");
             return;
           }
           if (form.url && !/^https?:\/\//i.test(form.url)) {
@@ -2338,7 +2143,21 @@ function SourceForm({ state, setState, notify, onClose }) {
           onClose();
         }}
       >
-        <p>Um trecho, um roteiro ou uma referência que vale guardar.</p>
+        <div className="source-ingest-intro">
+          <span>ADICIONE UMA FONTE</span>
+          <p>Cole uma URL ou envie um arquivo. A plataforma lê o material, cria o resumo, extrai palavras-chave e preserva o conteúdo para consulta.</p>
+        </div>
+        <section className="source-url-capture" aria-label="Extrair uma fonte pela URL">
+          <label>
+            Cole a URL da fonte
+            <div className="source-url-input">
+              <input type="url" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder="https://www.esferalegal.com.br/" />
+              <button type="button" className="button primary" onClick={ingestUrl} disabled={!!ingesting || !form.url.trim()}>{ingesting === "url" ? "Extraindo…" : "Extrair agora"}</button>
+            </div>
+          </label>
+          <small>Website ou página pública · YouTube com legenda pública · rede social conectada</small>
+        </section>
+        <div className="source-or"><span>ou envie um arquivo</span></div>
         <button
           type="button"
           className="upload-zone"
@@ -2346,8 +2165,8 @@ function SourceForm({ state, setState, notify, onClose }) {
         >
           <Upload size={23} />
           <span>
-            <b>Importar texto do computador</b>
-            <small>Arquivos .txt e .md · até 2 MB</small>
+            <b>{ingesting === "file" ? "Lendo e estruturando o arquivo…" : "Importar e extrair arquivo"}</b>
+            <small>PDF, DOCX, TXT, Markdown, CSV, áudio ou vídeo · até 25 MB</small>
           </span>
           <Plus size={18} />
         </button>
@@ -2355,27 +2174,18 @@ function SourceForm({ state, setState, notify, onClose }) {
           type="file"
           ref={fileRef}
           hidden
-          accept=".txt,.md,text/plain,text/markdown"
+          accept=".pdf,.docx,.txt,.md,.csv,.json,.html,.htm,.mp3,.mp4,.m4a,.wav,.ogg,.webm,.flac,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/*,audio/*,video/*"
           onChange={async (e) => {
             const f = e.target.files[0];
             if (!f) return;
-            if (f.size > 2 * 1024 * 1024) {
-              setError("Escolha um arquivo de até 2 MB.");
-              return;
-            }
-            if (!/\.(txt|md)$/i.test(f.name)) {
-              setError("Escolha um arquivo .txt ou .md.");
-              return;
-            }
-            setForm({
-              ...form,
-              title: f.name.replace(/\.(txt|md)$/i, ""),
-              text: await f.text(),
-              type: "Documento",
-            });
-            setError("");
+            await ingestFile(f);
+            e.target.value = "";
           }}
         />
+        <p className="source-details-label">Detalhes da referência <span>— preenchidos automaticamente quando possível</span></p>
+        <label>Relação com a marca<select aria-label="Relação com a marca" value={form.editorialRole} onChange={e => setForm({...form, editorialRole:e.target.value})}>{SOURCE_ROLES.map(([id,label]) => <option key={id} value={id}>{label}</option>)}</select></label>
+        <p className="field-help">Para seu produto ou serviço, escolha “Produto ou solução própria”. Ele será priorizado no Radar, mesmo sem ser uma notícia recente.</p>
+        <details className="source-curation"><summary>Por que esta referência importa? (opcional)</summary><label>Por que você salvou esta fonte?<textarea rows={2} value={form.whySaved} onChange={e=>setForm({...form,whySaved:e.target.value})} placeholder="O gancho, a ideia, a evidência ou o jeito de explicar…"/></label><label>Padrão de estrutura a estudar<textarea rows={2} value={form.pattern} onChange={e=>setForm({...form,pattern:e.target.value})} placeholder="Ex.: pergunta concreta → exemplo → orientação. Sem copiar as frases."/></label></details>
         <label>
           Título
           <input
@@ -2396,30 +2206,23 @@ function SourceForm({ state, setState, notify, onClose }) {
             />
           </label>
           <label>
-            Link da fonte (opcional)
-            <input
-              type="url"
-              value={form.url}
-              onChange={(e) => setForm({ ...form, url: e.target.value })}
-              placeholder="https://"
-            />
+            Tipo de material
+            <input value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} placeholder="Identificado pela extração" />
           </label>
         </div>
         <label>
           Conteúdo
           <textarea
-            required
             rows={6}
             value={form.text}
+            aria-label="Conteúdo"
             maxLength={100000}
             onChange={(e) => setForm({ ...form, text: e.target.value })}
-            placeholder="Cole o texto que a equipe poderá consultar…"
+            placeholder="Será preenchido pela extração. Você também pode colar ou revisar o conteúdo manualmente."
           />
         </label>
-        <p className="field-help">
-          O link registra a origem. O conteúdo deve ser colado ou importado; a
-          demo não extrai páginas externas.
-        </p>
+        {form.summary && <section className="ingest-preview"><small>EXTRAÇÃO CONCLUÍDA</small><p>{form.summary}</p>{form.keywords?.length > 0 && <div className="source-keywords">{form.keywords.map(keyword => <span key={keyword}>{keyword}</span>)}</div>}<small>{form.extraction?.method} · confira o conteúdo antes de guardar</small></section>}
+        <p className="field-help">Websites e páginas públicas são lidos pela plataforma. Vídeos do YouTube usam legenda pública; áudio/vídeo exige uma conexão OpenAI para transcrição. Redes sociais precisam de conexão autorizada da conta ou de um arquivo exportado.</p>
         <label className="checkbox-label">
           <input
             type="checkbox"
@@ -2442,6 +2245,7 @@ function SourceForm({ state, setState, notify, onClose }) {
           </button>
         </div>
       </form>
+      )}
     </Dialog>
   );
 }
@@ -2614,6 +2418,10 @@ function PieceDetail({
             </div>
           </aside>
         </div>
+        {!editing && <PieceCouncil piece={piece} />}
+        {!editing && <PieceLineage piece={piece} />}
+        {!editing && <PublicationControls piece={piece} />}
+        {!editing && <details className="piece-media"><summary>Mídia</summary><p>O rascunho contém texto e direção de produção. Imagens e vídeos são gerados aqui, usando créditos do provedor. Áudio deve ser gravado a partir do roteiro; síntese de voz ainda não está integrada.</p><MediaStudio initialPrompt={piece.delivery?.visual||piece.body} /></details>}
         {issues.length > 0 && !editing && (
           <div className="validation-warning">
             <AlertTriangle size={19} />
@@ -2689,6 +2497,8 @@ function PieceDetail({
                     setState(
                       transition(state, piece.id, "edit", { body, sourceIds }),
                     );
+                    setEditing(false);
+                    setChecked(false);
                     notify("Edição salva. A peça precisa de uma nova revisão.");
                   } catch (e) {
                     notify(e.message, true);
@@ -2756,7 +2566,7 @@ function PieceDetail({
                             !canApprove || issues.length > 0 || !checked
                           }
                           onClick={() =>
-                            doAction(piece.id, "approve", { author: "Beto" })
+                            doAction(piece.id, "approve", { author: "Aprovador" })
                           }
                         >
                           Aprovar versão <CheckCheck size={17} />
@@ -2790,4 +2600,4 @@ function PieceDetail({
     </Dialog>
   );
 }
-createRoot(document.getElementById("root")).render(<App />);
+createRoot(document.getElementById("root")).render(<AccountRoot Component={App} />);

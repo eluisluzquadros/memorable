@@ -1,5 +1,7 @@
 node_modules
+.runtime
 dist
 qa
 *.log
 *.tsbuildinfo
+/qa-*.png

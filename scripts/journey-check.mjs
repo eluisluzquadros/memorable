@@ -28,14 +28,15 @@ try {
   await page
     .getByRole("textbox", { name: "O que vamos comunicar?" })
     .fill("Como tornar uma conversa mais clara");
-  await page.getByRole("button", { name: "Explorar 3 abordagens" }).click();
-  await page.getByRole("tab", { name: "ABORDAGEM 2" }).click();
+  await page.getByLabel("Quantidade de versões").selectOption("3");
+  await page.getByRole("button", { name: "Preparar 3 versões locais" }).click();
+  await page.getByRole("tab", { name: "Storytelling", exact: true }).click();
   const editor = page.getByRole("textbox", { name: "Editar abordagem" });
   await editor.fill(
-    "Uma conversa começa com escuta. Texto editado para o teste de revisão.",
+    "Uma conversa começa com escuta. Texto editado para o teste de revisão. Antes de explicar um termo técnico, entenda a dúvida e preserve o contexto da fonte. O que ainda precisa ficar claro?",
   );
-  await page.getByRole("tab", { name: "ABORDAGEM 3" }).click();
-  await page.getByRole("tab", { name: "ABORDAGEM 2" }).click();
+  await page.getByRole("tab", { name: "Quebra de Objeção", exact: true }).click();
+  await page.getByRole("tab", { name: "Storytelling", exact: true }).click();
   assert.match(await editor.inputValue(), /Texto editado/);
   check("Variant edits survive switching");
   await page.getByLabel("Prazo", { exact: true }).fill("");
@@ -45,6 +46,7 @@ try {
   check("Missing deadline blocked before creation");
   await page.getByLabel("Prazo", { exact: true }).fill("2026-12-20");
   await page.getByRole("button", { name: "Salvar rascunho" }).click();
+  await page.getByRole("button", { name: "Executar conselho e ajustes locais" }).click();
   await page.getByRole("button", { name: "Enviar para revisão" }).click();
   await page.getByRole("button", { name: "Fechar", exact: true }).click();
   await page

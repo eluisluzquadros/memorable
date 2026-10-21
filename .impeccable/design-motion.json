@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-20T00:00:00Z",
+  "title": "Design System: Memorable #motion (cinematic landing only)",
+  "scope": "Route #motion only: src/LandingMotion.jsx, src/landing-motion.css, src/motion-fonts.css, all under .mx-root. The product app and src/Landing.jsx follow the root DESIGN.md world (Sora/DM Sans, cobalt). DESIGN.md has no YAML frontmatter, so primitives are carried here as CSS custom properties.",
+  "extensions": {
+    "colorMeta": {
+      "ink": { "role": "neutral", "displayName": "Night Studio Ink", "canonical": "#08090c", "tonalRamp": ["#08090c", "#0d0e12", "#101115", "#14151a", "#1a1b21", "#1d1f25", "#3a3631", "#f4efe6"] },
+      "paper": { "role": "neutral", "displayName": "Warm Paper", "canonical": "#f4efe6" },
+      "muted": { "role": "neutral", "displayName": "Ash", "canonical": "#b3aca2" },
+      "stone": { "role": "secondary", "displayName": "Wood-type Stone", "canonical": "#d9c6a3" },
+      "line": { "role": "neutral", "displayName": "Hairline", "canonical": "rgba(244, 239, 230, 0.14)" },
+      "glass": { "role": "neutral", "displayName": "Frosted Glass", "canonical": "rgba(17, 19, 25, 0.66)" },
+      "ember": { "role": "primary", "displayName": "Ember", "canonical": "#ff7a1a" },
+      "hot": { "role": "tertiary", "displayName": "LED Magenta", "canonical": "#ff2fa8" },
+      "screen": { "role": "tertiary", "displayName": "LED Screen Light", "canonical": "linear-gradient(135deg, #ff2fa8, #ff7a1a 70%, #ffb050)" }
+    },
+    "typographyMeta": {
+      "scenery": { "displayName": "Scenery word", "fontFamily": "Anton, Archivo, sans-serif", "fontWeight": 400, "fontSize": "min(calc(94vw / var(--len) / 0.5), 44svh)", "lineHeight": 0.84, "purpose": "The act word behind the figure, sized by letter count." },
+      "display": { "displayName": "Section display", "fontFamily": "Anton", "fontWeight": 400, "fontSize": "clamp(64px, 7.4vw, 120px) to clamp(84px, 13vw, 210px)", "lineHeight": 0.86, "purpose": "Portfolio and closing titles, in stone." },
+      "headline": { "displayName": "Condensed headline", "fontFamily": "Archivo", "fontWeight": 800, "fontStretch": "72%", "fontSize": "clamp(42px, 5.2vw, 82px) h1; clamp(36px, 3.8vw, 60px) acts", "lineHeight": 0.98, "letterSpacing": "-0.02em", "purpose": "h1 and act/section headings." },
+      "card-title": { "displayName": "Card title", "fontFamily": "Anton", "fontWeight": 400, "fontSize": "30px to 34px", "lineHeight": 1, "purpose": "Slide, approval and case titles." },
+      "body": { "displayName": "Body", "fontFamily": "Archivo, system-ui, sans-serif", "fontWeight": 400, "fontSize": "16px to 17px", "lineHeight": 1.5, "purpose": "Copy, max 42-44ch." },
+      "ui-label": { "displayName": "UI label", "fontFamily": "Archivo", "fontWeight": 700, "fontStretch": "75%", "fontSize": "11px to 12px", "letterSpacing": "0.12em", "textTransform": "uppercase", "purpose": "Functional header of a simulated panel or table only." }
+    },
+    "shadows": [
+      { "name": "glass", "value": "-28px 34px 60px -26px rgba(0,0,0,0.8), inset 1px 1px 0 rgba(255,255,255,0.14)", "purpose": "Production panels." },
+      { "name": "card", "value": "0 24px 40px -28px rgba(0,0,0,0.9)", "purpose": "Portfolio cases." },
+      { "name": "cta-glow", "value": "0 18px 40px -16px rgba(255,122,26,0.7)", "purpose": "Primary CTA at rest; 0 24px 48px -16px rgba(255,122,26,0.85) on hover." },
+      { "name": "figure", "value": "drop-shadow(0 40px 60px rgba(0,0,0,0.55))", "purpose": "Cut-out figure." }
+    ],
+    "motion": [
+      { "name": "ease", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "All entrances and hovers." },
+      { "name": "stamp-ease", "value": "cubic-bezier(0.2, 1.4, 0.4, 1)", "purpose": "Approval stamp overshoot only." },
+      { "name": "--t", "value": "0..1 per act", "purpose": "Local act progress written by one passive rAF scroll listener; drives parallax and city zoom in CSS." },
+      { "name": "mx-scan", "value": "1s, rotateY(-48deg) translateX(80px) blur(8px) -> rest", "purpose": "Act pauta panels." },
+      { "name": "mx-deal", "value": "0.95s, rotateZ(-9deg) rotateY(-30deg) translateY(90px) -> rest", "purpose": "Act escrita panels." },
+      { "name": "mx-jolt", "value": "0.9s, horizontal shake 40/-10/7/-4px", "purpose": "Act critica rejected panel." },
+      { "name": "mx-stamp", "value": "0.7s, scale(1.35) rotateZ(-4deg) -> rest", "purpose": "Act aprovado approval panel." },
+      { "name": "mx-rise", "value": "0.8-1s, translateY(18px) blur(6px) -> rest", "purpose": "Default copy and panel entrance." },
+      { "name": "ring-marquee", "value": "SMIL startOffset 0% -> -100%, 60s, infinite", "purpose": "Arena ring textPath." }
+    ],
+    "breakpoints": [
+      { "name": "tablet", "value": "1100px" },
+      { "name": "phone", "value": "760px" }
+    ],
+    "spacing": [
+      { "name": "--pad", "value": "clamp(20px, 5vw, 72px)" },
+      { "name": "section-y", "value": "120px (88px/80px at 760px)" }
+    ],
+    "rounded": [
+      { "name": "pill", "value": "999px" },
+      { "name": "glass", "value": "16px to 18px" },
+      { "name": "card", "value": "14px" },
+      { "name": "toolbar", "value": "10px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary CTA",
+      "kind": "button",
+      "refersTo": "mx-cta",
+      "description": "The single filled ember action.",
+      "html": "<a class=\"ds-cta\" href=\"#\">Ver o fluxo funcionando</a>",
+      "css": ".ds-cta { display: inline-flex; align-items: center; gap: 10px; padding: 15px 24px; border-radius: 999px; background: #ff7a1a; color: #08090c; text-decoration: none; font: 700 16px Archivo, system-ui, sans-serif; box-shadow: 0 18px 40px -16px rgba(255,122,26,0.7); transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), box-shadow 0.35s cubic-bezier(0.16,1,0.3,1), background 0.2s; } .ds-cta:hover { transform: translateY(-2px); background: #ff8b38; box-shadow: 0 24px 48px -16px rgba(255,122,26,0.85); } .ds-cta:focus-visible { outline: 2px solid #ff7a1a; outline-offset: 3px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "mx-ghost",
+      "description": "Secondary pill with hairline border.",
+      "html": "<a class=\"ds-ghost\" href=\"#\">Criar conta</a>",
+      "css": ".ds-ghost { display: inline-flex; align-items: center; gap: 8px; padding: 14px 20px; border-radius: 999px; border: 1px solid rgba(244,239,230,0.14); color: #f4efe6; background: #08090c; text-decoration: none; font: 600 15px Archivo, system-ui, sans-serif; transition: border-color 0.2s, background 0.2s; } .ds-ghost:hover { border-color: rgba(244,239,230,0.45); background: #111216; } .ds-ghost:focus-visible { outline: 2px solid #ff7a1a; outline-offset: 3px; }"
+    },
+    {
+      "name": "Glass Production Panel",
+      "kind": "card",
+      "refersTo": "mx-panel",
+      "description": "Frosted, tilted panel simulating a product screen.",
+      "html": "<div class=\"ds-stage\"><div class=\"ds-panel\"><div class=\"ds-panel-head\">Radar · 3 pautas novas</div><p class=\"ds-row\"><b>Clareza no primeiro atendimento</b><em>9,1</em></p><p class=\"ds-row\"><b>O que perguntar antes</b><em>8,4</em></p></div></div>",
+      "css": ".ds-stage { perspective: 1400px; padding: 32px; background: radial-gradient(ellipse 60% 70% at 84% -6%, rgba(255,196,120,0.26), transparent 62%), #08090c; } .ds-panel { position: relative; width: 320px; padding: 14px 16px 16px; color: #f4efe6; font: 400 15px Archivo, system-ui, sans-serif; background: rgba(17,19,25,0.66); border: 1px solid rgba(244,239,230,0.16); border-radius: 16px; backdrop-filter: blur(18px) saturate(140%); box-shadow: -28px 34px 60px -26px rgba(0,0,0,0.8), inset 1px 1px 0 rgba(255,255,255,0.14); transform: rotateY(-16deg); transform-origin: right center; } .ds-panel::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(135deg, rgba(255,214,160,0.16), transparent 38%); pointer-events: none; } .ds-panel-head { margin-bottom: 10px; font-size: 11px; font-weight: 700; font-stretch: 75%; letter-spacing: 0.12em; text-transform: uppercase; color: #b3aca2; } .ds-row { display: flex; justify-content: space-between; margin: 0; padding: 9px 0; border-top: 1px solid rgba(244,239,230,0.14); } .ds-row em { font-style: normal; font-family: Anton, sans-serif; font-size: 26px; color: #ff7a1a; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Step Rail",
+      "kind": "nav",
+      "refersTo": "mx-rail",
+      "description": "Act navigation; active step in stone.",
+      "html": "<nav class=\"ds-rail\"><button>Início</button><button class=\"is-on\" aria-current=\"step\">Pesquisar</button><button>Escrever</button></nav>",
+      "css": ".ds-rail { display: inline-flex; gap: 4px; padding: 5px; border-radius: 999px; background: rgba(12,13,17,0.8); border: 1px solid rgba(244,239,230,0.14); } .ds-rail button { border: 0; background: none; cursor: pointer; padding: 7px 13px; border-radius: 999px; font: 600 12.5px Archivo, system-ui, sans-serif; color: #b3aca2; transition: color 0.25s, background 0.25s; } .ds-rail button:hover { color: #f4efe6; } .ds-rail button.is-on { color: #08090c; background: #d9c6a3; } .ds-rail button:focus-visible { outline: 2px solid #ff7a1a; outline-offset: 3px; }"
+    },
+    {
+      "name": "LED Screen",
+      "kind": "custom",
+      "refersTo": "mx-screen",
+      "description": "Container-query screen with spill and scanlines.",
+      "html": "<div class=\"ds-led-wrap\"><i class=\"ds-spill\"></i><div class=\"ds-screen\"><span class=\"ds-brand\">Sua marca.</span><strong>Ninguém assina o que não entende.</strong><small>Reels · 15 s</small></div></div>",
+      "css": ".ds-led-wrap { position: relative; width: 360px; height: 220px; padding: 30px; background: #08090c; overflow: hidden; } .ds-spill { position: absolute; left: 10%; top: 5%; width: 80%; height: 90%; background: linear-gradient(135deg, #ff2fa8, #ff7a1a 70%, #ffb050); filter: blur(70px); opacity: 0.55; mix-blend-mode: screen; } .ds-screen { position: relative; container-type: size; height: 100%; box-sizing: border-box; padding: 2.4% 2.2%; display: flex; flex-direction: column; justify-content: space-between; background: linear-gradient(135deg, #ff2fa8, #ff7a1a 70%, #ffb050); color: #08090c; overflow: hidden; } .ds-screen::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.07) 0 1px, transparent 1px 3px); } .ds-brand { font: 800 max(9px, 7cqh) Archivo, sans-serif; font-stretch: 80%; } .ds-screen strong { font-family: Anton, sans-serif; font-weight: 400; font-size: 15cqh; line-height: 1; } .ds-screen small { font: 600 max(8px, 5cqh) Archivo, sans-serif; }"
+    },
+    {
+      "name": "Case Card",
+      "kind": "card",
+      "refersTo": "mx-cases li",
+      "description": "Demonstration portfolio case.",
+      "html": "<div class=\"ds-case\"><strong>Um episódio, sete peças</strong><small>Escritório de advocacia</small><p>Podcast de 40 min → Carrossel, Reels, artigo</p><em>Demonstração</em></div>",
+      "css": ".ds-case { display: flex; flex-direction: column; gap: 8px; width: 240px; min-height: 230px; padding: 22px 20px 18px; border-radius: 14px; background: linear-gradient(160deg, #1a1b21, #101115); border: 1px solid rgba(244,239,230,0.14); box-shadow: 0 24px 40px -28px rgba(0,0,0,0.9); transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), border-color 0.3s; font-family: Archivo, system-ui, sans-serif; } .ds-case:hover { transform: translateY(-4px); border-color: rgba(255,122,26,0.5); } .ds-case strong { font-family: Anton, sans-serif; font-weight: 400; font-size: 32px; line-height: 1; color: #f4efe6; } .ds-case small { color: #ff7a1a; font-size: 13px; font-weight: 600; } .ds-case p { margin: auto 0 0; color: #b3aca2; font-size: 14.5px; } .ds-case em { font-style: normal; font-size: 11.5px; color: #b3aca2; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "O estúdio à noite",
+    "overview": "O pipeline do produto encenado como filme em cinco atos (pauta, escrita, crítica, aprovado, no mundo) num estúdio escuro: palavra-cenário em tipo de madeira cor de pedra atrás de uma figura recortada, painéis de produção em vidro fosco orbitando o lado aberto da figura e, no último ato, telas de LED na cidade acendendo com a peça publicada. Escuro, quente, alta escala tipográfica; a cor saturada aparece como luz emitida, nunca como superfície de interface.",
+    "keyCharacteristics": [
+      "Tinta noturna como base única; papel quente para texto; pedra só na tipografia de cenário.",
+      "Um gradiente de LED (magenta para âmbar) como luz de tela; âmbar sozinho como a ação.",
+      "Anton para escala de cenário, Archivo variável (largura 72–100%) para todo o resto.",
+      "Vidro fosco com inclinação 3D como único material de painel.",
+      "Imagens geradas com IA (Higgsfield), declaradas no rodapé."
+    ],
+    "rules": [
+      { "name": "The Ember Is the Action Rule", "body": "Âmbar preenchido é só o CTA primário (\"Ver o fluxo funcionando\", hover #ff8b38); no resto, âmbar aparece como traço, ícone ou número, nunca como segundo botão cheio.", "section": "colors" },
+      { "name": "The Light Not Paint Rule", "body": "Magenta e --screen existem como luz emitida (LED, onda de áudio, barras de medidor, slide de carrossel, halo do fechamento). Não usar como fundo de seção ou de cartão comum.", "section": "colors" },
+      { "name": "The Numbers Are Tabular Rule", "body": "Todo número de dado (notas, horários, contagens) usa tabular-nums; notas grandes em Anton âmbar.", "section": "typography" },
+      { "name": "The Light Casts Shadow Rule", "body": "Sombras são difusas e caem para baixo-esquerda, vindas da luz do estúdio; a única sombra colorida é o brilho âmbar do CTA e da figura no ato \"aprovado\".", "section": "elevation" }
+    ],
+    "dos": [
+      "Do rotular todo dado sintético na própria tela: \"Dados de demonstração\" fixo no palco (e na versão estática), \"Demonstração\" em cada case, \"Imagens geradas com IA · conteúdo de demonstração\" no rodapé.",
+      "Do descrever resultados como transformação (fonte → peças, versões, agenda), não como número.",
+      "Do amarrar o movimento de scroll a --t em CSS, com um único listener rAF passivo.",
+      "Do manter a versão .mx-static completa para reduced motion: o mesmo conteúdo, nunca menos.",
+      "Do posicionar telas e textos sobre fotos em % de uma moldura com o aspect-ratio da imagem."
+    ],
+    "donts": [
+      "Don't inventar métricas, clientes, logos ou depoimentos (alcance, engajamento, ROI). As notas dos painéis (9,1, 8,4…) existem só como UI simulada sob o aviso de demonstração.",
+      "Don't usar âmbar preenchido em mais de um botão por viewport.",
+      "Don't usar --screen em texto (background-clip: text) ou como fundo de seção.",
+      "Don't capturar o scroll (snap ou scroll-jacking); o trilho apenas rola até o ato.",
+      "Don't levar Anton, --stone ou o vidro para o app ou para a landing clássica."
+    ]
+  }
+}

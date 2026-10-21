@@ -1966,3 +1966,16 @@ small {
     animation: spin 2s linear infinite !important;
   }
 }
+
+/* Placeholder while the cinematic landing chunk loads. */
+.mx-loading { min-height: 100svh; background: #08090c; }
+
+/* Classic landing: one subscription instead of a tool stack */
+.landing-stack { max-width: 1180px; margin: 0 auto; padding: 96px 24px; display: grid; grid-template-columns: 1fr 1.4fr; gap: 48px; align-items: start; }
+.landing-stack h2 { margin: 0; font-family: var(--display); font-size: clamp(32px, 4vw, 52px); line-height: 1.05; letter-spacing: -0.02em; color: var(--ink); }
+.landing-stack ul { list-style: none; margin: 0; padding: 0; }
+.landing-stack li { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; padding: 14px 0; border-top: 1px solid var(--line); }
+.landing-stack li b { display: flex; gap: 10px; align-items: baseline; font-weight: 600; color: var(--ink); }
+.landing-stack li b svg { color: var(--blue); flex: none; transform: translateY(2px); }
+.landing-stack li span { color: var(--muted); }
+@media (max-width: 800px) { .landing-stack { grid-template-columns: 1fr; padding: 64px 16px; } .landing-stack li { grid-template-columns: 1fr; gap: 2px; } }

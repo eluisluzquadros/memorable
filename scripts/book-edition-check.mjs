@@ -1,0 +1,31 @@
+import { chromium } from 'playwright';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+import { pathToFileURL } from 'node:url';
+const bookRoot='C:/Users/eluzq/workspace/ai-powered-content/artefatos/everton/pontoroxico/';
+const sha=crypto.createHash('sha256').update(fs.readFileSync(bookRoot+'pontotoxico_v6.md')).digest('hex');
+assert.equal(sha,'56101d00108a4a539a53894bfb3055059b8eeb840b0294396b7c3570630dfb8a');
+const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'});
+const errors=[];
+try {
+  const page=await browser.newPage({viewport:{width:1440,height:1000},reducedMotion:'reduce'});
+  page.setDefaultTimeout(15000);
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(pathToFileURL(bookRoot+'edicao_v7/pontotoxico_v7_leitura.html').href);
+  assert.equal(await page.locator('article h2[id^="capitulo-"]').count(),13);
+  assert.equal(await page.locator('nav a').count(),13);
+  assert.ok(await page.locator('article').innerText().then(t=>t.includes('As histórias deste livro são ficção.')));
+  await page.screenshot({path:'qa/book-v7-desktop.png'});
+  await page.setViewportSize({width:390,height:844});
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await page.screenshot({path:'qa/book-v7-mobile.png'});
+  await page.locator('nav summary').click();
+  await page.locator('nav a').filter({hasText:'Capítulo 5 —'}).click();
+  await page.waitForURL(url=>url.hash.startsWith('#capitulo-5-'),{timeout:15000});
+  const heading=page.getByRole('heading',{name:'Capítulo 5 — A reunião de acolhimento às sete',exact:true});
+  await heading.scrollIntoViewIfNeeded();
+  await page.screenshot({path:'qa/book-v7-chapter5.png'});
+  assert.deepEqual(errors,[]);
+  console.log('PASS: source v6 unchanged, 13 canonical chapters, reader navigation, fiction label, mobile layout and no browser errors');
+} finally { await browser.close(); }
