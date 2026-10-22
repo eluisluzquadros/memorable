@@ -1031,3 +1031,52 @@ select option {
   align-items: center;
   gap: 10px;
 }
+/* Segundo cérebro: five layers, each with its count and where to tend it */
+.brain-layers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+.brain-layer {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  margin: 0;
+}
+.brain-layer header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  align-items: center;
+}
+.brain-layer header svg {
+  color: var(--accent);
+}
+.brain-layer h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.brain-layer header span {
+  grid-column: 2;
+  color: var(--fg-muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+.brain-layer p {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 14px;
+}
+.brain-layer .text-button {
+  justify-self: start;
+}
+.brain-truth {
+  margin: 18px 0 0;
+  color: var(--fg-muted);
+  font-size: 14px;
+}
+.bs-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}

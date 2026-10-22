@@ -478,6 +478,24 @@ export function dnaKnowledge(state) {
   const site = (dna.sources || []).find((url) => !/fonts\.(googleapis|gstatic)/.test(url)) || "";
   return [{ id: `dna-${state.workspace}`, title: `Site oficial da marca${site ? ` (${site})` : ""} · DNA aprovado`, editorialRole: "owned", summary: positioning, text }];
 }
+// Second brain: what the team approved and learned about this brand travels with every request.
+// Approved pieces are voice examples, never sources of fact.
+const APPROVED = ["Aprovado", "Agendado", "Publicado"];
+export function brandMemory(state, workspace = state.workspace) {
+  const own = (p) => p.workspace === workspace;
+  const approvedExamples = state.pieces
+    .filter((p) => own(p) && APPROVED.includes(p.status) && p.body?.trim())
+    .sort((a, b) => String(b.stageAt || b.createdAt || "").localeCompare(String(a.stageAt || a.createdAt || "")))
+    .slice(0, 3)
+    .map((p) => ({ title: p.title, format: p.format, excerpt: p.body.slice(0, 1200) }));
+  const insights = (state.outcomes || [])
+    .filter((o) => String(o.learning || "").trim() && state.pieces.some((p) => p.id === o.pieceId && own(p)))
+    .slice(0, 5)
+    .map((o) => ({ learning: o.learning, hypothesis: o.hypothesis || "", evidence: o.evidence || "" }));
+  return { approvedExamples, insights };
+}
+// The brand interview leads the official material, then the most recent.
+const knowledgeOrder = (a, b) => (b.id.startsWith("interview-") - a.id.startsWith("interview-")) || String(b.date || "").localeCompare(String(a.date || ""));
 export function contextPacket(state, brief) {
   const ids = brief.sourceIds || [brief.source].filter(Boolean);
   const settings = productionSettings(brief);
@@ -486,11 +504,12 @@ export function contextPacket(state, brief) {
     workspace: state.workspace,
     brand: {name: (state.workspaces||demoSpaces).find(w=>w.id===state.workspace)?.name || brief.brandName || "Sua marca", purpose:"Comunicar a marca do cliente. Fontes externas são evidências, nunca o anunciante."},
     voice: state.voices[state.workspace],
+    ...brandMemory(state),
     brandDNA: state.brandDNA?.[state.workspace] || null,
     campaign: (state.campaigns || []).find(c => c.id === brief.campaignId && c.workspace === state.workspace) || null,
     parent: state.pieces.filter(p => p.id === brief.parentId && p.workspace === state.workspace).map(p => ({ id: p.id, title: p.title, revision: p.revision, body: p.body.slice(0, 6000), sourceIds: p.sourceIds }))[0] || null,
     inspiration: inspiration ? {id:inspiration.id,title:inspiration.title,url:inspiration.url,whySaved:inspiration.whySaved || '',pattern:inspiration.pattern || '',excerpt:inspiration.text.slice(0,5000),use:'Referência de estrutura; não é evidência factual sobre a marca.'} : null,
-    brandKnowledge: [...dnaKnowledge(state), ...state.sources.filter(s => s.workspace === state.workspace && strategicSource(s) && sourceValid(s)).slice(0,8).map(s=>({id:s.id,title:s.title,editorialRole:s.editorialRole,summary:s.summary,text:s.text.slice(0,5000)}))],
+    brandKnowledge: [...dnaKnowledge(state), ...state.sources.filter(s => s.workspace === state.workspace && strategicSource(s) && sourceValid(s)).sort(knowledgeOrder).slice(0,8).map(s=>({id:s.id,title:s.title,editorialRole:s.editorialRole,summary:s.summary,text:s.text.slice(0,5000)}))],
     brief: {
       title: brief.title,
       brandName: (state.workspaces||demoSpaces).find(w=>w.id===state.workspace)?.name || brief.brandName || "Sua marca",

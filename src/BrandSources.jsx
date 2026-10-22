@@ -75,7 +75,7 @@ function Interview({ onSaved }) {
 }
 
 // Official brand material: the team picks what feeds the DNA; files go to the acervo first.
-export function BrandSources({ selected, onToggle, onAdded }) {
+export function BrandSources({ selected = [], onToggle = () => {}, onAdded = () => {}, selectable = true, title = "Materiais da marca", intro = "Além do site, use o que a marca já produziu: apresentações, propostas, manuais, gravações. Sem site, comece pela entrevista." }) {
   const { state, setState, notify } = useContext(AppContext);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -120,21 +120,31 @@ export function BrandSources({ selected, onToggle, onAdded }) {
   return (
     <div className="bs-panel">
       <div className="bs-head">
-        <h3>Materiais da marca</h3>
-        <p>Além do site, use o que a marca já produziu: apresentações, propostas, manuais, gravações. Sem site, comece pela entrevista.</p>
+        <h3>{title}</h3>
+        <p>{intro}</p>
       </div>
       {owned.length > 0 ? (
         <ul className="bs-list">
           {owned.map((s) => (
             <li key={s.id}>
-              <label className="checkbox-label">
-                <input type="checkbox" checked={selected.includes(s.id)} onChange={() => onToggle(s.id)} />
-                <FileText size={16} aria-hidden="true" />
-                <span>
-                  <b>{s.title}</b>
-                  <small>{s.origin || s.url}</small>
-                </span>
-              </label>
+              {selectable ? (
+                <label className="checkbox-label">
+                  <input type="checkbox" checked={selected.includes(s.id)} onChange={() => onToggle(s.id)} />
+                  <FileText size={16} aria-hidden="true" />
+                  <span>
+                    <b>{s.title}</b>
+                    <small>{s.origin || s.url}</small>
+                  </span>
+                </label>
+              ) : (
+                <div className="bs-item">
+                  <FileText size={16} aria-hidden="true" />
+                  <span>
+                    <b>{s.title}</b>
+                    <small>{s.origin || s.url}</small>
+                  </span>
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -144,7 +154,7 @@ export function BrandSources({ selected, onToggle, onAdded }) {
       <div className="bs-actions">
         <label className={`button secondary bs-upload ${busy ? "is-busy" : ""}`}>
           <Upload size={16} aria-hidden="true" /> {busy ? "Lendo arquivo…" : "Enviar material (PDF, Word, texto, áudio)"}
-          <input type="file" accept=".pdf,.docx,.txt,.md,.csv,.html,.mp3,.m4a,.wav,.mp4,.webm" onChange={upload} disabled={busy} />
+          <input type="file" accept=".pdf,.docx,.txt,.md,.csv,.html,.json,.mp3,.m4a,.wav,.mp4,.webm" onChange={upload} disabled={busy} />
         </label>
         <button type="button" className="button secondary" aria-expanded={interviewOpen} onClick={() => setInterviewOpen((v) => !v)}>
           <MessageSquareText size={16} aria-hidden="true" /> {state.brandInterview?.[state.workspace] ? "Editar entrevista da marca" : "Responder entrevista da marca"}

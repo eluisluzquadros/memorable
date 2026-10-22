@@ -1,15 +1,103 @@
-import React, { useContext } from 'react';
-import { Brain, ArrowRight, FileText, Fingerprint, BookOpen, Network, RefreshCw } from 'lucide-react';
-import { AppContext } from './context';
-import { sourceValid, strategicSource } from './operations.mjs';
+import React, { useContext } from "react";
+import { ArrowRight, Fingerprint, FileText, CheckCheck, BookOpen, LineChart, Network } from "lucide-react";
+import { AppContext } from "./context";
+import { sourceValid, strategicSource, brandMemory } from "./operations.mjs";
+import { BrandSources } from "./BrandSources";
+
+const VOICE_FIELDS = ["tone", "audience", "positioning", "pillars", "say", "avoid", "examples", "checklist"];
+
+// The brand's second brain: five layers that every new piece receives, and where each is tended.
 export function SecondBrain() {
-  const {state,workspace,sources,events,goto}=useContext(AppContext);
-  const voice=state.voices[state.workspace], dna=state.brandDNA?.[state.workspace];
-  const lessons=state.rules.filter(r=>r.workspace===state.workspace&&r.active!==false);
-  const own=sources.filter(s=>strategicSource(s)&&sourceValid(s));
-  return <div className="brain-page"><div className="page-heading"><div><h1>Um segundo cérebro para a sua marca.</h1><p>Tudo o que a sua marca sabe, produz e aprende, guiando cada novo conteúdo.</p></div><span className="brain-roadmap"><Network size={16}/> Conexões em preparação</span></div>
-    <section className="brain-hero"><Brain size={38}/><div><h2>Conhecimento que acompanha cada criação.</h2><p>Esta é a base para conectar documentos, conversas e sistemas da empresa. Hoje, a Memorable já reúne fontes, identidade e critérios editoriais validados para orientar a escrita. A integração contínua com outros sistemas será uma próxima etapa.</p><button className="button primary" onClick={()=>goto('guardar')}>Alimentar com uma fonte <ArrowRight size={16}/></button></div></section>
-    <div className="brain-cards"><section className="r-panel"><FileText size={23}/><h2>{sources.filter(sourceValid).length} fontes consultáveis</h2><p>{own.length} fontes classificadas como conteúdo oficial ou solução própria. O restante compõe o repertório de pesquisa.</p><button className="text-button" onClick={()=>goto('guardar')}>Pesquisar e organizar fontes →</button></section><section className="r-panel"><Fingerprint size={23}/><h2>Identidade e posicionamento</h2><p>{voice.positioning || voice.tone}</p><small>{dna?'DNA visual validado disponível no contexto.':'DNA visual ainda pode ser extraído e validado.'}</small><button className="text-button" onClick={()=>goto('configuracoes')}>Revisar o contexto da marca →</button></section><section className="r-panel"><BookOpen size={23}/><h2>{lessons.length} critérios ativos</h2><p>{events.length} decisões registradas nesta marca. Uma correção vira orientação para a IA depois que a equipe a valida no Caderno.</p><button className="text-button" onClick={()=>goto('caderno')}>Consultar decisões e aprendizado →</button></section></div>
-    <section className="r-panel brain-loop"><RefreshCw size={23}/><h2>Um ciclo que aprende com o trabalho.</h2><ol><li><b>Pesquisar</b><span>Fontes e referências entram com origem e conteúdo.</span></li><li><b>Contextualizar</b><span>Identidade, oferta, evidências e padrões orientam as ideias.</span></li><li><b>Produzir e revisar</b><span>Conteúdo, ajustes e decisões ficam registrados.</span></li><li><b>Validar aprendizados</b><span>A equipe transforma correções em critérios das próximas criações.</span></li></ol><p className="field-help">O registro de decisões e o uso de critérios validados já existem. Sincronização entre sistemas, busca semântica unificada e aprendizado sugerido automaticamente estão em planejamento.</p></section>
-    <section className="r-panel brain-future"><span className="brain-roadmap">PRÓXIMAS CONEXÕES</span><h2>Conectar o conhecimento onde ele já vive.</h2><p>Possibilidades previstas para ampliar o contexto da empresa. Estes conectores ainda não estão implementados nesta app.</p><div>{['Google Drive e documentos','Notion e bases internas','CRM, ofertas e objeções','Reuniões e conversas autorizadas'].map(name=><article key={name}><Network size={19}/><b>{name}</b><span>Planejado</span></article>)}</div></section></div>;
+  const { state, sources, goto } = useContext(AppContext);
+  const voice = state.voices[state.workspace] || {};
+  const dna = state.brandDNA?.[state.workspace];
+  const filled = VOICE_FIELDS.filter((k) => String(voice[k] || "").trim()).length;
+  const official = sources.filter((s) => s.workspace === state.workspace && strategicSource(s) && sourceValid(s));
+  const lessons = state.rules.filter((r) => r.workspace === state.workspace && r.active !== false);
+  const { approvedExamples, insights } = brandMemory(state);
+  const layers = [
+    {
+      icon: Fingerprint,
+      title: "Identidade",
+      count: dna ? `DNA versão ${dna.revision}` : "DNA a extrair",
+      text: `${filled} de ${VOICE_FIELDS.length} campos da ficha de voz preenchidos. É a base de tom, público, pilares e do que a marca nunca diz.`,
+      action: ["Revisar DNA e ficha de voz", "configuracoes"],
+    },
+    {
+      icon: FileText,
+      title: "Materiais oficiais",
+      count: `${official.length} ${official.length === 1 ? "material" : "materiais"}`,
+      text: "Entrevista, apresentações, manuais e páginas oficiais. Sustentam o que a marca afirma sobre si e alimentam o DNA.",
+      action: ["Ver no acervo", "guardar"],
+    },
+    {
+      icon: CheckCheck,
+      title: "Conteúdos aprovados",
+      count: `${approvedExamples.length} em uso como exemplo`,
+      text: approvedExamples.length
+        ? `Os mais recentes ensinam a voz aprovada: ${approvedExamples.map((p) => `“${p.title}”`).join(", ")}.`
+        : "Cada conteúdo que você aprova passa a ensinar a voz da marca para os próximos.",
+      action: ["Abrir o Kanban", "kanban"],
+    },
+    {
+      icon: BookOpen,
+      title: "Decisões validadas",
+      count: `${lessons.length} ${lessons.length === 1 ? "critério" : "critérios"}`,
+      text: "Correções que a equipe transformou em regra. Entram em toda nova criação do formato a que se aplicam.",
+      action: ["Abrir o Caderno de decisões", "caderno"],
+    },
+    {
+      icon: LineChart,
+      title: "Resultados",
+      count: `${insights.length} ${insights.length === 1 ? "aprendizado" : "aprendizados"}`,
+      text: "O que funcionou com o público, registrado com evidência. Orienta as próximas escolhas de tema e formato.",
+      action: ["Registrar resultados", "resultados"],
+    },
+  ];
+  return (
+    <div className="brain-page">
+      <div className="page-heading">
+        <div>
+          <h1>Um segundo cérebro para a sua marca.</h1>
+          <p>Tudo o que a sua marca sabe, produz e aprende, guiando cada novo conteúdo.</p>
+        </div>
+      </div>
+      <section className="brain-layers" aria-label="Camadas do segundo cérebro">
+        {layers.map(({ icon: Icon, title, count, text, action }) => (
+          <article key={title} className="r-panel brain-layer">
+            <header>
+              <Icon size={20} aria-hidden="true" />
+              <h2>{title}</h2>
+              <span>{count}</span>
+            </header>
+            <p>{text}</p>
+            <button className="text-button" onClick={() => goto(action[1])}>
+              {action[0]} <ArrowRight size={15} aria-hidden="true" />
+            </button>
+          </article>
+        ))}
+      </section>
+      <p className="brain-truth">
+        As cinco camadas seguem com cada pedido de escrita e de refino desta marca. Conteúdos aprovados servem de exemplo de voz, nunca de fonte de fatos.
+      </p>
+      <BrandSources
+        selectable={false}
+        title="Já tem um segundo cérebro?"
+        intro="Envie exportações do Notion, do Google Drive ou do seu caderno de notas (Markdown, texto, PDF, Word) e responda a entrevista da marca. Tudo entra como material oficial e passa a alimentar o DNA e a escrita."
+      />
+      <section className="r-panel brain-future">
+        <h2>Conectar o conhecimento onde ele já vive.</h2>
+        <p>Conectores contínuos ainda não estão implementados; por enquanto, a importação é por arquivo.</p>
+        <div>
+          {["Google Drive e documentos", "Notion e bases internas", "CRM, ofertas e objeções", "Reuniões e conversas autorizadas"].map((name) => (
+            <article key={name}>
+              <Network size={19} aria-hidden="true" />
+              <b>{name}</b>
+              <span>Planejado</span>
+            </article>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
 }
