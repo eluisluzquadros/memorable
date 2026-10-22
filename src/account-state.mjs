@@ -1,4 +1,5 @@
 import { initialState, workspaces } from './workflow.mjs';
+import { BRAND_TONES } from './brand-tones.mjs';
 import { hydrateOperations } from './operations.mjs';
 
 export function workspaceList(state,{includeArchived=false}={}) {
@@ -21,10 +22,10 @@ export function organizationSetup(input,fallback='Meu negócio') {
   return {type:input.type,name,brands};
 }
 const freshVoice=()=>({tone:'Claro, próximo e responsável',audience:'',positioning:'',pillars:'',say:'',avoid:'Promessas sem fundamento\nInformações não verificadas',examples:'',checklist:'Conferir fontes\nPreservar privacidade\nRevisar adequação à marca'});
-const makeSpace=(id,name)=>({id,name,initials:brandInitials(name),color:'#214cff',voice:'Claro, próximo e responsável',audience:'',budget:300});
+const makeSpace=(id,name,index=0)=>({id,name,initials:brandInitials(name),color:BRAND_TONES[index%BRAND_TONES.length],voice:'Claro, próximo e responsável',audience:'',budget:300});
 export function createAccountState(user,setup) {
   const org=organizationSetup(setup,String(user.name || 'Meu negócio').trim());
-  const spaces=org.brands.map((b,i)=>makeSpace(`workspace-${user.id}${i?`-${i+1}`:''}`,b.name));
+  const spaces=org.brands.map((b,i)=>makeSpace(`workspace-${user.id}${i?`-${i+1}`:''}`,b.name,i));
   return hydrateOperations({version:1,accountSchemaVersion:1,organizationName:org.name,organizationType:org.type,workspaces:spaces,workspace:spaces[0].id,role:'Administrador',pieces:[],sources:[],events:[],rules:[],budgets:Object.fromEntries(spaces.map(w=>[w.id,w.budget])),voices:Object.fromEntries(spaces.map(w=>[w.id,freshVoice()]))},spaces);
 }
 function assertOrganizationAdmin(state){if(state.role!=='Administrador')throw new Error('Use o papel Administrador para gerenciar a organização.');}
@@ -37,7 +38,7 @@ function validBrandName(state,name,excludeId){
 export function addBrand(state,name){
   assertOrganizationAdmin(state);const value=validBrandName(state,name);
   if(workspaceList(state,{includeArchived:true}).length>=50)throw new Error('Esta versão permite até 50 marcas por organização.');
-  const space=makeSpace(`workspace-${crypto.randomUUID()}`,value),spaces=[...workspaceList(state,{includeArchived:true}),space];
+  const space=makeSpace(`workspace-${crypto.randomUUID()}`,value,workspaceList(state,{includeArchived:true}).length),spaces=[...workspaceList(state,{includeArchived:true}),space];
   return hydrateOperations({...state,workspaces:spaces,organizationType:'group',budgets:{...state.budgets,[space.id]:space.budget},voices:{...state.voices,[space.id]:freshVoice()}},spaces);
 }
 export function renameBrand(state,id,name){

@@ -53,7 +53,7 @@ const stages = [
   [
     "Escrever",
     "Transforme uma pauta em vários formatos.",
-    "O time de agentes escreve posts, carrosséis, roteiros, artigos, anúncios UGC e vídeos de produto com a voz da sua marca. Um conselho editorial reprova o que está fraco.",
+    "O time de agentes escreve posts, carrosséis, roteiros, artigos, anúncios UGC e vídeos de produto com a voz da sua marca, e cada versão é refinada até soar como você.",
     PenLine,
   ],
   [
@@ -492,7 +492,7 @@ export default function Landing() {
               ["Acervo com resumo e texto completo", "app de notas e leitura"],
               ["Redação multiformato com a voz da marca", "assistente de escrita"],
               ["Roteiros, anúncios UGC e vídeos de produto", "editor de roteiro e estúdio"],
-              ["Conselho editorial e aprovação por versão", "revisor, planilha e e-mail"],
+              ["Refino de voz e aprovação por versão", "revisor, planilha e e-mail"],
               ["Imagens e vídeos com Higgsfield", "estúdio de mídia"],
               ["Agenda, exportação e portfólio de cases", "agendador e pasta de apresentações"],
             ].map(([ours, theirs]) => (
@@ -580,7 +580,7 @@ export default function Landing() {
           <h2 id="landing-questions-title">Como isso entra na sua rotina?</h2>
           <details><summary>Serve para quem produz conteúdo sozinho?</summary><p>Sim. Comece com seu negócio, suas fontes e os formatos que você precisa publicar. Você pode planejar, revisar e aprovar no mesmo espaço. Equipes e múltiplas marcas são possibilidades de expansão.</p></details>
           <details><summary>O que a automação faz e o que fica comigo?</summary><p>O fluxo reúne coleta de referências, preparação de pautas, criação e conferência. Você define público e objetivo, valida a identidade e aprova o conteúdo. Os critérios registrados acompanham as próximas produções.</p></details>
-          <details><summary>O que posso testar agora?</summary><p>Tudo: importar páginas, arquivos e canais inteiros, extrair o DNA do site, vigiar fontes, gerar com o time de agentes (com uma chave Claude, OpenAI ou Gemini em Configurações), passar pelo conselho, aprovar, agendar, exportar e montar cases no Portfólio. Imagens e vídeos usam sua conta Higgsfield. Publicação direta nas redes entra com a integração da implantação.</p></details>
+          <details><summary>O que posso testar agora?</summary><p>Tudo: importar páginas, arquivos e canais inteiros, extrair o DNA do site, vigiar fontes, gerar com o time de agentes (com uma chave Claude, OpenAI ou Gemini em Configurações), refinar, aprovar, agendar, exportar e montar cases no Portfólio. Imagens e vídeos usam sua conta Higgsfield. Publicação direta nas redes entra com a integração da implantação.</p></details>
           <details><summary>Preciso criar uma campanha para cada post?</summary><p>Não. Vá direto a Escrever para um conteúdo avulsa. Use Campanhas quando vários conteúdos compartilham um objetivo e precisam ser avaliados em conjunto.</p></details>
         </section>
         <section className="closing">

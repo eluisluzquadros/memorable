@@ -13,6 +13,7 @@ import {
   Play,
   FileText,
   Mic,
+  Sparkles,
 } from "lucide-react";
 import "./motion-fonts.css";
 import "./landing-motion.css";
@@ -37,11 +38,11 @@ const ACTS = [
     chips: ["Carrossel", "Reels", "Artigo", "Newsletter", "LinkedIn", "Anúncio UGC"],
   },
   {
-    id: "critica",
-    word: "CRÍTICA",
-    step: "Conselho",
-    title: "Um conselho que reprova.",
-    text: "Frase cortada, clichê, afirmação sem fonte ou marketing de graça para a fonte: o conselho devolve para reescrita antes de chegar até você.",
+    id: "refino",
+    word: "REFINO",
+    step: "Refinar",
+    title: "Refinado até soar como você.",
+    text: "Antes de chegar até você, cada versão é afinada no tom da sua marca, com frases mais claras e fontes conferidas. Você revisa o melhor texto, não o primeiro rascunho.",
   },
   {
     id: "aprovado",
@@ -73,7 +74,7 @@ const STACK = [
   ["Acervo de referências com resumo", "app de notas e leitura"],
   ["Redação multiformato com a voz da marca", "assistente de escrita"],
   ["Roteiros com cenas e tempo", "editor de roteiro"],
-  ["Conselho editorial e checagem", "revisor externo"],
+  ["Refino de voz, clareza e fontes", "revisor externo"],
   ["Aprovação por versão", "planilha e e-mail"],
   ["Imagens e vídeos com Higgsfield", "estúdio de mídia"],
   ["Agenda e exportação por canal", "agendador de redes"],
@@ -165,7 +166,7 @@ function ActPanels({ id }) {
     return (
       <>
         <Panel className="p-a mx-slide" label="Carrossel" icon={Layers}>
-          <strong>Seu cliente entende o que você explica?</strong>
+          <strong>Seu cliente entende o seu pitch?</strong>
           <small className="mx-more">
             Tela 1 de 6 ·
  próximas <ArrowRight size={14} aria-hidden="true" />
@@ -186,10 +187,10 @@ function ActPanels({ id }) {
         </Panel>
       </>
     );
-  if (id === "critica")
+  if (id === "refino")
     return (
       <>
-        <Panel className="p-a" label="Conselho editorial · rodada 1" icon={ShieldCheck}>
+        <Panel className="p-a" label="Refino · versão 1 → 2" icon={ShieldCheck}>
           <ul className="mx-council">
             <li>
               <span>Clareza</span>
@@ -203,17 +204,19 @@ function ActPanels({ id }) {
               <span>Voz da marca</span>
               <em>4,7</em>
             </li>
-            <li className="is-block">
+            <li className="is-up">
               <span>Ritmo e tempo</span>
-              <em>2,1</em>
+              <em>2,1 → 4,5</em>
             </li>
           </ul>
         </Panel>
-        <Panel className="p-b mx-reject" label="Devolvido ao redator" icon={X}>
+        <Panel className="p-b" label="Afinado na sua voz" icon={Sparkles}>
           <ul className="mx-fixes">
             <li>
-              <s>“Qual dúvida você gostaria”</s>
-              <small>Fala interrompida na cena 3.</small>
+              <s>“Somos referência em soluções jurídicas”</s>
+              <span>
+                <ArrowRight size={14} aria-hidden="true" /> “Seu contrato, explicado antes de você assinar”
+              </span>
             </li>
             <li>
               <s>“um divisor de águas”</s>
@@ -237,7 +240,7 @@ function ActPanels({ id }) {
               <Check size={14} aria-hidden="true" /> Fontes conferidas
             </li>
             <li>
-              <Check size={14} aria-hidden="true" /> Conselho sem bloqueios
+              <Check size={14} aria-hidden="true" /> Tom e clareza refinados
             </li>
             <li>
               <Check size={14} aria-hidden="true" /> Voz validada no DNA
@@ -247,7 +250,7 @@ function ActPanels({ id }) {
         </div>
         <Panel className="p-b" label="Histórico" icon={FileText}>
           <ol className="mx-history">
-            <li>v1 · reprovada pelo conselho</li>
+            <li>v1 · refinada no tom da marca</li>
             <li>v2 · ajuste pedido: trocar termo técnico</li>
             <li>v3 · aprovada por Ana, aprovadora</li>
           </ol>
@@ -297,7 +300,7 @@ function CityScreens({ t, still = false }) {
           <img src="/motion/storefront.webp" alt="" />
           <Screen variant="store">
             <span className="mx-screen-brand">Sua marca.</span>
-            <strong>Seu cliente entende o que você explica?</strong>
+            <strong>Seu cliente entende o seu pitch?</strong>
             <small>Carrossel · 1 / 6</small>
           </Screen>
         </div>
@@ -324,7 +327,7 @@ function HeroCopy({ account }) {
     <div className="mx-hero-copy">
       <div className="mx-select">
         <div className="mx-select-bar" aria-hidden="true">
-          <span>Copiar</span>
+          <span>Criar</span>
           <span>Aprovar</span>
           <span>Publicar</span>
         </div>

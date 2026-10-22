@@ -1,0 +1,114 @@
+/* Memorable app tokens: the landing's night studio, lit for work.
+   Light is warm paper; dark is the studio ink. The saved choice wins, otherwise the system decides. */
+@import "./motion-fonts.css";
+
+:root {
+  color-scheme: light;
+  --bg: #f4efe6;
+  --surface: #fbf8f2;
+  --surface-2: #ede6da;
+  --surface-3: #e4dacb;
+  --fg: #17140f;
+  --fg-muted: #5c5448;
+  --fg-subtle: #7d7365;
+  --line: rgba(23, 20, 15, 0.13);
+  --line-strong: rgba(23, 20, 15, 0.28);
+  --accent: #7a5a2b;
+  --accent-wash: rgba(160, 121, 62, 0.15);
+  --action: #ff7a1a;
+  --action-hover: #ff8b38;
+  --on-action: #08090c;
+  --on-accent: #fbf8f2;
+  --on-state: #ffffff;
+  --action-glow: rgba(255, 122, 26, 0.38);
+  --focus: #c2410c;
+  --hot: #c81077;
+  --hot-wash: rgba(200, 16, 119, 0.16);
+  --ok: #17603a;
+  --ok-wash: rgba(23, 96, 58, 0.11);
+  --warn: #8a5300;
+  --warn-wash: rgba(201, 125, 0, 0.15);
+  --danger: #b42318;
+  --danger-wash: rgba(180, 35, 24, 0.1);
+  --inverse: #17140f;
+  --on-inverse: #f4efe6;
+  --shadow: rgba(70, 48, 16, 0.14);
+  --glass: rgba(251, 248, 242, 0.86);
+  --scroll-thumb: rgba(23, 20, 15, 0.22);
+
+  /* Legacy names used across the app stylesheets */
+  --blue: var(--accent);
+  --ink: var(--fg);
+  --muted: var(--fg-muted);
+  --paper: var(--bg);
+  --secondary: var(--fg-muted);
+  --display: "Archivo", system-ui, sans-serif;
+  --stage: "Anton", "Archivo", sans-serif;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #08090c;
+  --surface: #111319;
+  --surface-2: #0c0d11;
+  --surface-3: #1b1e26;
+  --fg: #f4efe6;
+  --fg-muted: #b3aca2;
+  --fg-subtle: #8c867d;
+  --line: rgba(244, 239, 230, 0.11);
+  --line-strong: rgba(244, 239, 230, 0.25);
+  --accent: #d9c6a3;
+  --accent-wash: rgba(217, 198, 163, 0.13);
+  --action-glow: rgba(255, 122, 26, 0.5);
+  --focus: #ff7a1a;
+  --hot: #ff2fa8;
+  --hot-wash: rgba(255, 47, 168, 0.3);
+  --ok: #5fd39a;
+  --ok-wash: rgba(95, 211, 154, 0.13);
+  --warn: #ffb050;
+  --warn-wash: rgba(255, 176, 80, 0.13);
+  --danger: #ff8178;
+  --danger-wash: rgba(255, 129, 120, 0.13);
+  --inverse: #f4efe6;
+  --on-accent: #08090c;
+  --on-state: #08090c;
+  --on-inverse: #08090c;
+  --shadow: rgba(0, 0, 0, 0.55);
+  --glass: rgba(17, 19, 25, 0.82);
+  --scroll-thumb: rgba(244, 239, 230, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #08090c;
+    --surface: #111319;
+    --surface-2: #0c0d11;
+    --surface-3: #1b1e26;
+    --fg: #f4efe6;
+    --fg-muted: #b3aca2;
+    --fg-subtle: #8c867d;
+    --line: rgba(244, 239, 230, 0.11);
+    --line-strong: rgba(244, 239, 230, 0.25);
+    --accent: #d9c6a3;
+    --accent-wash: rgba(217, 198, 163, 0.13);
+    --action-glow: rgba(255, 122, 26, 0.5);
+    --focus: #ff7a1a;
+    --hot: #ff2fa8;
+    --hot-wash: rgba(255, 47, 168, 0.3);
+    --ok: #5fd39a;
+    --ok-wash: rgba(95, 211, 154, 0.13);
+    --warn: #ffb050;
+    --warn-wash: rgba(255, 176, 80, 0.13);
+    --danger: #ff8178;
+    --danger-wash: rgba(255, 129, 120, 0.13);
+    --inverse: #f4efe6;
+    --on-accent: #08090c;
+    --on-state: #08090c;
+    --on-inverse: #08090c;
+    --shadow: rgba(0, 0, 0, 0.55);
+    --glass: rgba(17, 19, 25, 0.82);
+    --scroll-thumb: rgba(244, 239, 230, 0.2);
+  }
+}

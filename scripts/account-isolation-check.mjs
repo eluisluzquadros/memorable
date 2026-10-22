@@ -39,12 +39,12 @@ try{
  assert.equal((await context.request.get(base+'/api/collected?workspace='+accountA.workspace)).status(),403);
  assert.equal((await context.request.post(base+'/api/schedule',{data:{workspace:accountA.workspace,sources:[],config:{}}})).status(),403);
  assert.equal((await context.request.get(base+'/api/account/backup')).status(),200);assert.equal((await (await context.request.get(base+'/api/account/backup')).json()).backup,null);
- await page.goto(base+'/');await page.getByRole('button',{name:'Sair da conta',exact:true}).click();await page.getByRole('heading',{name:'Bom ter você de volta.',exact:true}).waitFor();
+ await page.goto(base+'/');await page.getByRole('button',{name:'Sair',exact:true}).click();await page.getByRole('heading',{name:'Bom ter você de volta.',exact:true}).waitFor();
  await page.getByLabel('E-mail',{exact:true}).fill(emails[0]);await page.getByLabel('Senha',{exact:true}).fill(password);await page.getByRole('button',{name:'Entrar no meu espaço',exact:true}).click();await page.waitForURL('**/#app/painel');await saved();
  assert.equal((await state()).sources[0].title,'Fonte privada Skyvidya QA');
  await page.goto(base+'/#app/configuracoes');
  await page.route('**/api/account/state',route=>route.request().method()==='PUT'?route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:'Conflito de teste: alterações ainda não salvas.'})}):route.continue());
- await page.getByLabel('Teto do espaço (R$)',{exact:true}).fill('456');await page.getByRole('button',{name:'Salvar orçamento',exact:true}).click();
+ await page.getByLabel('Teto da marca (R$)',{exact:true}).fill('456');await page.getByRole('button',{name:'Salvar orçamento',exact:true}).click();
  await logout();
  const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:'Exportar alterações não salvas',exact:true}).click();const download=await downloadPromise;
  const recovered=JSON.parse(await fs.readFile(await download.path(),'utf8'));assert.equal(recovered.state.budgets[accountA.workspace],456);assert.equal(recovered.state.sources[0].title,'Fonte privada Skyvidya QA');

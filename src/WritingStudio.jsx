@@ -226,9 +226,6 @@ export function WritingStudio() {
     <div className="writing-studio">
       <header className="page-heading">
         <div>
-          <small className="ws-eyebrow">
-            CONTEÚDO PARA {workspace.name.toLocaleUpperCase("pt-BR")}
-          </small>
           <h1>Uma ideia. Um conteúdo seu.</h1>
           <p>
             A referência fundamenta. A mensagem e o próximo passo são da sua

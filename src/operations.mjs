@@ -1,4 +1,5 @@
 import {workspaces as demoSpaces} from './demo-workspaces.mjs';
+import { brandTone } from './brand-tones.mjs';
 import { editorialIssues, EDITORIAL_STANDARD } from './editorial-quality.mjs';
 import { localVariants } from './local-scaffold.mjs';
 import { invalidateSourceDependents } from './strategy.mjs';
@@ -183,6 +184,7 @@ const clean = (s) =>
 export function hydrateOperations(state, spaces) {
   return {
     ...state,
+    ...(Array.isArray(state.workspaces) ? { workspaces: state.workspaces.map((w, i) => ({ ...w, color: brandTone(w.color, i) })) } : {}),
     schemaRevision: 2,
     writingQueue: state.writingQueue || [],
     monitors: state.monitors || [],

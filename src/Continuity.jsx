@@ -345,7 +345,7 @@ export function Results() {
     <>
       <div className="page-heading">
         <div>
-          <div className="eyebrow r-eyebrow">FECHAR O CICLO</div>
+          
           <h1>O que o conteúdo ensinou?</h1>
           <p>
             Registre evidência, resultado e aprendizado. Produzir mais só

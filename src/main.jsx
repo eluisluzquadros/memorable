@@ -93,11 +93,15 @@ import {
   sourceCaptureProblem,
   SOURCE_ROLES,
 } from "./operations.mjs";
+import "./theme.css";
 import "./styles.css";
 import "./review.css";
+import "./app-skin.css";
 import { SourceMetadata,SourceRefresh, PublicationControls, Results } from "./Continuity";
 import { Campaigns, PieceLineage } from "./Campaigns";
 import { AccountRoot } from './Account';
+import { ThemeSwitch, ThemeSetting } from "./ThemeSwitch";
+import { StageRail } from "./StageRail";
 
 const navItems = [
   ["painel", "Visão geral", LayoutDashboard],
@@ -648,7 +652,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
             <div className="workspace-select-wrap" onClick={() => sidebarCompact && toggleSidebar()}>
               <span
                 className="workspace-avatar"
-                style={{ background: groupScope ? "var(--ink, #172027)" : workspace.color }}
+                style={groupScope ? { background: "var(--accent)", color: "var(--on-accent)" } : { background: workspace.color }}
               >
                 {groupScope ? <Building2 size={17} aria-hidden="true" /> : workspace.initials}
               </span>
@@ -709,6 +713,18 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
               <p className="nav-scope-hint">Para pesquisar, escrever e aprovar, escolha uma marca no seletor acima.</p>
             )}
             <div className="sidebar-bottom">
+              <div className="sidebar-mobile-tools">
+                <label className="role-select">
+                  <span>Papel</span>
+                  <select aria-label="Trocar papel" value={state.role} onChange={(e) => setState((s) => ({ ...s, role: e.target.value }))}>
+                    <option>Editor</option>
+                    <option>Aprovador</option>
+                    <option>Administrador</option>
+                    <option>Observador</option>
+                  </select>
+                </label>
+                {account ? <button className="text-button" onClick={onLogout}>Sair da conta</button> : <a className="text-button" href="#auth">Entrar / Criar conta</a>}
+              </div>
               {account&&<a href="#app/organizacao" title={sidebarCompact?'Organização e marcas':undefined} className={route==='organizacao'?'active':''}><Building2 size={19}/>Organização e marcas</a>}
               <a
                 className={route === "configuracoes" ? "active" : ""}
@@ -770,6 +786,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
                 <b>{pageTitle}</b>
               </div>
               <div className="topbar-right">
+                <ThemeSwitch />
                 <button className="tour-launcher" onClick={startTour} aria-label="Tour guiado" title="Repetir tour guiado"><Compass size={17}/><span>Tour guiado</span></button>
                 {account ? <><span className="account-sync" role="status">{syncStatus}</span><button className="text-button" onClick={onLogout}>Sair da conta</button></> : <a className="text-button" href="#auth">Entrar / Criar conta</a>}
                 <span className="demo-indicator">
@@ -1185,7 +1202,7 @@ function Dashboard() {
         </div>
         <div>
           <span>Esperando revisão</span>
-          <b className="blue-text">
+          <b>
             {pending.length.toString().padStart(2, "0")}
           </b>
           <small>próxima decisão humana</small>
@@ -1207,7 +1224,6 @@ function Dashboard() {
             <span className="attention-symbol">
               <CheckCheck size={20} />
             </span>
-            O próximo passo
           </div>
           <h2>
             {pending.length
@@ -1282,7 +1298,6 @@ function Dashboard() {
         />
       )}
       <div className="pilot-note">
-        <span>VALIDAÇÃO DO PILOTO</span>
         <p>
           <b>Menos de 8h</b> até a aprovação e <b>10 roteiros por semana.</b>{" "}
           Metas propostas para medir durante o piloto, ainda não resultados.
@@ -1951,10 +1966,17 @@ function Configuracoes() {
     <>
       <div className="page-heading">
         <div>
-          <h1>Um espaço com a sua voz.</h1>
+          <h1>Uma marca com a sua voz.</h1>
           <p>Identidade, orçamento e conexões da operação.</p>
         </div>
       </div>
+      <section className="r-panel settings-appearance">
+        <div>
+          <h2>Aparência</h2>
+          <p>Claro em papel ou escuro como o estúdio da landing. Seguindo o sistema, a plataforma acompanha o modo do seu computador.</p>
+        </div>
+        <ThemeSetting />
+      </section>
       <VoiceSettings />
       <Connections />
       <div className="settings-layout">
@@ -1969,7 +1991,7 @@ function Configuracoes() {
             </span>
             <div>
               <h3>{workspace.name}</h3>
-              <p>{account ? 'Espaço próprio da sua conta' : 'Grupo BBMD · espaço de demonstração'}</p>
+              <p>{account ? 'Marca da sua conta' : 'Grupo BBMD · marca de demonstração'}</p>
             </div>
           </div>
           <dl>
@@ -2457,7 +2479,7 @@ function PieceDetail({
       <div className="piece-detail">
         <div className="piece-detail-heading">
           <div>
-            <Badge status={piece.status} />
+            <StageRail status={piece.status} />
             <h2>{piece.title}</h2>
             <p>
               {piece.format} <span>·</span> {piece.owner} <span>·</span> Prazo{" "}

@@ -75,11 +75,10 @@ const exportFile = (name, content, type = "application/json") => {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
-function Heading({ eyebrow, title, text, children }) {
+function Heading({ title, text, children }) {
   return (
     <div className="page-heading">
       <div>
-        {eyebrow && <div className="eyebrow r-eyebrow">{eyebrow}</div>}
         <h1>{title}</h1>
         <p>{text}</p>
       </div>
@@ -188,7 +187,6 @@ export function Radar() {
   return (
     <>
       <Heading
-        eyebrow="INTELIGÊNCIA DE IDEIAS"
         title="Encontre o próximo assunto."
         text="Sugestões a partir do acervo. Escolha uma ideia para levar à escrita."
       >
@@ -962,7 +960,6 @@ export function Kanban() {
   return (
     <>
       <Heading
-        eyebrow="OPERAÇÃO EDITORIAL"
         title="Todo o trabalho, à vista."
         text="Acompanhe etapas, responsáveis e prazos. A decisão de aprovação tem seu próprio espaço."
       >
@@ -1012,13 +1009,30 @@ export function Kanban() {
           </button>
         </div>
       )}
+      {view === "etapa" && (
+        <ol className="stage-rail board-rail" aria-label="Etapas do quadro">
+          {groups.map((g, i) => (
+            <li key={g.name} className={g.items.length ? "has-items" : ""}>
+              <button
+                type="button"
+                onClick={() => document.getElementById(`kanban-col-${i}`)?.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" })}
+                aria-label={`${g.name}: ${g.items.length} ${g.items.length === 1 ? "conteúdo" : "conteúdos"}. Ir para a coluna`}
+              >
+                {g.name}
+                <span>{g.items.length}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
       <div
         className="r-kanban"
         tabIndex={0}
         aria-label="Quadro de conteúdos; role horizontalmente para ver as etapas"
       >
-        {groups.map((g) => (
+        {groups.map((g, i) => (
           <section
+            id={`kanban-col-${i}`}
             className={`r-kanban-column ${over === g.name ? "is-over" : ""}`}
             key={g.name}
             onDragOver={(e) => e.preventDefault()}
@@ -1031,9 +1045,10 @@ export function Kanban() {
                 move(e.dataTransfer.getData("text/plain"), g.name);
             }}
           >
+            {/* By stage, the rail above carries the counts; by person, the header keeps its own. */}
             <h2>
               {g.name}
-              <span>{g.items.length}</span>
+              {view !== "etapa" && <span>{g.items.length}</span>}
             </h2>
             {g.items.map((p) => (
               <article
@@ -1114,7 +1129,6 @@ export function VoiceSettings() {
   return (
     <><BrandDNA onVoice={dna => setVoice(v => ({ ...v, ...Object.fromEntries(['tone', 'audience', 'positioning'].filter(k => dna[k]?.trim()).map(k => [k, dna[k]])) }))} /><section className="r-panel r-voice">
       <Heading
-        eyebrow="CONTEXTO PROPRIETÁRIO"
         title="Ficha de voz"
         text={`O que torna o conteúdo reconhecível como ${workspace.name}.`}
       />
@@ -1334,7 +1348,6 @@ export function Squad() {
   return (
     <>
       <Heading
-        eyebrow="4 FASES · 8 ESPECIALISTAS · 1 CONSELHO"
         title="Um time com contexto comum."
         text="Cada especialidade tem uma entrega. Fontes, voz e decisões acompanham a produção."
       />

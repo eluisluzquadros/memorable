@@ -2,57 +2,225 @@
   "schemaVersion": 2,
   "generatedAt": "2026-10-20T00:00:00Z",
   "title": "Design System: Memorable #motion (cinematic landing only)",
-  "scope": "Route #motion only: src/LandingMotion.jsx, src/landing-motion.css, src/motion-fonts.css, all under .mx-root. The product app and src/Landing.jsx follow the root DESIGN.md world (Sora/DM Sans, cobalt). DESIGN.md has no YAML frontmatter, so primitives are carried here as CSS custom properties.",
+  "scope": "Route #motion only: src/LandingMotion.jsx, src/landing-motion.css, src/motion-fonts.css, all under .mx-root. The product app carries this world's type, palette, pill controls, step rail and dialog glass in light (warm paper) and dark (studio ink) themes, documented in the root DESIGN.md; the cinematic devices (LED screens, figure, scenery word, scroll stage, tilted glass panels) stay here. src/Landing.jsx (#classica) inherits the app tokens.",
   "extensions": {
     "colorMeta": {
-      "ink": { "role": "neutral", "displayName": "Night Studio Ink", "canonical": "#08090c", "tonalRamp": ["#08090c", "#0d0e12", "#101115", "#14151a", "#1a1b21", "#1d1f25", "#3a3631", "#f4efe6"] },
-      "paper": { "role": "neutral", "displayName": "Warm Paper", "canonical": "#f4efe6" },
-      "muted": { "role": "neutral", "displayName": "Ash", "canonical": "#b3aca2" },
-      "stone": { "role": "secondary", "displayName": "Wood-type Stone", "canonical": "#d9c6a3" },
-      "line": { "role": "neutral", "displayName": "Hairline", "canonical": "rgba(244, 239, 230, 0.14)" },
-      "glass": { "role": "neutral", "displayName": "Frosted Glass", "canonical": "rgba(17, 19, 25, 0.66)" },
-      "ember": { "role": "primary", "displayName": "Ember", "canonical": "#ff7a1a" },
-      "hot": { "role": "tertiary", "displayName": "LED Magenta", "canonical": "#ff2fa8" },
-      "screen": { "role": "tertiary", "displayName": "LED Screen Light", "canonical": "linear-gradient(135deg, #ff2fa8, #ff7a1a 70%, #ffb050)" }
+      "ink": {
+        "role": "neutral",
+        "displayName": "Night Studio Ink",
+        "canonical": "#08090c",
+        "tonalRamp": [
+          "#08090c",
+          "#0d0e12",
+          "#101115",
+          "#14151a",
+          "#1a1b21",
+          "#1d1f25",
+          "#3a3631",
+          "#f4efe6"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Warm Paper",
+        "canonical": "#f4efe6"
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Ash",
+        "canonical": "#b3aca2"
+      },
+      "stone": {
+        "role": "secondary",
+        "displayName": "Wood-type Stone",
+        "canonical": "#d9c6a3"
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "rgba(244, 239, 230, 0.14)"
+      },
+      "glass": {
+        "role": "neutral",
+        "displayName": "Frosted Glass",
+        "canonical": "rgba(17, 19, 25, 0.66)"
+      },
+      "ember": {
+        "role": "primary",
+        "displayName": "Ember",
+        "canonical": "#ff7a1a"
+      },
+      "hot": {
+        "role": "tertiary",
+        "displayName": "LED Magenta",
+        "canonical": "#ff2fa8"
+      },
+      "screen": {
+        "role": "tertiary",
+        "displayName": "LED Screen Light",
+        "canonical": "linear-gradient(135deg, #ff2fa8, #ff7a1a 70%, #ffb050)"
+      }
     },
     "typographyMeta": {
-      "scenery": { "displayName": "Scenery word", "fontFamily": "Anton, Archivo, sans-serif", "fontWeight": 400, "fontSize": "min(calc(94vw / var(--len) / 0.5), 44svh)", "lineHeight": 0.84, "purpose": "The act word behind the figure, sized by letter count." },
-      "display": { "displayName": "Section display", "fontFamily": "Anton", "fontWeight": 400, "fontSize": "clamp(64px, 7.4vw, 120px) to clamp(84px, 13vw, 210px)", "lineHeight": 0.86, "purpose": "Portfolio and closing titles, in stone." },
-      "headline": { "displayName": "Condensed headline", "fontFamily": "Archivo", "fontWeight": 800, "fontStretch": "72%", "fontSize": "clamp(42px, 5.2vw, 82px) h1; clamp(36px, 3.8vw, 60px) acts", "lineHeight": 0.98, "letterSpacing": "-0.02em", "purpose": "h1 and act/section headings." },
-      "card-title": { "displayName": "Card title", "fontFamily": "Anton", "fontWeight": 400, "fontSize": "30px to 34px", "lineHeight": 1, "purpose": "Slide, approval and case titles." },
-      "body": { "displayName": "Body", "fontFamily": "Archivo, system-ui, sans-serif", "fontWeight": 400, "fontSize": "16px to 17px", "lineHeight": 1.5, "purpose": "Copy, max 42-44ch." },
-      "ui-label": { "displayName": "UI label", "fontFamily": "Archivo", "fontWeight": 700, "fontStretch": "75%", "fontSize": "11px to 12px", "letterSpacing": "0.12em", "textTransform": "uppercase", "purpose": "Functional header of a simulated panel or table only." }
+      "scenery": {
+        "displayName": "Scenery word",
+        "fontFamily": "Anton, Archivo, sans-serif",
+        "fontWeight": 400,
+        "fontSize": "min(calc(94vw / var(--len) / 0.5), 44svh)",
+        "lineHeight": 0.84,
+        "purpose": "The act word behind the figure, sized by letter count."
+      },
+      "display": {
+        "displayName": "Section display",
+        "fontFamily": "Anton",
+        "fontWeight": 400,
+        "fontSize": "clamp(64px, 7.4vw, 120px) to clamp(84px, 13vw, 210px)",
+        "lineHeight": 0.86,
+        "purpose": "Portfolio and closing titles, in stone."
+      },
+      "headline": {
+        "displayName": "Condensed headline",
+        "fontFamily": "Archivo",
+        "fontWeight": 800,
+        "fontStretch": "72%",
+        "fontSize": "clamp(42px, 5.2vw, 82px) h1; clamp(36px, 3.8vw, 60px) acts",
+        "lineHeight": 0.98,
+        "letterSpacing": "-0.02em",
+        "purpose": "h1 and act/section headings."
+      },
+      "card-title": {
+        "displayName": "Card title",
+        "fontFamily": "Anton",
+        "fontWeight": 400,
+        "fontSize": "30px to 34px",
+        "lineHeight": 1,
+        "purpose": "Slide, approval and case titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "fontFamily": "Archivo, system-ui, sans-serif",
+        "fontWeight": 400,
+        "fontSize": "16px to 17px",
+        "lineHeight": 1.5,
+        "purpose": "Copy, max 42-44ch."
+      },
+      "ui-label": {
+        "displayName": "UI label",
+        "fontFamily": "Archivo",
+        "fontWeight": 700,
+        "fontStretch": "75%",
+        "fontSize": "11px to 12px",
+        "letterSpacing": "0.12em",
+        "textTransform": "uppercase",
+        "purpose": "Functional header of a simulated panel or table only."
+      }
     },
     "shadows": [
-      { "name": "glass", "value": "-28px 34px 60px -26px rgba(0,0,0,0.8), inset 1px 1px 0 rgba(255,255,255,0.14)", "purpose": "Production panels." },
-      { "name": "card", "value": "0 24px 40px -28px rgba(0,0,0,0.9)", "purpose": "Portfolio cases." },
-      { "name": "cta-glow", "value": "0 18px 40px -16px rgba(255,122,26,0.7)", "purpose": "Primary CTA at rest; 0 24px 48px -16px rgba(255,122,26,0.85) on hover." },
-      { "name": "figure", "value": "drop-shadow(0 40px 60px rgba(0,0,0,0.55))", "purpose": "Cut-out figure." }
+      {
+        "name": "glass",
+        "value": "-28px 34px 60px -26px rgba(0,0,0,0.8), inset 1px 1px 0 rgba(255,255,255,0.14)",
+        "purpose": "Production panels."
+      },
+      {
+        "name": "card",
+        "value": "0 24px 40px -28px rgba(0,0,0,0.9)",
+        "purpose": "Portfolio cases."
+      },
+      {
+        "name": "cta-glow",
+        "value": "0 18px 40px -16px rgba(255,122,26,0.7)",
+        "purpose": "Primary CTA at rest; 0 24px 48px -16px rgba(255,122,26,0.85) on hover."
+      },
+      {
+        "name": "figure",
+        "value": "drop-shadow(0 40px 60px rgba(0,0,0,0.55))",
+        "purpose": "Cut-out figure."
+      }
     ],
     "motion": [
-      { "name": "ease", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "All entrances and hovers." },
-      { "name": "stamp-ease", "value": "cubic-bezier(0.2, 1.4, 0.4, 1)", "purpose": "Approval stamp overshoot only." },
-      { "name": "--t", "value": "0..1 per act", "purpose": "Local act progress written by one passive rAF scroll listener; drives parallax and city zoom in CSS." },
-      { "name": "mx-scan", "value": "1s, rotateY(-48deg) translateX(80px) blur(8px) -> rest", "purpose": "Act pauta panels." },
-      { "name": "mx-deal", "value": "0.95s, rotateZ(-9deg) rotateY(-30deg) translateY(90px) -> rest", "purpose": "Act escrita panels." },
-      { "name": "mx-jolt", "value": "0.9s, horizontal shake 40/-10/7/-4px", "purpose": "Act critica rejected panel." },
-      { "name": "mx-stamp", "value": "0.7s, scale(1.35) rotateZ(-4deg) -> rest", "purpose": "Act aprovado approval panel." },
-      { "name": "mx-rise", "value": "0.8-1s, translateY(18px) blur(6px) -> rest", "purpose": "Default copy and panel entrance." },
-      { "name": "ring-marquee", "value": "SMIL startOffset 0% -> -100%, 60s, infinite", "purpose": "Arena ring textPath." }
+      {
+        "name": "ease",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "All entrances and hovers."
+      },
+      {
+        "name": "stamp-ease",
+        "value": "cubic-bezier(0.2, 1.4, 0.4, 1)",
+        "purpose": "Approval stamp overshoot only."
+      },
+      {
+        "name": "--t",
+        "value": "0..1 per act",
+        "purpose": "Local act progress written by one passive rAF scroll listener; drives parallax and city zoom in CSS."
+      },
+      {
+        "name": "mx-scan",
+        "value": "1s, rotateY(-48deg) translateX(80px) blur(8px) -> rest",
+        "purpose": "Act pauta panels."
+      },
+      {
+        "name": "mx-deal",
+        "value": "0.95s, rotateZ(-9deg) rotateY(-30deg) translateY(90px) -> rest",
+        "purpose": "Act escrita panels."
+      },
+      {
+        "name": "mx-jolt",
+        "value": "0.9s, horizontal shake 40/-10/7/-4px",
+        "purpose": "Act critica rejected panel."
+      },
+      {
+        "name": "mx-stamp",
+        "value": "0.7s, scale(1.35) rotateZ(-4deg) -> rest",
+        "purpose": "Act aprovado approval panel."
+      },
+      {
+        "name": "mx-rise",
+        "value": "0.8-1s, translateY(18px) blur(6px) -> rest",
+        "purpose": "Default copy and panel entrance."
+      },
+      {
+        "name": "ring-marquee",
+        "value": "SMIL startOffset 0% -> -100%, 60s, infinite",
+        "purpose": "Arena ring textPath."
+      }
     ],
     "breakpoints": [
-      { "name": "tablet", "value": "1100px" },
-      { "name": "phone", "value": "760px" }
+      {
+        "name": "tablet",
+        "value": "1100px"
+      },
+      {
+        "name": "phone",
+        "value": "760px"
+      }
     ],
     "spacing": [
-      { "name": "--pad", "value": "clamp(20px, 5vw, 72px)" },
-      { "name": "section-y", "value": "120px (88px/80px at 760px)" }
+      {
+        "name": "--pad",
+        "value": "clamp(20px, 5vw, 72px)"
+      },
+      {
+        "name": "section-y",
+        "value": "120px (88px/80px at 760px)"
+      }
     ],
     "rounded": [
-      { "name": "pill", "value": "999px" },
-      { "name": "glass", "value": "16px to 18px" },
-      { "name": "card", "value": "14px" },
-      { "name": "toolbar", "value": "10px" }
+      {
+        "name": "pill",
+        "value": "999px"
+      },
+      {
+        "name": "glass",
+        "value": "16px to 18px"
+      },
+      {
+        "name": "card",
+        "value": "14px"
+      },
+      {
+        "name": "toolbar",
+        "value": "10px"
+      }
     ]
   },
   "components": [
@@ -116,10 +284,26 @@
       "Imagens geradas com IA (Higgsfield), declaradas no rodapé."
     ],
     "rules": [
-      { "name": "The Ember Is the Action Rule", "body": "Âmbar preenchido é só o CTA primário (\"Ver o fluxo funcionando\", hover #ff8b38); no resto, âmbar aparece como traço, ícone ou número, nunca como segundo botão cheio.", "section": "colors" },
-      { "name": "The Light Not Paint Rule", "body": "Magenta e --screen existem como luz emitida (LED, onda de áudio, barras de medidor, slide de carrossel, halo do fechamento). Não usar como fundo de seção ou de cartão comum.", "section": "colors" },
-      { "name": "The Numbers Are Tabular Rule", "body": "Todo número de dado (notas, horários, contagens) usa tabular-nums; notas grandes em Anton âmbar.", "section": "typography" },
-      { "name": "The Light Casts Shadow Rule", "body": "Sombras são difusas e caem para baixo-esquerda, vindas da luz do estúdio; a única sombra colorida é o brilho âmbar do CTA e da figura no ato \"aprovado\".", "section": "elevation" }
+      {
+        "name": "The Ember Is the Action Rule",
+        "body": "Âmbar preenchido é só o CTA primário (\"Ver o fluxo funcionando\", hover #ff8b38); no resto, âmbar aparece como traço, ícone ou número, nunca como segundo botão cheio.",
+        "section": "colors"
+      },
+      {
+        "name": "The Light Not Paint Rule",
+        "body": "Magenta e --screen existem como luz emitida (LED, onda de áudio, barras de medidor, slide de carrossel, halo do fechamento). Não usar como fundo de seção ou de cartão comum.",
+        "section": "colors"
+      },
+      {
+        "name": "The Numbers Are Tabular Rule",
+        "body": "Todo número de dado (notas, horários, contagens) usa tabular-nums; notas grandes em Anton âmbar.",
+        "section": "typography"
+      },
+      {
+        "name": "The Light Casts Shadow Rule",
+        "body": "Sombras são difusas e caem para baixo-esquerda, vindas da luz do estúdio; a única sombra colorida é o brilho âmbar do CTA e da figura no ato \"aprovado\".",
+        "section": "elevation"
+      }
     ],
     "dos": [
       "Do rotular todo dado sintético na própria tela: \"Dados de demonstração\" fixo no palco (e na versão estática), \"Demonstração\" em cada case, \"Imagens geradas com IA · conteúdo de demonstração\" no rodapé.",

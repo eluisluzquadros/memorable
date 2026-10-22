@@ -126,7 +126,6 @@ export function BrandDNA({ onVoice }) {
   return (
     <section className="r-panel dna-panel">
       <div className="dna-heading">
-        <small>IDENTIDADE DA MARCA</small>
         <h2>Comece pelo que já é seu.</h2>
         <p>
           Seu site e sua documentação dão origem a uma ficha visual e verbal que
