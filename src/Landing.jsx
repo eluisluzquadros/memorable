@@ -65,7 +65,7 @@ const stages = [
   [
     "Publicar",
     "Organize a entrega do conteúdo aprovado.",
-    "Organize canal e horário. Leve a peça aprovada para a agenda ou exporte o conteúdo.",
+    "Organize canal e horário. Leve o conteúdo aprovado para a agenda ou exporte o conteúdo.",
     CalendarDays,
   ],
 ];
@@ -298,7 +298,7 @@ export default function Landing() {
               <p>
                 Configure o processo uma vez.
                 <br />
-                Reutilize o contexto a cada nova peça.
+                Reutilize o contexto a cada novo conteúdo.
               </p>
             </div>
             <div className="flow-body">
@@ -405,7 +405,7 @@ export default function Landing() {
                         <span>Conteúdo aprovado</span>
                       </div>
                       <h4>
-                        Cada peça,
+                        Cada conteúdo,
                         <br />
                         no seu momento.
                       </h4>
@@ -456,7 +456,7 @@ export default function Landing() {
                 <h3>Aprove uma versão, com suas fontes.</h3>
                 <p>
                   Confira de onde veio a informação e registre os ajustes.
-                  Alterações na peça aprovada exigem uma nova revisão.
+                  Alterações no conteúdo aprovado exigem uma nova revisão.
                 </p>
               </div>
               <ShieldCheck size={22} />
@@ -466,7 +466,7 @@ export default function Landing() {
               <div>
                 <h3>Transforme correções em critérios.</h3>
                 <p>
-                  Valide as lições que devem orientar as próximas peças.
+                  Valide as lições que devem orientar as próximos conteúdos.
                   Registre resultados para avaliar o que merece continuar.
                 </p>
               </div>
@@ -581,7 +581,7 @@ export default function Landing() {
           <details><summary>Serve para quem produz conteúdo sozinho?</summary><p>Sim. Comece com seu negócio, suas fontes e os formatos que você precisa publicar. Você pode planejar, revisar e aprovar no mesmo espaço. Equipes e múltiplas marcas são possibilidades de expansão.</p></details>
           <details><summary>O que a automação faz e o que fica comigo?</summary><p>O fluxo reúne coleta de referências, preparação de pautas, criação e conferência. Você define público e objetivo, valida a identidade e aprova o conteúdo. Os critérios registrados acompanham as próximas produções.</p></details>
           <details><summary>O que posso testar agora?</summary><p>Tudo: importar páginas, arquivos e canais inteiros, extrair o DNA do site, vigiar fontes, gerar com o time de agentes (com uma chave Claude, OpenAI ou Gemini em Configurações), passar pelo conselho, aprovar, agendar, exportar e montar cases no Portfólio. Imagens e vídeos usam sua conta Higgsfield. Publicação direta nas redes entra com a integração da implantação.</p></details>
-          <details><summary>Preciso criar uma campanha para cada post?</summary><p>Não. Vá direto a Escrever para uma peça avulsa. Use Campanhas quando vários conteúdos compartilham um objetivo e precisam ser avaliados em conjunto.</p></details>
+          <details><summary>Preciso criar uma campanha para cada post?</summary><p>Não. Vá direto a Escrever para um conteúdo avulsa. Use Campanhas quando vários conteúdos compartilham um objetivo e precisam ser avaliados em conjunto.</p></details>
         </section>
         <section className="closing">
           <p>Sua próxima pauta pode virar um fluxo de produção.</p>

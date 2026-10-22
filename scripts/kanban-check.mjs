@@ -57,7 +57,7 @@ try {
 
   // Delete from the piece detail, confirmed in place.
   await page.getByRole("button", { name: "Peça em revisão ruim" }).click();
-  await page.getByRole("button", { name: "Excluir peça" }).click();
+  await page.getByRole("button", { name: "Excluir conteúdo" }).click();
   await page.getByRole("button", { name: "Excluir definitivamente" }).click();
   const after = await until((s) => !s.pieces.some((p) => p.id === "rev"), "delete");
   assert.equal(after.pieces.some((p) => p.id === "rev"), false);

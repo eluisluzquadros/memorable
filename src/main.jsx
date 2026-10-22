@@ -70,6 +70,8 @@ import {
   createPiece,
   variants,
   storageKey,
+  statusLabel,
+  boardColumn,
 } from "./workflow.mjs";
 import { AppContext } from "./context";
 import {
@@ -153,7 +155,7 @@ function Badge({ status }) {
   return (
     <span className={`badge ${statusClass(status)}`}>
       <span />
-      {status}
+      {statusLabel(status)}
     </span>
   );
 }
@@ -439,19 +441,19 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
       setState(transition(state, id, action, payload));
       notify(
         action === "approve"
-          ? "Peça aprovada. Agora ela pode entrar na agenda."
+          ? "Conteúdo aprovado. Agora ele pode entrar na agenda."
           : action === "reject"
-            ? "Ajuste registrado. A peça voltou para a escrita."
+            ? "Ajuste registrado. O conteúdo voltou para a escrita."
             : action === "schedule"
-              ? "Peça adicionada à agenda local."
+              ? "Conteúdo adicionado à agenda local."
               : action === "review"
-                ? "Peça enviada para revisão."
+                ? "Conteúdo enviado para revisão."
                 : action === "move"
-                  ? `Peça movida para ${payload.status}.`
+                  ? `Conteúdo movido para ${payload.status}.`
                   : action === "retract"
-                    ? `Peça recolhida da revisão para ${payload.status}.`
+                    ? `Conteúdo recolhido da revisão para ${payload.status}.`
                     : action === "reopen"
-                      ? `Peça reaberta em ${payload.status}; a aprovação foi desfeita.`
+                      ? `Conteúdo reaberto em ${payload.status}; a aprovação foi desfeita.`
                       : action === "unschedule"
                         ? "Agendamento cancelado; a aprovação foi mantida."
                         : "Alteração registrada.",
@@ -777,7 +779,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
                 <label className="role-select">
                   <span>Papel</span>
                   <select
-                    aria-label={account ? 'Papel no espaço' : 'Papel na demonstração'}
+                    aria-label={account ? 'Papel na marca' : 'Papel na demonstração'}
                     value={state.role}
                     onChange={(e) =>
                       setState((s) => ({ ...s, role: e.target.value }))
@@ -884,7 +886,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
         >
           <div className="dialog-body">
             <p>
-              Isso remove as peças, fontes e decisões criadas nesta demo e
+              Isso remove os conteúdos, fontes e decisões criados nesta demo e
               restaura os exemplos iniciais. Exporte os dados nas configurações
               se quiser preservá-los.
             </p>
@@ -964,7 +966,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
               (x.title + " " + (x.body || x.text))
                 .toLowerCase()
                 .includes(globalSearch.toLowerCase()),
-            ) && <p>Nenhum resultado neste espaço. Tente outra palavra.</p>}
+            ) && <p>Nenhum resultado nesta marca. Tente outra palavra.</p>}
           </div>
         </Dialog>
       )}
@@ -1046,7 +1048,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
                     }
                     if (activeSource.workspace !== state.workspace) {
                       notify(
-                        "Abra o espaço de origem para avaliar este material.",
+                        "Abra a marca de origem para avaliar este material.",
                         true,
                       );
                       return;
@@ -1177,9 +1179,9 @@ function Dashboard() {
       </div>
       <div className="dashboard-metrics">
         <div>
-          <span>Na esteira</span>
+          <span>Em produção</span>
           <b>{pieces.length.toString().padStart(2, "0")}</b>
-          <small>peças neste espaço</small>
+          <small>conteúdos nesta marca</small>
         </div>
         <div>
           <span>Esperando revisão</span>
@@ -1209,7 +1211,7 @@ function Dashboard() {
           </div>
           <h2>
             {pending.length
-              ? `${pending.length} ${pending.length === 1 ? "peça espera" : "peças esperam"} pelo seu olhar.`
+              ? `${pending.length} ${pending.length === 1 ? "conteúdo espera" : "conteúdos esperam"} pelo seu olhar.`
               : "Abra espaço para uma boa ideia."}
           </h2>
           <p>
@@ -1236,8 +1238,8 @@ function Dashboard() {
             <span>Agora</span>
           </div>
           <div className="pipeline-chart">
-            {["Rascunho", "Em revisão", "Aprovado", "Agendado"].map((s, i) => {
-              const count = pieces.filter((p) => p.status === s).length;
+            {["Escrevendo", "Em aprovação", "Aprovado", "Agendado"].map((s, i) => {
+              const count = pieces.filter((p) => boardColumn(p.status).name === s).length;
               return (
                 <div key={s}>
                   <span className="chart-value">{count}</span>
@@ -1248,13 +1250,7 @@ function Dashboard() {
                     }}
                   />
                   <span className="chart-caption">
-                    {s === "Em revisão"
-                      ? "Revisão"
-                      : s === "Rascunho"
-                        ? "Escrita"
-                        : s === "Agendado"
-                          ? "Agenda"
-                          : "Aprovado"}
+                    {s}
                   </span>
                 </div>
               );
@@ -1279,7 +1275,7 @@ function Dashboard() {
         pieceTable(pieces.slice(0, 5))
       ) : (
         <Empty
-          title="Sua primeira peça começa no acervo."
+          title="Seu primeiro conteúdo começa no acervo."
           text="Escolha uma referência para começar a produção."
           action={() => goto("guardar")}
           label="Abrir acervo"
@@ -1356,8 +1352,8 @@ function Guardar() {
           <b>{sources.length} referências disponíveis</b>
           <span>
             {sources.filter((s) => s.shared).length} na biblioteca compartilhada
-            · {sources.filter((s) => s.workspace === workspace.id).length} deste
-            espaço
+            · {sources.filter((s) => s.workspace === workspace.id).length} desta
+            marca
           </span>
         </p>
         <span className="inline-label">{workspace.name}</span>
@@ -1522,7 +1518,7 @@ function Aprovar() {
               key={t}
               onClick={() => setApprovalFilter(t)}
             >
-              {t}
+              {statusLabel(t)}
               {t === "Em revisão" && <span>{pending.length}</span>}
             </button>
           ))}
@@ -1581,7 +1577,7 @@ function Aprovar() {
                   </button>
                 ))}
               {!filtered.some((p) => p.status === status) && (
-                <div className="kanban-empty">Nenhuma peça nesta etapa.</div>
+                <div className="kanban-empty">Nenhum conteúdo nesta etapa.</div>
               )}
             </div>
           ))}
@@ -1590,7 +1586,7 @@ function Aprovar() {
         <Empty
           icon={CheckCheck}
           title="Tudo em dia por aqui."
-          text="As peças desta etapa aparecerão quando o trabalho avançar."
+          text="Os conteúdos desta etapa aparecerão quando o trabalho avançar."
           action={() => goto("escrever")}
           label="Criar conteúdo"
         />
@@ -1598,7 +1594,7 @@ function Aprovar() {
       <div className="quiet-note">
         <CheckCheck size={18} />
         <p>
-          A aprovação vale para uma versão. Qualquer edição devolve a peça à
+          A aprovação vale para uma versão. Qualquer edição devolve o conteúdo à
           escrita e exige nova revisão.
         </p>
       </div>
@@ -1645,7 +1641,7 @@ function Publicar() {
     <>
       <div className="page-heading">
         <div>
-          <h1>Cada peça, no seu momento.</h1>
+          <h1>Cada conteúdo, no seu momento.</h1>
           <p>O conteúdo aprovado encontra seu próximo destino.</p>
         </div>
         <button
@@ -1713,7 +1709,7 @@ function Publicar() {
       ) : (
         <div className="compact-empty">
           <CheckCheck size={22} />
-          <p>Quando uma peça for aprovada, ela aparece aqui.</p>
+          <p>Quando um conteúdo for aprovado, ele aparece aqui.</p>
           <button className="text-button" onClick={() => goto("aprovar")}>
             Abrir revisão <ArrowRight size={16} />
           </button>
@@ -1768,7 +1764,7 @@ function Publicar() {
         <Empty
           icon={CalendarDays}
           title="Uma agenda com espaço para boas ideias."
-          text="Aprove uma peça e defina o canal, a data e a hora do próximo capítulo."
+          text="Aprove um conteúdo e defina o canal, a data e a hora do próximo capítulo."
         />
       )}
       <div className="section-header"><h2>Publicações registradas <span className="count-label">{published.length}</span></h2></div>
@@ -1831,7 +1827,7 @@ function Caderno() {
               ),
               "application/json",
             );
-            notify("Caderno exportado com peças e histórico.");
+            notify("Caderno exportado com conteúdos e histórico.");
           }}
         >
           <Download size={17} />
@@ -1887,7 +1883,7 @@ function Caderno() {
               <button
                 className="icon-button"
                 onClick={() => setSelectedPiece(e.pieceId)}
-                aria-label={`Ver peça ${e.title}`}
+                aria-label={`Ver conteúdo ${e.title}`}
               >
                 <ArrowUpRight size={18} />
               </button>
@@ -1898,7 +1894,7 @@ function Caderno() {
         <Empty
           icon={BookOpen}
           title="O primeiro critério começa com uma decisão."
-          text="Aprove uma peça, solicite um ajuste ou edite um rascunho. O histórico aparece aqui."
+          text="Aprove um conteúdo, solicite um ajuste ou edite um rascunho. O histórico aparece aqui."
           action={() => goto("aprovar")}
           label="Abrir revisão"
         />
@@ -2029,11 +2025,11 @@ function Configuracoes() {
                 ...s,
                 budgets: { ...s.budgets, [state.workspace]: Number(budget) },
               }));
-              notify("Teto atualizado para este espaço.");
+              notify("Teto atualizado para esta marca.");
             }}
           >
             <label>
-              Teto do espaço (R$)
+              Teto da marca (R$)
               <input
                 type="number"
                 min="0"
@@ -2048,7 +2044,7 @@ function Configuracoes() {
             </button>
           </form>
           <div className="unit-cost">
-            <span>Custo por peça aprovada</span>
+            <span>Custo por conteúdo aprovado</span>
             <b>
               {approved.length
                 ? money(spent / approved.length)
@@ -2060,7 +2056,7 @@ function Configuracoes() {
         <section className="settings-section">
           <h2>{account ? 'Dados da sua conta' : 'Seu ambiente de demonstração'}</h2>
           <p>
-            {account ? 'Dados salvos no SQLite do serviço local e separados por conta. Os papéis ilustram responsabilidades editoriais dentro deste espaço.' : 'Dados locais neste navegador. A troca de papel ilustra o fluxo; não é autenticação nem controle seguro de acesso.'}
+            {account ? 'Dados salvos no SQLite do serviço local e separados por conta. Os papéis ilustram responsabilidades editoriais dentro desta marca.' : 'Dados locais neste navegador. A troca de papel ilustra o fluxo; não é autenticação nem controle seguro de acesso.'}
           </p>
           <button
             className="button secondary"
@@ -2359,14 +2355,14 @@ function DeletePiece({ piece, state, setState, notify, onDone }) {
       {confirming ? (
         <>
           <p>
-            Excluir “{piece.title}”? A peça sai do Kanban e dos cases; o histórico registra a exclusão. Não dá para desfazer.
+            Excluir “{piece.title}”? O conteúdo sai do Kanban e dos cases; o histórico registra a exclusão. Não dá para desfazer.
           </p>
           <button
             className="button danger"
             onClick={() => {
               try {
                 setState((s) => removePiece(s, piece.id));
-                notify("Peça excluída. O registro ficou no histórico.");
+                notify("Conteúdo excluído. O registro ficou no histórico.");
                 onDone();
               } catch (e) {
                 notify(e.message, true);
@@ -2376,12 +2372,12 @@ function DeletePiece({ piece, state, setState, notify, onDone }) {
             Excluir definitivamente
           </button>
           <button className="button secondary" onClick={() => setConfirming(false)}>
-            Manter peça
+            Manter conteúdo
           </button>
         </>
       ) : (
         <button className="text-button piece-delete-trigger" onClick={() => setConfirming(true)}>
-          Excluir peça
+          Excluir conteúdo
         </button>
       )}
     </div>
@@ -2475,7 +2471,7 @@ function PieceDetail({
           <div className="piece-reading">
             {editing ? (
               <label>
-                Texto da peça
+                Texto do conteúdo
                 <textarea
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
@@ -2630,7 +2626,7 @@ function PieceDetail({
                     );
                     setEditing(false);
                     setChecked(false);
-                    notify("Edição salva. A peça precisa de uma nova revisão.");
+                    notify("Edição salva. O conteúdo precisa de uma nova revisão.");
                   } catch (e) {
                     notify(e.message, true);
                   }
@@ -2647,7 +2643,7 @@ function PieceDetail({
                 onClick={() => setEditing(true)}
               >
                 <PenLine size={16} />
-                Editar peça
+                Editar conteúdo
               </button>
               <div>
                 {["Rascunho", "Ajustes"].includes(piece.status) && (

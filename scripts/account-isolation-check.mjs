@@ -18,7 +18,7 @@ try{
  const demo=await page.evaluate(()=>JSON.parse(localStorage.getItem('esteira-demo-v1')));
  await register('Skyvidya QA',emails[0]);
  const accountA=await state();assert.equal(accountA.pieces.length,0);assert.equal(accountA.sources.length,0);assert.equal(accountA.workspaces.length,1);
- assert.equal(await page.getByLabel('Espaço de trabalho',{exact:true}).locator('option').count(),1);
+ assert.equal(await page.getByLabel('Escopo: grupo ou marca',{exact:true}).locator('option').count(),1);
  assert.ok(!(await page.locator('.sidebar').innerText()).includes('BBMD'));
  assert.equal((await context.request.get(base+'/api/collected?workspace='+accountA.workspace)).status(),200);
  assert.equal((await context.request.get(base+'/api/collected?workspace=bbmd')).status(),403);

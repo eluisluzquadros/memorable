@@ -102,7 +102,7 @@ test("workspace boundaries and reviewer edit restriction hold", () => {
   assert.throws(
     () =>
       transition({ ...author(), workspace: "ativos" }, "piece-1", "approve"),
-    /outro espaço/,
+    /outra marca/,
   );
   assert.throws(
     () => transition(author(), "piece-1", "edit", { body: "X" }),
@@ -145,7 +145,7 @@ test("kanban drops map to workflow actions, and going back from approval needs c
   assert.equal(planKanbanMove(state, "s", "Aprovado").action, "unschedule");
   assert.deepEqual(planKanbanMove(state, "a", "Agendado"), { kind: "needs", need: "schedule" });
   assert.throws(() => planKanbanMove(state, "p", "Rascunho"), /definitivo/);
-  assert.throws(() => planKanbanMove(state, "a", "Em revisão"), /volte a peça para a escrita/);
+  assert.throws(() => planKanbanMove(state, "a", "Em revisão"), /volte o conteúdo para a escrita/);
 
   const retracted = move(state, "r", "retract", { status: "Rascunho" });
   assert.equal(retracted.pieces.find((x) => x.id === "r").status, "Rascunho");
@@ -157,7 +157,7 @@ test("kanban drops map to workflow actions, and going back from approval needs c
   assert.equal(removed.pieces.some((x) => x.id === "r"), false);
   assert.deepEqual(removed.cases[0].pieceIds, ["a"]);
   assert.equal(removed.events[0].action, "delete");
-  assert.throws(() => removePiece(state, "p"), /publicadas/);
+  assert.throws(() => removePiece(state, "p"), /publicados/);
   assert.throws(() => removePiece(state, "d"), /desdobramentos/);
   assert.throws(() => removePiece({ ...state, role: "Aprovador" }, "r"), /Editor/);
 });

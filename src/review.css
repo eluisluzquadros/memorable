@@ -1068,3 +1068,26 @@
   .sidebar-compact .sidebar nav a .nav-count { position: absolute; top: 4px; right: 8px; }
   .sidebar-compact .user-profile { justify-content: center; flex-wrap: wrap; gap: 8px; }
 }
+
+/* Quiet scrollbars: thin, palette-colored, and the sidebar only shows its track on hover */
+.app-shell, .app-shell * { scrollbar-width: thin; scrollbar-color: #c9d2df transparent; }
+.app-shell ::-webkit-scrollbar { width: 8px; height: 8px; }
+.app-shell ::-webkit-scrollbar-track { background: transparent; }
+.app-shell ::-webkit-scrollbar-thumb { background: #c9d2df; border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+.app-shell ::-webkit-scrollbar-button { display: none; height: 0; width: 0; }
+html:has(.app-shell) { scrollbar-width: thin; scrollbar-color: #c9d2df #fafbfd; }
+.sidebar { overflow-x: hidden; scrollbar-color: transparent transparent; }
+.sidebar:hover, .sidebar:focus-within { scrollbar-color: #c9d2df transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: transparent; }
+.sidebar:hover::-webkit-scrollbar-thumb, .sidebar:focus-within::-webkit-scrollbar-thumb { background: #c9d2df; background-clip: padding-box; }
+/* The logo and the hide/show button share one row inside the 212px sidebar column */
+.sidebar-logo { padding-left: 4px; }
+.sidebar .sidebar-logo .brand { font-size: 23px; gap: 9px; letter-spacing: -1.2px; min-width: 0; }
+.sidebar .sidebar-logo .brand-mark { width: 21px; gap: 3px; }
+.sidebar .sidebar-logo .brand-period { margin-left: -9px; }
+.sidebar-toggle { width: 36px; height: 36px; }
+@media (min-width: 851px) {
+  .sidebar-compact .sidebar .sidebar-logo .brand { font-size: 0; gap: 0; }
+  .sidebar-compact .sidebar-logo { padding: 0 0 18px; }
+  .sidebar-compact .sidebar nav a .nav-count { top: 2px; right: 2px; min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; line-height: 16px; }
+}

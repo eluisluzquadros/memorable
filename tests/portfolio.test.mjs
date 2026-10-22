@@ -21,8 +21,8 @@ const base = () => ({
 test("a case only gathers approved pieces from the active workspace", () => {
   const state = base();
   assert.deepEqual(eligiblePieces(state).map((p) => p.id), ["p1"]);
-  assert.throws(() => saveCase(state, { title: "Case", challenge: "Explicar contratos para leigos.", pieceIds: ["p2"] }), /aprovadas/);
-  assert.throws(() => saveCase(state, { title: "Case", challenge: "Explicar contratos para leigos.", pieceIds: ["p3"] }), /aprovadas/);
+  assert.throws(() => saveCase(state, { title: "Case", challenge: "Explicar contratos para leigos.", pieceIds: ["p2"] }), /aprovados/);
+  assert.throws(() => saveCase(state, { title: "Case", challenge: "Explicar contratos para leigos.", pieceIds: ["p3"] }), /aprovados/);
   assert.throws(() => saveCase(state, { title: "Case", challenge: "curto", pieceIds: ["p1"] }), /desafio/);
   assert.throws(() => saveCase({ ...state, role: "Observador" }, { title: "Case", challenge: "Explicar contratos para leigos.", pieceIds: ["p1"] }));
   const next = saveCase(state, { title: "Um episódio, sete peças", challenge: "Explicar contratos para leigos.", pieceIds: ["p1"] });

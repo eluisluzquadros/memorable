@@ -70,7 +70,7 @@ export function ProviderTools({
           0.18 >
           state.budgets[state.workspace]
       )
-        throw new Error("Teto estimado atingido neste espaço.");
+        throw new Error("Teto estimado atingido nesta marca.");
       setBusy(kind);
       onBusy?.(true);
       const requestedContext = currentContext.current;

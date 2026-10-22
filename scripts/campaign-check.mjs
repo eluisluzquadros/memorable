@@ -11,7 +11,7 @@ try {
  await page.getByRole('button',{name:'Criar conteúdo da campanha'}).click();
  await page.getByLabel('Referência do acervo').selectOption({index:1});await page.getByLabel('Prazo',{exact:true}).fill('2026-12-20');
  await page.getByRole('button',{name:'Preparar 1 versão local'}).click();await page.getByRole('button',{name:'Salvar rascunho'}).click();
- await page.getByRole('button',{name:'Criar desdobramento desta peça'}).click();
+ await page.getByRole('button',{name:'Criar desdobramento deste conteúdo'}).click();
  await page.getByRole('button',{name:'Preparar 1 versão local'}).click();await page.getByRole('button',{name:'Salvar rascunho'}).click();
  await page.getByRole('button',{name:'Fechar',exact:true}).click();await page.goto('http://localhost:5173/#app/campanhas');await page.reload();
  assert.equal(await page.locator('.campaign-pieces > div').count(),2);

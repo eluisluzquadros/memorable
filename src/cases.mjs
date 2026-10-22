@@ -15,11 +15,11 @@ export function saveCase(state, input) {
   if (!title) throw new Error("Dê um título ao case.");
   if (challenge.length < 20) throw new Error("Descreva o desafio do cliente em pelo menos uma frase.");
   const ids = [...new Set(input.pieceIds || [])];
-  if (!ids.length) throw new Error("Escolha ao menos uma peça aprovada.");
+  if (!ids.length) throw new Error("Escolha ao menos um conteúdo aprovado.");
   const ready = new Set(eligiblePieces(state).map((p) => p.id));
-  if (ids.some((id) => !ready.has(id))) throw new Error("Um case só reúne peças aprovadas, agendadas ou publicadas deste espaço.");
+  if (ids.some((id) => !ready.has(id))) throw new Error("Um case só reúne conteúdos aprovados, agendados ou publicados desta marca.");
   const existing = input.id && (state.cases || []).find((c) => c.id === input.id && c.workspace === state.workspace);
-  if (input.id && !existing) throw new Error("Case não encontrado neste espaço.");
+  if (input.id && !existing) throw new Error("Case não encontrado nesta marca.");
   const item = {
     id: existing?.id || crypto.randomUUID(),
     workspace: state.workspace,
@@ -76,7 +76,7 @@ h1{font-size:44px;line-height:1.05;margin:8px 0 16px}h2{font-size:14px;letter-sp
 </style></head><body><main><div class="b">${escape(brandName)}</div><h1>${escape(item.title)}</h1><p>${escape(item.challenge)}</p>
 ${item.approach ? `<h2>Como fizemos</h2><p>${escape(item.approach)}</p>` : ""}
 <h2>Fontes de origem</h2>${story.sources.map((s) => `<div class="p"><b>${escape(s.title)}</b><br><small>${escape(s.origin)}</small></div>`).join("") || "<p class='n'>Sem fontes registradas.</p>"}
-<h2>Peças produzidas · ${escape(story.formats.join(", "))}</h2>${story.pieces.map((p) => `<div class="p"><small>${escape(p.format)} · ${escape(p.status)}${p.approver ? ` · aprovada por ${escape(p.approver)} (v${escape(p.approvedRevision)})` : ""}</small><h3>${escape(p.title)}</h3><p>${excerpt(p.body)}</p></div>`).join("")}
+<h2>Conteúdos produzidos · ${escape(story.formats.join(", "))}</h2>${story.pieces.map((p) => `<div class="p"><small>${escape(p.format)} · ${escape(p.status)}${p.approver ? ` · aprovada por ${escape(p.approver)} (v${escape(p.approvedRevision)})` : ""}</small><h3>${escape(p.title)}</h3><p>${excerpt(p.body)}</p></div>`).join("")}
 <h2>Resultados</h2>${totals}${story.learnings.length ? `<h2>Aprendizados</h2><ul>${story.learnings.map((l) => `<li>${escape(l)}</li>`).join("")}</ul>` : ""}
 <footer>Produzido com Memorable · fluxo com revisão humana e fontes rastreáveis.</footer></main></body></html>`;
 }

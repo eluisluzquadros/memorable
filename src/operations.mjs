@@ -268,14 +268,14 @@ export function saveMonitor(state, input) {
         m.workspace === state.workspace && m.url === url && m.id !== input.id,
     )
   )
-    throw new Error("Esta URL já está cadastrada neste espaço.");
+    throw new Error("Esta URL já está cadastrada nesta marca.");
   if (
     input.id &&
     !state.monitors.some(
       (m) => m.id === input.id && m.workspace === state.workspace,
     )
   )
-    throw new Error("Fonte não encontrada neste espaço.");
+    throw new Error("Fonte não encontrada nesta marca.");
   const item = {
     id: input.id || crypto.randomUUID(),
     workspace: state.workspace,
@@ -566,7 +566,7 @@ export function evaluateCouncil(state, piece) {
       blocker: !valid,
       reason: valid
         ? "Fontes citáveis, disponíveis e dentro da validade. A veracidade ainda exige conferência humana."
-        : "Fonte ausente, vencida ou indisponível neste espaço.",
+        : "Fonte ausente, vencida ou indisponível nesta marca.",
     },
     {
       lens: "Contraponto",

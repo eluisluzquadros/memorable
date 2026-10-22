@@ -1,6 +1,7 @@
 import React, { useContext, useState } from "react";
 import { Briefcase, Download, Plus, Trash2, ArrowRight, Check } from "lucide-react";
 import { AppContext } from "./context";
+import { statusLabel } from "./workflow.mjs";
 import { eligiblePieces, saveCase, removeCase, caseStory, caseDocument } from "./cases.mjs";
 
 const empty = { title: "", challenge: "", approach: "", pieceIds: [] };
@@ -41,7 +42,7 @@ export function Portfolio() {
           <h1>Portfólio</h1>
           <p>Transforme fluxos concluídos em cases para apresentar a clientes e investidores. Números só aparecem quando foram registrados com evidência em Resultados.</p>
         </div>
-        <button className="button primary" onClick={() => setForm({ ...empty })} disabled={!ready.length} title={ready.length ? undefined : "Aprove ao menos uma peça para montar um case."}>
+        <button className="button primary" onClick={() => setForm({ ...empty })} disabled={!ready.length} title={ready.length ? undefined : "Aprove ao menos um conteúdo para montar um case."}>
           <Plus size={17} /> Montar case
         </button>
       </div>
@@ -51,7 +52,7 @@ export function Portfolio() {
           <h2>{form.id ? "Editar case" : "Novo case"}</h2>
           <label>
             Título do case
-            <input value={form.title} maxLength={120} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Ex.: Um episódio, sete peças" />
+            <input value={form.title} maxLength={120} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Ex.: Um episódio, sete conteúdos" />
           </label>
           <label>
             Desafio do cliente
@@ -62,12 +63,12 @@ export function Portfolio() {
             <textarea rows={2} value={form.approach} onChange={(e) => setForm({ ...form, approach: e.target.value })} placeholder="Fontes usadas, formatos escolhidos, decisões editoriais." />
           </label>
           <fieldset className="pf-pieces">
-            <legend>Peças aprovadas que entram no case</legend>
+            <legend>Conteúdos aprovados que entram no case</legend>
             {ready.map((p) => (
               <label key={p.id} className="checkbox-label">
                 <input type="checkbox" checked={form.pieceIds.includes(p.id)} onChange={() => togglePiece(p.id)} />
                 <span>
-                  <b>{p.title}</b> <small>{p.format} · {p.status}</small>
+                  <b>{p.title}</b> <small>{p.format} · {statusLabel(p.status)}</small>
                 </span>
               </label>
             ))}
@@ -86,8 +87,8 @@ export function Portfolio() {
       {!cases.length && !form && (
         <section className="r-panel pf-empty">
           <Briefcase size={30} aria-hidden="true" />
-          <h2>Seu primeiro case começa com uma peça aprovada.</h2>
-          <p>{ready.length ? `Você já tem ${ready.length} ${ready.length === 1 ? "peça pronta" : "peças prontas"}. Monte um case para apresentar o fluxo completo: fonte, peças, aprovação e resultados.` : "Escreva, revise e aprove uma peça. Depois volte aqui para empacotar o trabalho como case."}</p>
+          <h2>Seu primeiro case começa com um conteúdo aprovado.</h2>
+          <p>{ready.length ? `Você já tem ${ready.length} ${ready.length === 1 ? "conteúdo pronto" : "conteúdos prontos"}. Monte um case para apresentar o fluxo completo: fonte, conteúdos, aprovação e resultados.` : "Escreva, revise e aprove um conteúdo. Depois volte aqui para empacotar o trabalho como case."}</p>
           {!ready.length && (
             <button className="button secondary" onClick={() => goto("escrever")}>
               Ir para Escrever <ArrowRight size={16} />
@@ -106,7 +107,7 @@ export function Portfolio() {
                   <strong>{c.title}</strong>
                   <span>{c.challenge}</span>
                   <small>
-                    {s.pieces.length} {s.pieces.length === 1 ? "peça" : "peças"} · {s.formats.join(", ")}
+                    {s.pieces.length} {s.pieces.length === 1 ? "conteúdo" : "conteúdos"} · {s.formats.join(", ")}
                     {s.totals ? " · resultados com evidência" : ""}
                   </small>
                 </button>
@@ -136,7 +137,7 @@ export function Portfolio() {
               </button>
             </div>
           </div>
-          {story.stale && <p className="validation-warning">Alguma peça deste case foi editada ou removida e saiu da aprovação. Revise antes de apresentar.</p>}
+          {story.stale && <p className="validation-warning">Algum conteúdo deste case foi editado ou removido e saiu da aprovação. Revise antes de apresentar.</p>}
           <div className="pf-columns">
             <div>
               <h3>Fontes de origem</h3>
@@ -150,7 +151,7 @@ export function Portfolio() {
               </ul>
             </div>
             <div>
-              <h3>Peças</h3>
+              <h3>Conteúdos</h3>
               <ul>
                 {story.pieces.map((p) => (
                   <li key={p.id}>
@@ -158,7 +159,7 @@ export function Portfolio() {
                       {p.title}
                     </button>
                     <small>
-                      {p.format} · {p.status}
+                      {p.format} · {statusLabel(p.status)}
                       {p.approver ? ` · aprovada por ${p.approver} (v${p.approvedRevision})` : ""}
                     </small>
                   </li>

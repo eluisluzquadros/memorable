@@ -25,7 +25,7 @@ export function SourceRefresh({source}) {
       const response=await fetch('/api/ingest/url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:source.url})});
       const result=await response.json();if(!response.ok)throw new Error(result.error||'Não foi possível atualizar a leitura.');
       setState(s=>({...s,sources:s.sources.map(x=>x.id===source.id?{...x,...result,title:x.title,origin:x.origin||result.origin,citable:true,manualOverride:false}:x),pieces:invalidateSourceDependents(s.pieces,new Set([source.id]))}));
-      notify('Texto e resumo atualizados. Peças vinculadas precisam de nova conferência.');
+      notify('Texto e resumo atualizados. Conteúdos vinculados precisam de nova conferência.');
     }catch(e){setError(e.message);}finally{setBusy(false);}
   }
   return source.url?<div className="source-refresh"><button className="text-button" disabled={busy} onClick={refresh}>{busy?'Atualizando…':'Atualizar leitura'}</button><p className="field-help">Substitui o texto e o resumo pela leitura atual do endereço. Suas etiquetas e a classificação da referência são preservadas.</p>{error&&<p className="form-error" role="alert">{error}</p>}</div>:null;
@@ -50,7 +50,7 @@ export function SourceMetadata({ source }) {
     <details className="r-panel" open={Boolean(sourceCaptureProblem(source))}>
       <summary>Editar referência, validade e gestão</summary>
       <p>
-        {count} peças citam esta fonte ·{" "}
+        {count} conteúdos citam esta fonte ·{" "}
         {sourceValid(source) ? "Citável" : "Não citável ou vencida"}
       </p>
       <form
@@ -60,7 +60,7 @@ export function SourceMetadata({ source }) {
             assertEditor(state);
             if (source.workspace !== state.workspace)
               throw new Error(
-                "Abra o espaço de origem para editar uma fonte compartilhada.",
+                "Abra a marca de origem para editar uma fonte compartilhada.",
               );
             if (!title.trim() || !text.trim())
               throw new Error("O conteúdo não pode ficar vazio.");
@@ -99,7 +99,7 @@ export function SourceMetadata({ source }) {
                   workspace: source.workspace,
                   title: source.title,
                   event:
-                    "Fonte revisada; as peças vinculadas precisam de nova conferência.",
+                    "Fonte revisada; os conteúdos vinculados precisam de nova conferência.",
                   action: "source-edit",
                   author: state.role,
                   at: new Date().toISOString(),
@@ -109,7 +109,7 @@ export function SourceMetadata({ source }) {
               ],
             }));
             notify(
-              "Referência atualizada. As peças vinculadas foram enviadas à conferência.",
+              "Referência atualizada. Os conteúdos vinculados foram enviados à conferência.",
             );
           } catch (e) {
             notify(e.message, true);
@@ -174,7 +174,7 @@ export function SourceMetadata({ source }) {
         </button>
       </form>
       {source.workspace === state.workspace && <div className="source-delete">
-        {count > 0 && <p><AlertTriangle size={15} /> Esta referência é usada por {count} {count === 1 ? "peça" : "peças"}. A exclusão vai bloquear novas aprovações até que uma fonte seja vinculada novamente.</p>}
+        {count > 0 && <p><AlertTriangle size={15} /> Esta referência é usada por {count} {count === 1 ? "conteúdo" : "conteúdos"}. A exclusão vai bloquear novas aprovações até que uma fonte seja vinculada novamente.</p>}
         {confirmDelete ? <div className="dialog-actions"><button className="button secondary" onClick={() => setConfirmDelete(false)}>Cancelar</button><button className="button danger" onClick={() => {
           try {
             assertEditor(state);
@@ -375,7 +375,7 @@ export function Results() {
         <section className="r-panel">
           <h2>Registrar um resultado</h2>
           <p>
-            Métricas manuais do time. Cada peça mantém a última medição,
+            Métricas manuais do time. Cada conteúdo mantém a última medição,
             evitando somar o mesmo resultado duas vezes.
           </p>
           <form
@@ -384,7 +384,7 @@ export function Results() {
               try {
                 assertEditor(state);
                 const piece = pieces.find((p) => p.id === form.pieceId);
-                if (!piece) throw new Error("Escolha uma peça deste espaço.");
+                if (!piece) throw new Error("Escolha um conteúdo desta marca.");
                 if (
                   [form.views, form.clicks, form.conversations].some(
                     (n) => !Number.isInteger(Number(n)) || Number(n) < 0,
@@ -447,7 +447,7 @@ export function Results() {
                   );
                 }}
               >
-                <option value="">Selecione uma peça</option>
+                <option value="">Selecione um conteúdo</option>
                 {pieces.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.title}

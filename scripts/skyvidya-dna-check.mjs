@@ -125,7 +125,7 @@ try {
     await requested;
     if (changeBrand) {
       const other = await page
-        .getByLabel("Espaço de trabalho", { exact: true })
+        .getByLabel("Escopo: grupo ou marca", { exact: true })
         .locator("option")
         .evaluateAll(
           (options, workspace) =>
@@ -133,7 +133,7 @@ try {
           original.workspace,
         );
       await page
-        .getByLabel("Espaço de trabalho", { exact: true })
+        .getByLabel("Escopo: grupo ou marca", { exact: true })
         .selectOption(other);
       assert.equal(
         await page.getByLabel("Site da marca", { exact: true }).inputValue(),
@@ -157,7 +157,7 @@ try {
     );
     if (changeBrand)
       await page
-        .getByLabel("Espaço de trabalho", { exact: true })
+        .getByLabel("Escopo: grupo ou marca", { exact: true })
         .selectOption(original.workspace);
   }
   await page.route("**/api/brand-dna", (route) =>

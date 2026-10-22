@@ -93,8 +93,8 @@ try {
     .getByRole("combobox", { name: "Papel na demonstração" })
     .selectOption("Editor");
   await page.getByRole("button", { name: "Abrir Como tornar" }).click();
-  await page.getByRole("button", { name: "Editar peça" }).click();
-  await page.getByLabel("Texto da peça").fill("Edição posterior à aprovação.");
+  await page.getByRole("button", { name: "Editar conteúdo" }).click();
+  await page.getByLabel("Texto do conteúdo").fill("Edição posterior à aprovação.");
   await page.getByRole("button", { name: "Salvar nova versão" }).click();
   await page.getByRole("button", { name: "Fechar", exact: true }).click();
   assert.equal(await page.locator(".schedule-list article").count(), 0);
@@ -113,7 +113,7 @@ try {
   );
   check("Decision history and JSON export");
   await page
-    .getByRole("combobox", { name: "Espaço de trabalho" })
+    .getByRole("combobox", { name: "Escopo: grupo ou marca" })
     .selectOption("ativos");
   assert.equal(await page.locator(".event-list").count(), 0);
   check("Workspace data separation");

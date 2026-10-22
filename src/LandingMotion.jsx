@@ -48,19 +48,19 @@ const ACTS = [
     word: "APROVADO",
     step: "Aprovar",
     title: "A última palavra é sua.",
-    text: "Você confere texto e fontes e aprova uma versão. Editou depois? A aprovação cai e a peça volta para revisão.",
+    text: "Você confere texto e fontes e aprova uma versão. Editou depois? A aprovação cai e o conteúdo volta para revisão.",
   },
   {
     id: "mundo",
     word: "NO MUNDO",
     step: "Publicar",
     title: "Sua marca onde o público está.",
-    text: "Agenda por canal e peças exportadas no formato de cada rede. A mesma ideia vira presença constante — é isso que faz uma marca ser lembrada.",
+    text: "Agenda por canal e conteúdos exportados no formato de cada rede. A mesma ideia vira presença constante — é isso que faz uma marca ser lembrada.",
   },
 ];
 
 const CASES = [
-  { brand: "Escritório de advocacia", title: "Um episódio, sete peças", from: "Podcast de 40 min", to: "Carrossel, Reels, artigo, newsletter e LinkedIn" },
+  { brand: "Escritório de advocacia", title: "Um episódio, sete conteúdos", from: "Podcast de 40 min", to: "Carrossel, Reels, artigo, newsletter e LinkedIn" },
   { brand: "Grupo com seis marcas", title: "Uma operação, seis vozes", from: "DNA de cada marca", to: "Pautas, aprovação e agenda separadas por marca" },
   { brand: "Consultoria B2B", title: "Do radar ao LinkedIn", from: "Blog do setor monitorado", to: "Post com fonte citada, aprovado em um fluxo" },
   { brand: "Loja online", title: "Cinco anúncios UGC", from: "Uma foto do produto", to: "Cinco ganchos diferentes para testar" },
@@ -504,7 +504,7 @@ function Portfolio({ reduced }) {
       <div className="mx-portfolio-body">
         <div className="mx-portfolio-copy">
           <h2 id="portfolio-title">Portfólio</h2>
-          <p>Cada fluxo concluído vira um case: fonte de origem, peças produzidas, versões aprovadas e os resultados que você registrar. Abaixo, cases de demonstração — os seus entram no lugar.</p>
+          <p>Cada fluxo concluído vira um case: fonte de origem, conteúdos produzidos, versões aprovadas e os resultados que você registrar. Abaixo, cases de demonstração — os seus entram no lugar.</p>
           <a className="mx-ghost" href="#app/portfolio">
             Abrir o portfólio na plataforma <ArrowUpRight size={16} aria-hidden="true" />
           </a>

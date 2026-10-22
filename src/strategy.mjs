@@ -5,15 +5,15 @@ export function saveCampaign(state, input) {
   for (const key of ['name', 'audience', 'problem', 'hypothesis', 'success'])
     if (!input[key]?.trim()) throw new Error('Preencha nome, público, problema, hipótese e critério de sucesso.');
   const previous = (state.campaigns || []).find(c => c.id === input.id);
-  if (input.id && (!previous || previous.workspace !== state.workspace)) throw new Error('Campanha indisponível neste espaço.');
+  if (input.id && (!previous || previous.workspace !== state.workspace)) throw new Error('Campanha indisponível nesta marca.');
   const campaign = { ...input, id: previous?.id || crypto.randomUUID(), workspace: state.workspace, revision: (previous?.revision || 0) + 1, updatedAt: new Date().toISOString() };
   return { ...state, campaigns: [campaign, ...(state.campaigns || []).filter(c => c.id !== campaign.id)] };
 }
 export function relationships(state, input) {
   const campaign = input.campaignId ? (state.campaigns || []).find(c => c.id === input.campaignId && c.workspace === state.workspace) : null;
-  if (input.campaignId && !campaign) throw new Error('A campanha precisa pertencer a este espaço.');
+  if (input.campaignId && !campaign) throw new Error('A campanha precisa pertencer a esta marca.');
   const parent = input.parentId ? state.pieces.find(p => p.id === input.parentId && p.workspace === state.workspace) : null;
-  if (input.parentId && !parent) throw new Error('O conteúdo principal precisa pertencer a este espaço.');
+  if (input.parentId && !parent) throw new Error('O conteúdo principal precisa pertencer a esta marca.');
   if (parent && (parent.campaignId || '') !== (input.campaignId || '')) throw new Error('O desdobramento deve manter a campanha do conteúdo principal.');
   return { campaignId: campaign?.id || null, campaignRevision: campaign?.revision || null, campaignSnapshot: campaign ? { ...campaign } : null, parentId: parent?.id || null, parentRevision: parent?.revision || null };
 }

@@ -217,7 +217,7 @@ export function Radar() {
         value={tab}
         onChange={setTab}
         items={[
-          ["pautas", "Pautas"],
+          ["pautas", "Ideias"],
           ["regras", "Ajustes"],
           ["historico", "Execuções"],
         ]}
@@ -228,7 +228,7 @@ export function Radar() {
           <div className="r-stat-strip">
             <div>
               <b>{topics.length}</b>
-              <span>pautas no acervo</span>
+              <span>ideias no acervo</span>
             </div>
             <div>
               <b>
@@ -254,14 +254,14 @@ export function Radar() {
             <label className="search-input">
               <Search size={17} />
               <input
-                aria-label="Buscar pautas"
-                placeholder="Buscar pautas…"
+                aria-label="Buscar ideias"
+                placeholder="Buscar ideias…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </label>
             <select
-              aria-label="Categoria de pauta"
+              aria-label="Categoria da ideia"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
             >
@@ -347,7 +347,7 @@ export function Radar() {
                     {r.mode === "web"
                       ? "Consulta de páginas públicas"
                       : "Curadoria local"}{" "}
-                    · {r.found} fontes/pautas
+                    · {r.found} fontes e ideias
                   </b>
                   <p>{r.detail}</p>
                   <small>
@@ -442,7 +442,7 @@ export function MonitorSources() {
             runSafely(() => {
               setState(saveMonitor(state, form));
               setForm(empty);
-              notify("Fonte salva neste espaço.");
+              notify("Fonte salva nesta marca.");
             }, notify);
           }}
         >
@@ -653,7 +653,7 @@ function RadarSettings() {
                 },
               }));
               notify(
-                "Critérios e rotina salvos. As pautas foram reclassificadas.",
+                "Critérios e rotina salvos. As ideias foram reclassificadas.",
               );
             }, notify);
           }}
@@ -817,7 +817,7 @@ function RadarSettings() {
                   setConfig({ ...config, notifyHot: e.target.checked })
                 }
               />
-              Avisar no aplicativo quando houver pautas acima da nota mínima
+              Avisar no aplicativo quando houver ideias acima da nota mínima
             </label>
             <label>
               Escopo da rotina
@@ -827,7 +827,7 @@ function RadarSettings() {
                   setConfig({ ...config, scope: e.target.value })
                 }
               >
-                <option value="workspace">Somente este espaço</option>
+                <option value="workspace">Somente esta marca</option>
                 <option value="all">Todos os espaços</option>
               </select>
             </label>
@@ -870,7 +870,7 @@ function RadarSettings() {
         </Note>
         <h3>Coleta web agendada</h3>
         <p>
-          Usa a frequência salva e as URLs ativas deste espaço. O processo local
+          Usa a frequência salva e as URLs ativas desta marca. O processo local
           precisa permanecer ligado; a rotina não roda com o computador
           desligado.
         </p>
@@ -947,14 +947,14 @@ export function Kanban() {
       const column = BOARD_COLUMNS.find((c) => c.name === columnName);
       if (!p || !column || boardColumn(p.status) === column) return;
       if (p.workspace !== state.workspace)
-        throw new Error("Abra o espaço desta marca para movimentar a peça.");
+        throw new Error("Abra esta marca para movimentar o conteúdo.");
       const plan = planKanbanMove(state, id, column.target);
       if (plan.kind === "apply") doAction(id, plan.action, plan.payload);
       else if (plan.kind === "confirm") setPending({ id, ...plan });
       else if (plan.need === "schedule") setModal({ type: "schedule", id });
       else if (plan.kind === "needs") {
         setSelectedPiece(id);
-        notify(plan.need === "reason" ? "Explique o ajuste necessário na revisão da peça." : "Registre o link da publicação no detalhe da peça.");
+        notify(plan.need === "reason" ? "Explique o ajuste necessário na revisão do conteúdo." : "Registre o link da publicação no detalhe do conteúdo.");
       }
     }, notify);
   return (
@@ -1100,7 +1100,7 @@ export function Kanban() {
         ))}
       </div>
       <Note>
-        Arraste o card ou use o seletor para mudar de etapa. Revisão, aprovação e agenda seguem as mesmas regras do detalhe da peça; voltar uma peça aprovada desfaz a aprovação.
+        Arraste o card ou use o seletor para mudar de etapa. Revisão, aprovação e agenda seguem as mesmas regras do detalhe do conteúdo; voltar um conteúdo aprovado desfaz a aprovação.
         Conselho, aprovação humana e agenda preservam os bloqueios da versão.
       </Note>
     </>
@@ -1429,7 +1429,7 @@ export function Squad() {
           </form>
           <Note>
             Um bloqueio factual não é corrigido inventando dados. Ao esgotar as
-            rodadas, a peça permanece em conferência. A nota local mede
+            rodadas, o conteúdo permanece em conferência. A nota local mede
             critérios estruturais; não equivale a um conselho de LLMs.
           </Note>
         </section>

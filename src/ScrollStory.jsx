@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Bookmark, Fingerprint, Layers, CheckCheck, ArrowUpRight } from 'lucide-react';
 const acts=[
- {name:'Repertório',title:'Alimente a produção com suas fontes.',text:'Reúna entrevistas, documentos e referências para abastecer a pesquisa e a escrita sem repetir o briefing a cada peça.',Icon:Bookmark,route:'guardar'},
+ {name:'Repertório',title:'Alimente a produção com suas fontes.',text:'Reúna entrevistas, documentos e referências para abastecer a pesquisa e a escrita sem repetir o briefing a cada conteúdo.',Icon:Bookmark,route:'guardar'},
  {name:'Identidade',title:'Configure sua voz uma vez.',text:'Valide cores, fontes e critérios da sua marca. As próximas criações recebem esse contexto automaticamente.',Icon:Fingerprint,route:'configuracoes'},
  {name:'Criação',title:'Produza vários formatos da mesma ideia.',text:'Desenvolva posts, artigos e roteiros com um fluxo de agentes. Compare abordagens e revise os desdobramentos.',Icon:Layers,route:'escrever'},
  {name:'Decisão',title:'Aprove e prepare a publicação.',text:'Confira o conteúdo, peça ajustes e organize a agenda. Você mantém o controle do que será publicado.',Icon:CheckCheck,route:'aprovar'},

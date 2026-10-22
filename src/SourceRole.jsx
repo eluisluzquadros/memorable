@@ -8,7 +8,7 @@ export function SourceRole({ source }) {
     const editorialRole = e.target.value;
     try {
       assertEditor(state);
-      if (source.workspace !== state.workspace) throw new Error('Abra o espaço de origem para classificar a fonte.');
+      if (source.workspace !== state.workspace) throw new Error('Abra a marca de origem para classificar a fonte.');
       setState(s => ({ ...s, sources: s.sources.map(x => x.id === source.id ? {...x, editorialRole} : x), events: [{id:crypto.randomUUID(),workspace:source.workspace,title:source.title,action:'source-priority',author:state.role,at:new Date().toISOString(),event:`Relação editorial: ${SOURCE_ROLES.find(([id]) => id === editorialRole)[1]}.`},...s.events] }));
       notify('Relação editorial salva. O Radar já usa essa prioridade.');
     } catch (error) { notify(error.message, true); }

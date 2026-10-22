@@ -128,7 +128,7 @@ export function blockers(state, piece) {
   const sources = accessibleSources(state, piece.workspace);
   const issues = [];
   if (piece.lineageReview) issues.push("Confira o conteúdo de origem antes de revisar este desdobramento.");
-  if (!piece.body?.trim()) issues.push("Inclua o texto da peça.");
+  if (!piece.body?.trim()) issues.push("Inclua o texto do conteúdo.");
   if (!piece.owner?.trim()) issues.push("Defina um responsável.");
   if (!piece.deadline) issues.push("Defina o prazo.");
   if (!piece.sourceIds?.length)
@@ -153,18 +153,21 @@ export const BOARD_COLUMNS = [
 ];
 export const boardColumn = (status) => BOARD_COLUMNS.find((c) => c.statuses.includes(status)) || BOARD_COLUMNS[1];
 export const STATUS_DETAIL = { Pedido: "Sem fonte ainda", "Em conferência": "Checado pelo conselho", Ajustes: "Ajustes pedidos pelo aprovador" };
+// What people read: the same words as the board columns, never the internal status names.
+export const STATUS_LABEL = { Pedido: "Ideia", "Pauta escolhida": "Ideia", Rascunho: "Escrevendo", "Em conferência": "Escrevendo", Ajustes: "Ajustes pedidos", "Em revisão": "Em aprovação" };
+export const statusLabel = (status) => STATUS_LABEL[status] || status;
 const assertWriter = (state) => {
   if (!["Editor", "Administrador"].includes(state.role))
-    throw new Error("Use o papel Editor para movimentar peças.");
+    throw new Error("Use o papel Editor para movimentar conteúdos.");
 };
 
 // Translates a Kanban drop into the workflow action it means, so dragging never skips a rule.
 export function planKanbanMove(state, pieceId, target) {
   const p = state.pieces.find((x) => x.id === pieceId);
-  if (!p) throw new Error("Peça não encontrada.");
+  if (!p) throw new Error("Conteúdo não encontrado.");
   if (p.status === target) return { kind: "none" };
   if (p.status === "Publicado")
-    throw new Error("Peça publicada não volta de etapa: o registro de publicação é definitivo.");
+    throw new Error("Conteúdo publicado não volta de etapa: o registro de publicação é definitivo.");
   if (WRITING_STAGES.includes(target)) {
     if (WRITING_STAGES.includes(p.status)) return { kind: "apply", action: "move", payload: { status: target } };
     if (p.status === "Em revisão")
@@ -173,17 +176,17 @@ export function planKanbanMove(state, pieceId, target) {
       kind: "confirm",
       action: "reopen",
       payload: { status: target },
-      message: `Voltar "${p.title}" para ${target} desfaz a aprovação${p.status === "Agendado" ? " e cancela o agendamento" : ""}. A peça precisará de nova revisão.`,
+      message: `Voltar "${p.title}" para ${target} desfaz a aprovação${p.status === "Agendado" ? " e cancela o agendamento" : ""}. O conteúdo precisará de nova revisão.`,
     };
   }
   if (target === "Em revisão") {
     if (WRITING_STAGES.includes(p.status)) return { kind: "apply", action: "review" };
-    throw new Error("Para revisar de novo, volte a peça para a escrita primeiro.");
+    throw new Error("Para revisar de novo, volte o conteúdo para a escrita primeiro.");
   }
   if (target === "Aprovado") {
     if (p.status === "Em revisão") return { kind: "apply", action: "approve" };
     if (p.status === "Agendado") return { kind: "apply", action: "unschedule" };
-    throw new Error("Só uma peça em revisão pode ser aprovada.");
+    throw new Error("Só um conteúdo em revisão pode ser aprovado.");
   }
   if (target === "Agendado") {
     if (p.status === "Aprovado") return { kind: "needs", need: "schedule" };
@@ -200,18 +203,18 @@ export function planKanbanMove(state, pieceId, target) {
 export function removePiece(state, pieceId) {
   assertWriter(state);
   const p = state.pieces.find((x) => x.id === pieceId);
-  if (!p || p.workspace !== state.workspace) throw new Error("Peça não encontrada neste espaço.");
+  if (!p || p.workspace !== state.workspace) throw new Error("Conteúdo não encontrado nesta marca.");
   if (p.status === "Publicado")
-    throw new Error("Peças publicadas não são excluídas: o registro de publicação faz parte do histórico.");
+    throw new Error("Conteúdos publicados não são excluídos: o registro de publicação faz parte do histórico.");
   if (state.pieces.some((x) => x.parentId === p.id))
-    throw new Error("Esta peça tem desdobramentos. Exclua ou desvincule os desdobramentos primeiro.");
+    throw new Error("Este conteúdo tem desdobramentos. Exclua ou desvincule os desdobramentos primeiro.");
   return {
     ...state,
     pieces: state.pieces.filter((x) => x.id !== p.id),
     cases: (state.cases || []).map((c) => ({ ...c, pieceIds: c.pieceIds.filter((id) => id !== p.id) })),
     writingQueue: (state.writingQueue || []).filter((q) => q.pieceId !== p.id),
     events: [
-      { id: crypto.randomUUID(), workspace: p.workspace, pieceId: p.id, title: p.title, action: "delete", event: `Peça excluída na etapa ${p.status}.`, author: state.role, at: new Date().toISOString(), revision: p.revision },
+      { id: crypto.randomUUID(), workspace: p.workspace, pieceId: p.id, title: p.title, action: "delete", event: `Conteúdo excluído na etapa ${p.status}.`, author: state.role, at: new Date().toISOString(), revision: p.revision },
       ...state.events,
     ],
   };
@@ -219,14 +222,14 @@ export function removePiece(state, pieceId) {
 
 export function transition(state, pieceId, action, payload = {}) {
   const p = state.pieces.find((x) => x.id === pieceId);
-  if (!p) throw new Error("Peça não encontrada.");
+  if (!p) throw new Error("Conteúdo não encontrado.");
   if (p.workspace !== state.workspace)
-    throw new Error("A peça pertence a outro espaço.");
+    throw new Error("O conteúdo pertence a outra marca.");
   let next = { ...p };
   let event = "";
   if (action === "edit") {
     if (!["Editor", "Administrador"].includes(state.role))
-      throw new Error("Use o papel Editor para editar uma peça.");
+      throw new Error("Use o papel Editor para editar um conteúdo.");
     if (typeof payload.body !== "string" || !payload.body.trim())
       throw new Error("O texto não pode ficar vazio.");
     next = {
@@ -247,19 +250,19 @@ export function transition(state, pieceId, action, payload = {}) {
     event = "Texto atualizado; revisão anterior invalidada.";
   } else if (action === "review") {
     if (state.role !== "Editor" && state.role !== "Administrador")
-      throw new Error("Entre como Editor para enviar uma peça.");
+      throw new Error("Entre como Editor para enviar um conteúdo.");
     const b = blockers(state, p);
     if (b.length) throw new Error(b.join(" "));
     if (!["Rascunho", "Ajustes", "Em conferência"].includes(p.status))
-      throw new Error("A peça já saiu da escrita.");
+      throw new Error("O conteúdo já saiu da escrita.");
     if (state.schemaRevision >= 2) councilGate(state, p);
     next.status = "Em revisão";
     event = "Enviada para revisão humana.";
   } else if (action === "approve") {
     if (!["Aprovador", "Administrador"].includes(state.role))
-      throw new Error("Troque para o papel Aprovador para aprovar esta peça.");
+      throw new Error("Troque para o papel Aprovador para aprovar este conteúdo.");
     if (p.status !== "Em revisão")
-      throw new Error("A peça precisa estar em revisão.");
+      throw new Error("O conteúdo precisa estar em revisão.");
     const b = blockers(state, p);
     if (b.length) throw new Error(b.join(" "));
     if (state.schemaRevision >= 2) councilGate(state, p);
@@ -272,7 +275,7 @@ export function transition(state, pieceId, action, payload = {}) {
     if (!["Aprovador", "Administrador"].includes(state.role))
       throw new Error("Troque para o papel Aprovador para solicitar ajustes.");
     if (p.status !== "Em revisão")
-      throw new Error("A peça precisa estar em revisão.");
+      throw new Error("O conteúdo precisa estar em revisão.");
     if (!payload.reason?.trim())
       throw new Error("Explique o ajuste necessário.");
     next.status = "Ajustes";
@@ -306,7 +309,7 @@ export function transition(state, pieceId, action, payload = {}) {
   } else if (action === "unschedule") {
     assertEditor(state);
     if (p.status !== "Agendado")
-      throw new Error("Esta peça não está agendada.");
+      throw new Error("Este conteúdo não está agendado.");
     next = { ...p, status: "Aprovado", scheduledAt: null, channel: null };
     event =
       "Agendamento local cancelado. A aprovação da versão foi preservada.";
@@ -338,13 +341,13 @@ export function transition(state, pieceId, action, payload = {}) {
   } else if (action === "retract") {
     assertWriter(state);
     if (p.status !== "Em revisão" || !WRITING_STAGES.includes(payload.status))
-      throw new Error("Só uma peça em revisão pode ser recolhida para a escrita.");
+      throw new Error("Só um conteúdo em revisão pode ser recolhido para a escrita.");
     next.status = payload.status;
     event = `Recolhida da revisão para ${payload.status}.`;
   } else if (action === "reopen") {
     assertWriter(state);
     if (!["Aprovado", "Agendado"].includes(p.status) || !WRITING_STAGES.includes(payload.status))
-      throw new Error("Só peças aprovadas ou agendadas podem ser reabertas.");
+      throw new Error("Só conteúdos aprovados ou agendados podem ser reabertos.");
     next = { ...p, status: payload.status, approvedRevision: null, approver: null, scheduledAt: null, channel: null };
     event = `Reaberta para ${payload.status}: aprovação ${p.status === "Agendado" ? "e agendamento desfeitos" : "desfeita"}.`;
   } else throw new Error("Ação inválida.");
@@ -371,13 +374,13 @@ export function transition(state, pieceId, action, payload = {}) {
 }
 export function createPiece(state, input) {
   const w = (state.workspaces || workspaces).find((x) => x.id === state.workspace);
-  if(!w || w.archived) throw new Error('Espaço de trabalho indisponível. Recarregue sua conta.');
+  if(!w || w.archived) throw new Error('Marca indisponível. Recarregue sua conta.');
   const spent = state.pieces
     .filter((x) => x.workspace === state.workspace)
     .reduce((s, p) => s + p.cost, 0);
   if (spent + 0.18 > state.budgets[state.workspace])
     throw new Error(
-      "O teto estimado deste espaço foi atingido. Ajuste o orçamento para simular uma nova criação.",
+      "O teto estimado desta marca foi atingido. Ajuste o orçamento para simular uma nova criação.",
     );
   if (!input.title?.trim() || !input.body?.trim())
     throw new Error("Preencha o assunto e o texto.");
@@ -386,7 +389,7 @@ export function createPiece(state, input) {
     !/^\d{4}-\d{2}-\d{2}$/.test(input.deadline) ||
     !Number.isFinite(Date.parse(input.deadline))
   )
-    throw new Error("Defina um prazo válido para a peça.");
+    throw new Error("Defina um prazo válido para o conteúdo.");
   if (
     !input.sourceIds?.length ||
     input.sourceIds.some(
@@ -397,10 +400,10 @@ export function createPiece(state, input) {
     )
   )
     throw new Error(
-      "Escolha uma fonte citável deste espaço ou da biblioteca compartilhada.",
+      "Escolha uma fonte citável desta marca ou da biblioteca compartilhada.",
     );
   if (!["Editor", "Administrador"].includes(state.role))
-    throw new Error("Use o papel Editor para criar uma peça.");
+    throw new Error("Use o papel Editor para criar um conteúdo.");
   const p = {
     ...relationships(state, input),
     id: crypto.randomUUID(),
