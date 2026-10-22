@@ -307,14 +307,9 @@ function CityScreens({ t, still = false }) {
       </figure>
       {!still && (
         <figure className="mx-scene mx-avenue" style={{ opacity: avenue ? 1 : 0 }}>
-          <img className="mx-avenue-bg" src="/motion/avenue.webp" alt="" />
+          <img className="mx-avenue-bg" src="/motion/billboard.webp" alt="" />
           <div className="mx-frame-avenue">
-            <img src="/motion/avenue.webp" alt="" />
-            <Screen variant="avenue">
-              <span className="mx-screen-brand">Sua marca.</span>
-              <strong>Ninguém assina o que não entende.</strong>
-              <small>Reels · 15 s</small>
-            </Screen>
+            <img src="/motion/billboard.webp" alt="Outdoor 3D numa esquina de São Paulo à noite: a persona da Memorable, sentada numa cadeira cromada, parece sair da tela sobre a rua." />
           </div>
         </figure>
       )}
