@@ -63,6 +63,7 @@ import {
   accessibleSources,
   blockers,
   transition,
+  removePiece,
   createPiece,
   variants,
   storageKey,
@@ -418,7 +419,15 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
               ? "Peça adicionada à agenda local."
               : action === "review"
                 ? "Peça enviada para revisão."
-                : "Alteração registrada.",
+                : action === "move"
+                  ? `Peça movida para ${payload.status}.`
+                  : action === "retract"
+                    ? `Peça recolhida da revisão para ${payload.status}.`
+                    : action === "reopen"
+                      ? `Peça reaberta em ${payload.status}; a aprovação foi desfeita.`
+                      : action === "unschedule"
+                        ? "Agendamento cancelado; a aprovação foi mantida."
+                        : "Alteração registrada.",
       );
       return true;
     } catch (e) {
@@ -2299,6 +2308,42 @@ function ScheduleForm({ piece, onClose, onSave }) {
     </Dialog>
   );
 }
+function DeletePiece({ piece, state, setState, notify, onDone }) {
+  const [confirming, setConfirming] = useState(false);
+  if (!["Editor", "Administrador"].includes(state.role)) return null;
+  return (
+    <div className="piece-delete">
+      {confirming ? (
+        <>
+          <p>
+            Excluir “{piece.title}”? A peça sai do Kanban e dos cases; o histórico registra a exclusão. Não dá para desfazer.
+          </p>
+          <button
+            className="button danger"
+            onClick={() => {
+              try {
+                setState((s) => removePiece(s, piece.id));
+                notify("Peça excluída. O registro ficou no histórico.");
+                onDone();
+              } catch (e) {
+                notify(e.message, true);
+              }
+            }}
+          >
+            Excluir definitivamente
+          </button>
+          <button className="button secondary" onClick={() => setConfirming(false)}>
+            Manter peça
+          </button>
+        </>
+      ) : (
+        <button className="text-button piece-delete-trigger" onClick={() => setConfirming(true)}>
+          Excluir peça
+        </button>
+      )}
+    </div>
+  );
+}
 // What the AI editor (and, in tests, a blind judge) said about the generated draft.
 function AiReview({ delivery }) {
   const review = delivery.editorialReview;
@@ -2460,6 +2505,9 @@ function PieceDetail({
         {!editing && <PieceCouncil piece={piece} />}
         {!editing && piece.delivery?.editorialReview && <AiReview delivery={piece.delivery} />}
         {!editing && <PieceLineage piece={piece} />}
+        {!editing && piece.status !== "Publicado" && (
+          <DeletePiece piece={piece} state={state} setState={setState} notify={notify} onDone={onClose} />
+        )}
         {!editing && <PublicationControls piece={piece} />}
         {!editing && <details className="piece-media"><summary>Mídia</summary><p>O rascunho contém texto e direção de produção. Imagens e vídeos são gerados aqui, usando créditos do provedor. Áudio deve ser gravado a partir do roteiro; síntese de voz ainda não está integrada.</p><MediaStudio initialPrompt={piece.delivery?.visual||piece.body} /></details>}
         {issues.length > 0 && !editing && (

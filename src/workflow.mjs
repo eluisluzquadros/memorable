@@ -141,6 +141,82 @@ export function blockers(state, piece) {
     issues.push("Uma fonte vinculada não está disponível ou não é citável.");
   return issues;
 }
+export const WRITING_STAGES = ["Pedido", "Pauta escolhida", "Rascunho", "Em conferência", "Ajustes"];
+// The board shows six working moments; finer statuses stay in the data and appear as card labels.
+export const BOARD_COLUMNS = [
+  { name: "Ideias", statuses: ["Pedido", "Pauta escolhida"], target: "Pauta escolhida" },
+  { name: "Escrevendo", statuses: ["Rascunho", "Em conferência", "Ajustes"], target: "Rascunho" },
+  { name: "Em aprovação", statuses: ["Em revisão"], target: "Em revisão" },
+  { name: "Aprovado", statuses: ["Aprovado"], target: "Aprovado" },
+  { name: "Agendado", statuses: ["Agendado"], target: "Agendado" },
+  { name: "Publicado", statuses: ["Publicado"], target: "Publicado" },
+];
+export const boardColumn = (status) => BOARD_COLUMNS.find((c) => c.statuses.includes(status)) || BOARD_COLUMNS[1];
+export const STATUS_DETAIL = { Pedido: "Sem fonte ainda", "Em conferência": "Checado pelo conselho", Ajustes: "Ajustes pedidos pelo aprovador" };
+const assertWriter = (state) => {
+  if (!["Editor", "Administrador"].includes(state.role))
+    throw new Error("Use o papel Editor para movimentar peças.");
+};
+
+// Translates a Kanban drop into the workflow action it means, so dragging never skips a rule.
+export function planKanbanMove(state, pieceId, target) {
+  const p = state.pieces.find((x) => x.id === pieceId);
+  if (!p) throw new Error("Peça não encontrada.");
+  if (p.status === target) return { kind: "none" };
+  if (p.status === "Publicado")
+    throw new Error("Peça publicada não volta de etapa: o registro de publicação é definitivo.");
+  if (WRITING_STAGES.includes(target)) {
+    if (WRITING_STAGES.includes(p.status)) return { kind: "apply", action: "move", payload: { status: target } };
+    if (p.status === "Em revisão")
+      return target === "Ajustes" ? { kind: "needs", need: "reason" } : { kind: "apply", action: "retract", payload: { status: target } };
+    return {
+      kind: "confirm",
+      action: "reopen",
+      payload: { status: target },
+      message: `Voltar "${p.title}" para ${target} desfaz a aprovação${p.status === "Agendado" ? " e cancela o agendamento" : ""}. A peça precisará de nova revisão.`,
+    };
+  }
+  if (target === "Em revisão") {
+    if (WRITING_STAGES.includes(p.status)) return { kind: "apply", action: "review" };
+    throw new Error("Para revisar de novo, volte a peça para a escrita primeiro.");
+  }
+  if (target === "Aprovado") {
+    if (p.status === "Em revisão") return { kind: "apply", action: "approve" };
+    if (p.status === "Agendado") return { kind: "apply", action: "unschedule" };
+    throw new Error("Só uma peça em revisão pode ser aprovada.");
+  }
+  if (target === "Agendado") {
+    if (p.status === "Aprovado") return { kind: "needs", need: "schedule" };
+    throw new Error("Só a versão aprovada pode entrar na agenda.");
+  }
+  if (target === "Publicado") {
+    if (["Aprovado", "Agendado"].includes(p.status)) return { kind: "needs", need: "publish" };
+    throw new Error("Só uma versão aprovada pode ser registrada como publicada.");
+  }
+  throw new Error("Etapa desconhecida.");
+}
+
+// Deleting keeps the audit trail: the event log records who removed what, and cases lose the reference.
+export function removePiece(state, pieceId) {
+  assertWriter(state);
+  const p = state.pieces.find((x) => x.id === pieceId);
+  if (!p || p.workspace !== state.workspace) throw new Error("Peça não encontrada neste espaço.");
+  if (p.status === "Publicado")
+    throw new Error("Peças publicadas não são excluídas: o registro de publicação faz parte do histórico.");
+  if (state.pieces.some((x) => x.parentId === p.id))
+    throw new Error("Esta peça tem desdobramentos. Exclua ou desvincule os desdobramentos primeiro.");
+  return {
+    ...state,
+    pieces: state.pieces.filter((x) => x.id !== p.id),
+    cases: (state.cases || []).map((c) => ({ ...c, pieceIds: c.pieceIds.filter((id) => id !== p.id) })),
+    writingQueue: (state.writingQueue || []).filter((q) => q.pieceId !== p.id),
+    events: [
+      { id: crypto.randomUUID(), workspace: p.workspace, pieceId: p.id, title: p.title, action: "delete", event: `Peça excluída na etapa ${p.status}.`, author: state.role, at: new Date().toISOString(), revision: p.revision },
+      ...state.events,
+    ],
+  };
+}
+
 export function transition(state, pieceId, action, payload = {}) {
   const p = state.pieces.find((x) => x.id === pieceId);
   if (!p) throw new Error("Peça não encontrada.");
@@ -253,6 +329,24 @@ export function transition(state, pieceId, action, payload = {}) {
     };
     event =
       "Publicação externa registrada manualmente com URL. Nenhum envio automático realizado.";
+  } else if (action === "move") {
+    assertWriter(state);
+    if (!WRITING_STAGES.includes(p.status) || !WRITING_STAGES.includes(payload.status))
+      throw new Error("Movimento livre só entre as etapas de escrita.");
+    next.status = payload.status;
+    event = `Movida de ${p.status} para ${payload.status}.`;
+  } else if (action === "retract") {
+    assertWriter(state);
+    if (p.status !== "Em revisão" || !WRITING_STAGES.includes(payload.status))
+      throw new Error("Só uma peça em revisão pode ser recolhida para a escrita.");
+    next.status = payload.status;
+    event = `Recolhida da revisão para ${payload.status}.`;
+  } else if (action === "reopen") {
+    assertWriter(state);
+    if (!["Aprovado", "Agendado"].includes(p.status) || !WRITING_STAGES.includes(payload.status))
+      throw new Error("Só peças aprovadas ou agendadas podem ser reabertas.");
+    next = { ...p, status: payload.status, approvedRevision: null, approver: null, scheduledAt: null, channel: null };
+    event = `Reaberta para ${payload.status}: aprovação ${p.status === "Agendado" ? "e agendamento desfeitos" : "desfeita"}.`;
   } else throw new Error("Ação inválida.");
   next.stageAt = new Date().toISOString();
   const entry = {

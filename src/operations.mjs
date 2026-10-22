@@ -466,6 +466,16 @@ export function runLocalRadar(
     },
   };
 }
+// An approved brand DNA is first-party evidence: its positioning and site text may back brand claims.
+export function dnaKnowledge(state) {
+  const dna = state.brandDNA?.[state.workspace];
+  if (!dna?.approvedAt) return [];
+  const positioning = typeof dna.positioning === "string" ? dna.positioning : dna.positioning?.value || "";
+  const text = [positioning, dna.excerpt || ""].filter(Boolean).join("\n\n").slice(0, 8000);
+  if (text.length < 80) return [];
+  const site = (dna.sources || []).find((url) => !/fonts\.(googleapis|gstatic)/.test(url)) || "";
+  return [{ id: `dna-${state.workspace}`, title: `Site oficial da marca${site ? ` (${site})` : ""} · DNA aprovado`, editorialRole: "owned", summary: positioning, text }];
+}
 export function contextPacket(state, brief) {
   const ids = brief.sourceIds || [brief.source].filter(Boolean);
   const settings = productionSettings(brief);
@@ -478,7 +488,7 @@ export function contextPacket(state, brief) {
     campaign: (state.campaigns || []).find(c => c.id === brief.campaignId && c.workspace === state.workspace) || null,
     parent: state.pieces.filter(p => p.id === brief.parentId && p.workspace === state.workspace).map(p => ({ id: p.id, title: p.title, revision: p.revision, body: p.body.slice(0, 6000), sourceIds: p.sourceIds }))[0] || null,
     inspiration: inspiration ? {id:inspiration.id,title:inspiration.title,url:inspiration.url,whySaved:inspiration.whySaved || '',pattern:inspiration.pattern || '',excerpt:inspiration.text.slice(0,5000),use:'Referência de estrutura; não é evidência factual sobre a marca.'} : null,
-    brandKnowledge: state.sources.filter(s => s.workspace === state.workspace && strategicSource(s) && sourceValid(s)).slice(0,8).map(s=>({id:s.id,title:s.title,editorialRole:s.editorialRole,summary:s.summary,text:s.text.slice(0,5000)})),
+    brandKnowledge: [...dnaKnowledge(state), ...state.sources.filter(s => s.workspace === state.workspace && strategicSource(s) && sourceValid(s)).slice(0,8).map(s=>({id:s.id,title:s.title,editorialRole:s.editorialRole,summary:s.summary,text:s.text.slice(0,5000)}))],
     brief: {
       title: brief.title,
       brandName: (state.workspaces||demoSpaces).find(w=>w.id===state.workspace)?.name || brief.brandName || "Sua marca",

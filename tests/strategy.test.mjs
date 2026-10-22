@@ -28,3 +28,14 @@ test('editorial context includes scoped active lessons, campaign and parent',()=
  const packet=contextPacket(state,{format:'LinkedIn',campaignId:root.campaignId,parentId:root.id,sourceIds:root.sourceIds});
  assert.deepEqual(packet.lessons,['Todos']); assert.equal(packet.campaign.name,campaign.name); assert.equal(packet.parent.id,root.id);
 });
+
+test("an approved brand DNA becomes first-party brand knowledge for the agents", async () => {
+  const { dnaKnowledge } = await import("../src/operations.mjs");
+  const base = { workspace: "w1", brandDNA: { w1: { positioning: "Inteligência geoespacial para transformar risco em resiliência.", excerpt: "645+ camadas de dados e 40 anos de histórico climático para crédito e seguro.", sources: ["https://fonts.googleapis.com/css2", "https://marca.exemplo/"] } } };
+  assert.deepEqual(dnaKnowledge(base), []);
+  const approved = { ...base, brandDNA: { w1: { ...base.brandDNA.w1, approvedAt: "2026-10-18T16:25:49.986Z" } } };
+  const [entry] = dnaKnowledge(approved);
+  assert.equal(entry.editorialRole, "owned");
+  assert.match(entry.title, /https:\/\/marca\.exemplo\//);
+  assert.match(entry.text, /645\+ camadas/);
+});

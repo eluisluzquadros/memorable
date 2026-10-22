@@ -28,7 +28,7 @@ try{
   await page.getByLabel('Formato',{exact:true}).selectOption('Corte de podcast');assert.ok(await page.getByLabel('Duração esperada',{exact:true}).locator('option[value="10"]').count());
   await page.getByLabel('Formato',{exact:true}).selectOption('Carrossel');assert.equal(await page.getByLabel('Quantidade de versões').inputValue(),'1');
   await page.getByLabel('Mensagem da marca').fill('Conectar dados e contexto territorial para apoiar decisões sobre risco climático com a Skyvidya.');
-  await page.getByRole('link',{name:'Conectar IA',exact:true}).waitFor();await qa('setup');
+  const hasProvider=((await (await context.request.get(base+'/api/text/status')).json()).providers||[]).length>0;await (hasProvider?page.getByRole('button',{name:/Gerar \d+ (versão|versões) com IA/}):page.getByRole('link',{name:'Conectar IA',exact:true})).waitFor();await qa('setup');
   await page.getByRole('button',{name:'Escrever manualmente',exact:true}).click();await page.getByLabel('Editar abordagem').waitFor();assert.match(await page.getByLabel('Editar abordagem').inputValue(),/\[Escreva/);
   await page.getByRole('button',{name:'Checar texto',exact:true}).click();await page.getByText('Corrigir antes de seguir',{exact:true}).waitFor();assert.ok(!(await page.locator('.r-council').innerText()).includes('/5'));
   await page.getByLabel('Editar abordagem').fill(badCarousel);await page.getByRole('button',{name:'Enviar para revisão',exact:true}).click();await page.getByText('Corrigir antes de seguir',{exact:true}).waitFor();assert.ok(page.url().endsWith('#app/escrever'));assert.equal((await state()).pieces[0].council.passed,false);

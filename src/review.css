@@ -1029,3 +1029,16 @@
 .ai-review-judge dl { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 8px 0 0; }
 .ai-review-judge dt { font-size: 12px; color: #7a5d24; }
 .ai-review-judge dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Kanban: drop target, confirmation when a move undoes an approval */
+.r-kanban-column.is-over { outline: 2px dashed var(--blue); outline-offset: -4px; background: #eef2ff; }
+.r-kanban-card[draggable="true"] { cursor: grab; }
+.r-kanban-card[draggable="true"]:active { cursor: grabbing; }
+.r-kanban-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 0 0 16px; padding: 14px 18px; border-radius: 12px; border: 1px solid #f0d9a8; background: #fffaf0; color: #5b4316; }
+.r-kanban-confirm p { flex: 1 1 320px; margin: 0; }
+
+/* Piece deletion, confirmed in place */
+.piece-delete { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.piece-delete p { flex: 1 1 100%; margin: 0; color: #8a2d2d; }
+.piece-delete-trigger { color: #a12b2b; }
+.r-pill-detail { background: #fff4e0; color: #7a4b05; }

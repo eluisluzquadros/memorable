@@ -130,3 +130,34 @@ test("every format provides three distinct locally generated texts", () => {
     assert(list.every((v) => v.body.includes("O contexto vem primeiro.")));
   }
 });
+
+test("kanban drops map to workflow actions, and going back from approval needs confirmation", async () => {
+  const { planKanbanMove, transition: move, removePiece } = await import("../src/workflow.mjs");
+  const piece = (id, status, extra = {}) => ({ id, workspace: "w", title: id, status, revision: 2, approvedRevision: status === "Aprovado" || status === "Agendado" ? 2 : null, approver: status === "Aprovado" || status === "Agendado" ? "Ana" : null, sourceIds: [], ...extra });
+  const state = { workspace: "w", role: "Editor", events: [], cases: [{ id: "c", pieceIds: ["r", "a"] }], pieces: [piece("d", "Rascunho"), piece("r", "Em revisão"), piece("a", "Aprovado"), piece("s", "Agendado", { scheduledAt: "2026-12-01", channel: "LinkedIn" }), piece("p", "Publicado"), piece("kid", "Rascunho", { parentId: "d" })] };
+  assert.deepEqual(planKanbanMove(state, "d", "Pedido"), { kind: "apply", action: "move", payload: { status: "Pedido" } });
+  assert.equal(planKanbanMove(state, "d", "Em revisão").action, "review");
+  assert.equal(planKanbanMove(state, "r", "Rascunho").action, "retract");
+  assert.deepEqual(planKanbanMove(state, "r", "Ajustes"), { kind: "needs", need: "reason" });
+  assert.equal(planKanbanMove(state, "r", "Aprovado").action, "approve");
+  assert.equal(planKanbanMove(state, "a", "Rascunho").kind, "confirm");
+  assert.match(planKanbanMove(state, "s", "Rascunho").message, /cancela o agendamento/);
+  assert.equal(planKanbanMove(state, "s", "Aprovado").action, "unschedule");
+  assert.deepEqual(planKanbanMove(state, "a", "Agendado"), { kind: "needs", need: "schedule" });
+  assert.throws(() => planKanbanMove(state, "p", "Rascunho"), /definitivo/);
+  assert.throws(() => planKanbanMove(state, "a", "Em revisão"), /volte a peça para a escrita/);
+
+  const retracted = move(state, "r", "retract", { status: "Rascunho" });
+  assert.equal(retracted.pieces.find((x) => x.id === "r").status, "Rascunho");
+  const reopened = move(state, "s", "reopen", { status: "Rascunho" }).pieces.find((x) => x.id === "s");
+  assert.deepEqual([reopened.status, reopened.approvedRevision, reopened.scheduledAt], ["Rascunho", null, null]);
+  assert.throws(() => move({ ...state, role: "Observador" }, "d", "move", { status: "Pedido" }), /Editor/);
+
+  const removed = removePiece(state, "r");
+  assert.equal(removed.pieces.some((x) => x.id === "r"), false);
+  assert.deepEqual(removed.cases[0].pieceIds, ["a"]);
+  assert.equal(removed.events[0].action, "delete");
+  assert.throws(() => removePiece(state, "p"), /publicadas/);
+  assert.throws(() => removePiece(state, "d"), /desdobramentos/);
+  assert.throws(() => removePiece({ ...state, role: "Aprovador" }, "r"), /Editor/);
+});

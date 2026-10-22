@@ -48,7 +48,7 @@ import {
   executionRecord,
   mergeCollection,
 } from "./operations.mjs";
-import { createPiece, transition } from "./workflow.mjs";
+import { createPiece, transition, planKanbanMove, BOARD_COLUMNS, boardColumn, STATUS_DETAIL } from "./workflow.mjs";
 import { workspaceList } from './account-state.mjs';
 const useApp = () => useContext(AppContext);
 const fmt = (d) =>
@@ -919,7 +919,9 @@ function RadarSettings() {
 }
 
 export function Kanban() {
-  const { state, setState, pieces, setSelectedPiece, notify, goto } = useApp();
+  const { state, setState, pieces, setSelectedPiece, notify, goto, doAction, setModal } = useApp();
+  const [pending, setPending] = useState(null);
+  const [over, setOver] = useState("");
   const [view, setView] = useState("etapa");
   const [owner, setOwner] = useState("Todos");
   const [search, setSearch] = useState("");
@@ -930,9 +932,9 @@ export function Kanban() {
   );
   const groups =
     view === "etapa"
-      ? STAGES.map((name) => ({
-          name,
-          items: list.filter((p) => p.status === name),
+      ? BOARD_COLUMNS.map((column) => ({
+          name: column.name,
+          items: list.filter((p) => column.statuses.includes(p.status)),
         }))
       : view === "pessoa"
         ? [...new Set(list.map((p) => p.owner))].map((name) => ({
@@ -943,43 +945,22 @@ export function Kanban() {
             name: w.name,
             items: list.filter((p) => p.workspace === w.id),
           }));
-  const move = (id, status) =>
+  // Every drop goes through the workflow rules: review, approval and schedule keep their gates.
+  const move = (id, columnName) =>
     runSafely(() => {
-      assertEditor(state);
       const p = state.pieces.find((x) => x.id === id);
+      const column = BOARD_COLUMNS.find((c) => c.name === columnName);
+      if (!p || !column || boardColumn(p.status) === column) return;
       if (p.workspace !== state.workspace)
         throw new Error("Abra o espaço desta marca para movimentar a peça.");
-      if (
-        !["Pedido", "Pauta escolhida", "Rascunho", "Em conferência"].includes(
-          p.status,
-        ) ||
-        !["Pedido", "Pauta escolhida", "Rascunho", "Em conferência"].includes(
-          status,
-        )
-      )
-        throw new Error(
-          "Aprovação e publicação seguem as ações de revisão no detalhe da peça.",
-        );
-      setState((s) => ({
-        ...s,
-        pieces: s.pieces.map((x) =>
-          x.id === id ? { ...x, status, stageAt: new Date().toISOString() } : x,
-        ),
-        events: [
-          {
-            id: crypto.randomUUID(),
-            pieceId: id,
-            workspace: p.workspace,
-            title: p.title,
-            event: `Movida de ${p.status} para ${status}.`,
-            action: "move",
-            at: new Date().toISOString(),
-            author: state.role,
-            revision: p.revision,
-          },
-          ...s.events,
-        ],
-      }));
+      const plan = planKanbanMove(state, id, column.target);
+      if (plan.kind === "apply") doAction(id, plan.action, plan.payload);
+      else if (plan.kind === "confirm") setPending({ id, ...plan });
+      else if (plan.need === "schedule") setModal({ type: "schedule", id });
+      else if (plan.kind === "needs") {
+        setSelectedPiece(id);
+        notify(plan.need === "reason" ? "Explique o ajuste necessário na revisão da peça." : "Registre o link da publicação no detalhe da peça.");
+      }
     }, notify);
   return (
     <>
@@ -1025,6 +1006,17 @@ export function Kanban() {
         </select>
         <span>{list.length} conteúdos</span>
       </div>
+      {pending && (
+        <div className="r-kanban-confirm" role="alertdialog" aria-label="Confirmar movimento">
+          <p>{pending.message}</p>
+          <button className="button primary" onClick={() => { doAction(pending.id, pending.action, pending.payload); setPending(null); }}>
+            Voltar e desfazer aprovação
+          </button>
+          <button className="button secondary" onClick={() => setPending(null)}>
+            Cancelar
+          </button>
+        </div>
+      )}
       <div
         className="r-kanban"
         tabIndex={0}
@@ -1032,11 +1024,14 @@ export function Kanban() {
       >
         {groups.map((g) => (
           <section
-            className="r-kanban-column"
+            className={`r-kanban-column ${over === g.name ? "is-over" : ""}`}
             key={g.name}
             onDragOver={(e) => e.preventDefault()}
+            onDragEnter={() => view === "etapa" && setOver(g.name)}
+            onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOver(""); }}
             onDrop={(e) => {
               e.preventDefault();
+              setOver("");
               if (view === "etapa")
                 move(e.dataTransfer.getData("text/plain"), g.name);
             }}
@@ -1049,15 +1044,7 @@ export function Kanban() {
               <article
                 className="r-kanban-card"
                 key={p.id}
-                draggable={
-                  view === "etapa" &&
-                  [
-                    "Pedido",
-                    "Pauta escolhida",
-                    "Rascunho",
-                    "Em conferência",
-                  ].includes(p.status)
-                }
+                draggable={view === "etapa" && p.status !== "Publicado"}
                 onDragStart={(e) => e.dataTransfer.setData("text/plain", p.id)}
               >
                 <small>
@@ -1078,7 +1065,8 @@ export function Kanban() {
                 >
                   {p.title}
                 </button>
-                {view !== "etapa" && <span className="r-pill">{p.status}</span>}
+                {view !== "etapa" && <span className="r-pill">{boardColumn(p.status).name}</span>}
+                {view === "etapa" && STATUS_DETAIL[p.status] && <span className="r-pill r-pill-detail">{STATUS_DETAIL[p.status]}</span>}
                 <p>
                   {p.owner} ·{" "}
                   {p.deadline
@@ -1105,24 +1093,14 @@ export function Kanban() {
                     {p.council.mode==='local'?'Checagem básica':'Revisão por IA'} · {p.council.standardVersion!==2?'refazer':p.council.passed?'revisão humana pendente':'ajustes pendentes'}
                   </small>
                 )}
-                {[
-                  "Pedido",
-                  "Pauta escolhida",
-                  "Rascunho",
-                  "Em conferência",
-                ].includes(p.status) && (
+                {view === "etapa" && p.status !== "Publicado" && (
                   <select
                     aria-label={`Mover ${p.title}`}
-                    value={p.status}
+                    value={boardColumn(p.status).name}
                     onChange={(e) => move(p.id, e.target.value)}
                   >
-                    {[
-                      "Pedido",
-                      "Pauta escolhida",
-                      "Rascunho",
-                      "Em conferência",
-                    ].map((s) => (
-                      <option key={s}>{s}</option>
+                    {BOARD_COLUMNS.map((c) => (
+                      <option key={c.name}>{c.name}</option>
                     ))}
                   </select>
                 )}
@@ -1135,7 +1113,7 @@ export function Kanban() {
         ))}
       </div>
       <Note>
-        Arraste ou use o seletor para organizar as etapas de preparação.
+        Arraste o card ou use o seletor para mudar de etapa. Revisão, aprovação e agenda seguem as mesmas regras do detalhe da peça; voltar uma peça aprovada desfaz a aprovação.
         Conselho, aprovação humana e agenda preservam os bloqueios da versão.
       </Note>
     </>
