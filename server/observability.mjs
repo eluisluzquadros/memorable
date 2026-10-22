@@ -8,6 +8,7 @@ import { catalogModel, estimateCost } from "../src/llm-catalog.mjs";
 
 const ROLES = [
   [/Content Planner|Trend Hunter/i, "Planejador"],
+  [/estrategista de marca/i, "DNA da marca"],
   [/Revisor de refino/i, "Revisor (refino)"],
   [/aplicando as recomendações do revisor/i, "Redator (refino)"],
   [/Copywriter|Ghostwriter/i, "Redator"],

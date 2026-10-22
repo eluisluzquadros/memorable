@@ -4,6 +4,7 @@ import {
   inspectDynamicStyles,
   needsHydration,
 } from "./brand-render.mjs";
+import { readKeyPages, proposeVoice, VOICE_FIELDS } from "./brand-voice.mjs";
 
 export function normalizeColor(value) {
   if (/^#[\da-f]{3}$/i.test(value))
@@ -296,11 +297,12 @@ export function applyRenderedEvidence(dna, sample, origin) {
   return dna;
 }
 export async function extractBrand(
-  { url, documentation = "" },
+  { url, documentation = "", brandName = "" },
   {
     getPublic = fetchPublic,
     renderStatic = inspectAppliedStyles,
     renderDynamic = inspectDynamicStyles,
+    voiceModel = null,
   } = {},
 ) {
   if (typeof documentation !== "string" || documentation.length > 80000)
@@ -393,6 +395,24 @@ export async function extractBrand(
   }
   const dna = inspectBrandMaterial(materials);
   if (sample) applyRenderedEvidence(dna, sample, page.url);
+  // With a model, the whole voice sheet is drafted from the home page, the brand's key pages and any
+  // documentation; without one, only the heuristic tone, audience and positioning remain.
+  let voiceNote = "Voz e público sugeridos são interpretações heurísticas do texto, sem geração por modelo de IA.";
+  if (voiceModel) {
+    try {
+      const pages = [];
+      if (page) pages.push({ url: page.url, text: (sample?.visibleText || extractPage(page.html)).slice(0, 8000) }, ...(await readKeyPages(page, getPublic)));
+      if (documentation.trim()) pages.push({ url: "Documentação fornecida", text: documentation.slice(0, 20000) });
+      const proposal = await proposeVoice({ brandName, pages }, voiceModel.model);
+      for (const key of VOICE_FIELDS) if (proposal.voice[key]) { dna[key] = proposal.voice[key]; dna.fieldEvidence[key] = proposal.evidence[key]; }
+      dna.sources.push(...pages.map((p) => p.url).filter((u) => /^https?:/.test(u)));
+      dna.pagesRead = pages.map((p) => p.url);
+      warnings.push(...proposal.notes);
+      voiceNote = `Ficha de voz proposta pelo modelo ${voiceModel.name} a partir de ${pages.length} ${pages.length === 1 ? "página" : "páginas"}; cada campo traz o trecho que o sustenta e os exemplos foram conferidos no texto do site.`;
+    } catch (error) {
+      warnings.push("A proposta completa de voz não ficou disponível (" + error.message + "). Ficaram as sugestões heurísticas.");
+    }
+  }
   dna.sources = [...new Set(dna.sources)];
   const partial = Boolean(page && (!sample || needsHydration(sample)));
   return {
@@ -409,7 +429,7 @@ export async function extractBrand(
       method === "rendered"
         ? "Página renderizada em navegador isolado. Scripts públicos foram executados para montar o conteúdo; todos os recursos de rede passaram pelo leitor de endereços públicos."
         : "Estilos calculados a partir do HTML/CSS público ou da documentação fornecida.",
-      "Imagens não foram analisadas e arquivos remotos de fontes não foram carregados. Voz e público sugeridos são interpretações heurísticas do texto, sem geração por modelo de IA.",
+      "Imagens não foram analisadas e arquivos remotos de fontes não foram carregados. " + voiceNote,
       ...warnings,
     ],
     excerpt: (

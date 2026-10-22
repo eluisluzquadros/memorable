@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
 import { AppContext } from "./context";
 
+// Verbal DNA fields map one to one onto the voice sheet (Configurações > Ficha de voz).
+const VERBAL = ["tone", "audience", "positioning", "pillars", "say", "avoid", "examples", "checklist"];
 export function BrandDNA({ onVoice }) {
-  const { state, setState, notify } = useContext(AppContext);
+  const { state, setState, notify, workspace } = useContext(AppContext);
   const [url, setUrl] = useState(""),
     [documentation, setDocumentation] = useState("");
   const [draft, setDraft] = useState(null),
@@ -57,7 +59,7 @@ export function BrandDNA({ onVoice }) {
       const response = await fetch("/api/brand-dna", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim(), documentation }),
+        body: JSON.stringify({ url: url.trim(), documentation, brandName: workspace?.name || "", roles: state.modelRoles || {} }),
         signal: active.signal,
       });
       let result;
@@ -112,7 +114,7 @@ export function BrandDNA({ onVoice }) {
         [state.workspace]: {
           ...s.voices[state.workspace],
           ...Object.fromEntries(
-            ["tone", "audience", "positioning"]
+            VERBAL
               .filter((k) => approved[k]?.trim())
               .map((k) => [k, approved[k]]),
           ),
@@ -269,17 +271,17 @@ export function BrandDNA({ onVoice }) {
                 ["headingFont", "Fonte dos títulos"],
                 ["bodyFont", "Fonte do texto"],
                 ["aesthetic", "Estética e composição"],
-                ["tone", "Voz identificada"],
-                ["audience", "Público identificado"],
-                ["positioning", "Posicionamento identificado"],
+                ["tone", "Tom de voz"],
+                ["audience", "Público e dores"],
+                ["positioning", "Posicionamento e ponto de vista"],
+                ["pillars", "Pilares editoriais (um por linha)"],
+                ["say", "O que dizemos / preferimos"],
+                ["avoid", "Expressões que evitamos (uma por linha)"],
+                ["examples", "Exemplos de escrita aprovados"],
+                ["checklist", "Checklist de revisão (um por linha)"],
               ].map(([key, label]) => {
                 const evidence = current.fieldEvidence?.[key];
-                const Field = [
-                  "aesthetic",
-                  "tone",
-                  "audience",
-                  "positioning",
-                ].includes(key)
+                const Field = VERBAL.includes(key) || key === "aesthetic"
                   ? "textarea"
                   : "input";
                 return (
@@ -288,9 +290,9 @@ export function BrandDNA({ onVoice }) {
                       {label}
                       <Field
                         aria-label={label}
-                        rows={3}
+                        rows={["examples", "pillars", "avoid", "checklist", "say"].includes(key) ? 5 : 3}
                         value={current[key] || ""}
-                        maxLength={1000}
+                        maxLength={4000}
                         onChange={(e) => edit(key, e.target.value)}
                         placeholder={
                           key.toLowerCase().includes("font")

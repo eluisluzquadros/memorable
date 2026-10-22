@@ -272,8 +272,10 @@ const server = http.createServer(async (req, res) => {
       persist();
       return send(res, 200, { ok: true });
     }
-    if (url.pathname === "/api/brand-dna")
-      return send(res, 200, await extractBrand(input));
+    if (url.pathname === "/api/brand-dna") {
+      const voiceModel = providerReady() ? roleModel('reviewer', input.roles?.reviewer, accounts.lookup(req)?.id || null, url.pathname) : null;
+      return send(res, 200, await extractBrand(input, { voiceModel }));
+    }
     if (url.pathname === "/api/video-scripts/generate")
       return send(res, 200, await generateVideoScripts(input.packet, input.selectedTopics, writer));
     if (url.pathname === "/api/squad") {

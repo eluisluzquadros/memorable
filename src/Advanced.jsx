@@ -1127,7 +1127,7 @@ export function VoiceSettings() {
   const { state, setState, notify, workspace } = useApp();
   const [voice, setVoice] = useState(state.voices[state.workspace]);
   return (
-    <><BrandDNA onVoice={dna => setVoice(v => ({ ...v, ...Object.fromEntries(['tone', 'audience', 'positioning'].filter(k => dna[k]?.trim()).map(k => [k, dna[k]])) }))} /><section className="r-panel r-voice">
+    <><BrandDNA onVoice={dna => setVoice(v => ({ ...v, ...Object.fromEntries(['tone', 'audience', 'positioning', 'pillars', 'say', 'avoid', 'examples', 'checklist'].filter(k => dna[k]?.trim()).map(k => [k, dna[k]])) }))} /><section className="r-panel r-voice">
       <Heading
         title="Ficha de voz"
         text={`O que torna o conteúdo reconhecível como ${workspace.name}.`}
