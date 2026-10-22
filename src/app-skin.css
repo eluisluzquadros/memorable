@@ -246,13 +246,47 @@ select option {
 .piece-table tr:hover td {
   background: var(--surface-3);
 }
+/* Tabs: text only, quiet until chosen; a stone stroke grows from the centre under the active one */
+.r-tabs {
+  gap: 28px;
+}
 .r-tabs button {
-  border-radius: 999px 999px 0 0;
+  position: relative;
+  padding: 14px 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--fg-muted);
+  font-size: 15px;
+  font-weight: 650;
+  font-stretch: 85%;
+}
+.r-tabs button::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform 0.28s var(--ease);
+}
+.r-tabs button:hover {
+  color: var(--fg);
 }
 .r-tabs button[aria-selected="true"] {
   color: var(--fg);
-  border-bottom-color: var(--accent);
-  background: var(--accent-wash);
+  background: none;
+}
+.r-tabs button[aria-selected="true"]::after {
+  transform: scaleX(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .r-tabs button::after {
+    transition: none;
+  }
 }
 .badge {
   border-radius: 999px;
