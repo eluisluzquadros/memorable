@@ -36,16 +36,18 @@ Sem provedor, a escrita local entrega apenas estrutura com campos a completar, n
 
 - **Landing cinematográfica** em `/#motion`: o fluxo como pitch em movimento. As imagens foram geradas com Higgsfield (`public/motion`) e o design está registrado em `DESIGN.md` (seção #motion).
 - **Canal inteiro como fonte:** em Pesquisar → Adicionar ao acervo → Canal inteiro, aceita YouTube (o canal todo, com título e descrição de cada vídeo), blogs (RSS, Atom ou sitemap) e Instagram (API oficial). O Vigiar acompanha o canal e importa só as novidades.
-- **Portfólio de cases** em `/#app/portfolio`: reúne peças aprovadas, fontes, aprovações e só os resultados com evidência. Exporta uma apresentação em HTML.
+- **Portfólio de cases** em `/#app/portfolio`: reúne conteúdos aprovados, fontes, aprovações e só os resultados com evidência. Exporta uma apresentação em HTML.
 - **Formatos do benchmark Higgsfield:** anúncio UGC, vídeo de produto, comercial, fotos de produto, fotos de imóvel e tour, site para negócio local, vídeo faceless para YouTube, thumbnail e produto digital, cada um com o método da skill correspondente (`src/playbooks.mjs`).
-- Validação: `npm test`, `scripts/editorial-journey-check.mjs`, `scripts/growth-features-check.mjs` e `scripts/motion-check.mjs`.
+- **Sugestões de colaboradores:** o Administrador cria, em Organização e marcas, um acesso restrito para quem não é do marketing (advogados, RH). O colaborador entra por `/#sugerir`, envia o assunto com referência opcional e acompanha só as próprias ideias (Recebida, Aceita, Em produção, Publicada ou Não seguiu, com o motivo). O time faz a triagem em Vigiar → Sugestões: ao aceitar, o relato vira referência interna no acervo, marcada como não pública, e a ideia entra em Escrever. O colaborador tem sessão própria e nunca lê o documento da organização (`server/suggestions.mjs`, `.runtime/suggestions.sqlite`).
+- **Vocabulário único:** ideia, conteúdo, marca e "em produção". Os status aparecem com os nomes das colunas do Kanban.
+- Validação: `npm test`, `scripts/editorial-journey-check.mjs`, `scripts/growth-features-check.mjs`, `scripts/kanban-check.mjs`, `scripts/suggestions-check.mjs` e `scripts/motion-check.mjs`.
 
 ## Roteiro
 
 1. Em Configurações, como Administrador, extrair e validar o DNA.
 2. Em Campanhas, definir público, problema, hipótese e critério de sucesso.
 3. Criar conteúdo, escolher fonte/prazo e desenvolver uma abordagem.
-4. Criar um desdobramento e consultar sua relação com a peça de origem.
+4. Criar um desdobramento e consultar sua relação com o conteúdo de origem.
 5. Avaliar pelo conselho, enviar à revisão humana e aprovar a versão conferida.
 6. Agendar localmente ou registrar uma publicação feita externamente.
 7. Registrar resultado, evidência e esforço; transformar uma correção em critério validado.

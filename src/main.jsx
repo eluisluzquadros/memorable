@@ -1413,7 +1413,12 @@ function Guardar() {
               <span
                 className={`source-citable ${sourceValid(s) ? "" : "uncitable"}`}
               >
-                {sourceValid(s) ? (
+                {sourceValid(s) && s.internal ? (
+                  <>
+                    <Link size={14} />
+                    Fonte interna · não pública
+                  </>
+                ) : sourceValid(s) ? (
                   <>
                     <Link size={14} />
                     Fonte vinculada

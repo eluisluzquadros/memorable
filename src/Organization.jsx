@@ -3,6 +3,7 @@ import {Building2,Layers,Plus,ArrowRight,Archive,RotateCcw} from 'lucide-react';
 import {AppContext} from './context';
 import {workspaceList,addBrand,renameBrand,archiveBrand,renameOrganization} from './account-state.mjs';
 import './organization.css';
+import {Contributors} from './Contributors';
 const reviewCount=pieces=>pieces.filter(p=>p.status==='Em revisão').length;
 
 function BrandRow({brand,state,setState,notify,onOpen}){
@@ -28,13 +29,13 @@ export function OrganizationSettings(){
     <section className="r-panel"><h2>{workspaceList(state).length} {workspaceList(state).length===1?'marca ativa':'marcas ativas'}</h2><p>Comece pequeno e amplie depois. Ao adicionar outra marca, sua organização passa a operar como um grupo.</p><form className="org-form" onSubmit={e=>{e.preventDefault();if(apply(s=>addBrand(s,newBrand),'Marca criada com contexto e acervo vazios. A visão do grupo já está disponível.'))setNewBrand('');}}><label>Nome da nova marca<input value={newBrand} onChange={e=>setNewBrand(e.target.value)} required minLength={2} maxLength={80} placeholder="Ex.: Minha segunda marca" disabled={!admin}/></label><button className="button primary" disabled={!admin}><Plus size={16}/> Adicionar marca</button></form>
       <div className="brand-management-list">{brands.map(brand=><BrandRow key={brand.id+'-'+brand.name} brand={brand} state={state} setState={setState} notify={notify} onOpen={()=>{changeWorkspace(brand.id);goto('painel');}}/>)}</div>
       <p className="field-help">Arquivar retira a marca da seleção e da visão ativa do grupo. Seus conteúdos e configurações permanecem guardados e podem ser restaurados. Mantenha pelo menos uma marca ativa.</p>
-    </section></div>;
+    </section><Contributors/></div>;
 }
 export function GroupOverview(){
   const {state,account,goto,changeWorkspace}=useContext(AppContext);
   const brands=workspaceList(state),ids=new Set(brands.map(w=>w.id)),pieces=state.pieces.filter(p=>ids.has(p.workspace));
   return <div className="organization-page"><div className="page-heading"><div><div className="eyebrow">ORQUESTRAÇÃO INTEGRADA</div><h1>{state.organizationName || 'Grupo BBMD'}</h1><p>Acompanhe todas as marcas. Abra uma delas para pesquisar, criar e revisar no contexto certo.</p></div><button className="button secondary" onClick={()=>goto('organizacao')}>Gerenciar marcas <ArrowRight size={16}/></button></div>
-    <div className="group-metrics">{[[brands.length,'Marcas ativas','espaços com contexto próprio'],[pieces.length,'Conteúdos','em todas as marcas ativas'],[reviewCount(pieces),'Em revisão','aguardando decisão humana'],[pieces.filter(p=>p.status==='Agendado').length,'Na agenda','agendamentos locais']].map(([value,label,help])=><div key={label}><span>{label}</span><b>{value}</b><small>{help}</small></div>)}</div>
+    <div className="group-metrics">{[[brands.length,'Marcas ativas','cada uma com contexto próprio'],[pieces.length,'Conteúdos','em todas as marcas ativas'],[reviewCount(pieces),'Em revisão','aguardando decisão humana'],[pieces.filter(p=>p.status==='Agendado').length,'Na agenda','agendamentos locais']].map(([value,label,help])=><div key={label}><span>{label}</span><b>{value}</b><small>{help}</small></div>)}</div>
     <div className="group-brand-grid">{brands.map(brand=>{const own=pieces.filter(p=>p.workspace===brand.id);return <article className="group-brand-card" key={brand.id}><header><span className="workspace-avatar" style={{background:brand.color}}>{brand.initials}</span><h2>{brand.name}</h2></header><p>{state.voices[brand.id]?.audience || 'Defina o público desta marca nas configurações.'}</p><dl><div><dt>Conteúdos</dt><dd>{own.length}</dd></div><div><dt>Em revisão</dt><dd>{reviewCount(own)}</dd></div><div><dt>Fontes próprias</dt><dd>{state.sources.filter(s=>s.workspace===brand.id).length}</dd></div></dl><div className="card-actions"><button className="button primary" onClick={()=>{changeWorkspace(brand.id);goto('painel');}}>Abrir marca <ArrowRight size={16}/></button>{reviewCount(own)>0&&<button className="text-button" onClick={()=>{changeWorkspace(brand.id);goto('aprovar');}}>Conferir revisão →</button>}</div></article>;})}</div>
     <p className="field-help">Esta visão consolida o andamento. A geração e a aprovação continuam vinculadas à marca escolhida. {account?'Marcas arquivadas ficam fora dos totais ativos.':'Os dados deste grupo pertencem à demonstração BBMD.'}</p></div>;
 }

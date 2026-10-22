@@ -7,6 +7,7 @@ import { extractBrand } from "./brand.mjs";
 import { generateSquad, generateVideoScripts, councilAI, providerReady, serverModelName, serverModel, allowedServerModel, analyseRadar } from "./ai.mjs";
 import { nextRadarRun, validateRadar } from "../src/operations.mjs";
 import { createAccounts, sessionCookie } from './accounts.mjs';
+import { createSuggestions, contributorCookie, suggestionStatus } from './suggestions.mjs';
 import { createIntegrations } from './integrations.mjs';
 import { discoverChannel, importChannelItems } from './channels.mjs';
 import { createObservability } from './observability.mjs';
@@ -19,6 +20,8 @@ fs.mkdirSync(dataDir, { recursive: true });
 const legacyDb = path.join(dataDir, 'skyvidya.sqlite'), accountsDb = path.join(dataDir, 'memorable.sqlite');
 const accounts = createAccounts(fs.existsSync(accountsDb) || !fs.existsSync(legacyDb) ? accountsDb : legacyDb);
 const integrations = createIntegrations(dataDir);
+const suggestions = createSuggestions(path.join(dataDir, 'suggestions.sqlite'));
+const activeBrands = doc => (doc?.workspaces || []).filter(w => !w.archived);
 const observability = createObservability(dataDir);
 const modelChoice = () => { try { return providerReady() && !!allowedServerModel(LLM_CATALOG[0].id); } catch { return false; } };
 // Live OpenRouter prices refresh the catalog at most every six hours.
@@ -153,6 +156,39 @@ const server = http.createServer(async (req, res) => {
       if(req.method==='POST'&&url.pathname==='/api/media/generate')return send(res,200,await integrations.generate(user.id,await read(req)));
       if(req.method==='POST'&&url.pathname==='/api/media/poll')return send(res,200,await integrations.poll(user.id,(await read(req)).id));
       return send(res,404,{error:'Rota de integração não encontrada.'});
+    }
+    // Contributors only reach these routes: their session never opens the organization's document.
+    if (url.pathname.startsWith('/api/contributor/')) {
+      if (req.method === 'POST' && url.pathname === '/api/contributor/login') {
+        const result = suggestions.login(await read(req), req.socket.remoteAddress);
+        suggestions.revoke(req); res.setHeader('Set-Cookie', contributorCookie(result.token));
+        return send(res, 200, { contributor: { name: result.contributor.name } });
+      }
+      if (req.method === 'POST' && url.pathname === '/api/contributor/logout') { suggestions.revoke(req); res.setHeader('Set-Cookie', contributorCookie('')); return send(res, 200, { ok: true }); }
+      const person = suggestions.lookup(req);
+      if (!person) return send(res, 401, { error: 'Entre com o acesso de colaborador.' });
+      const doc = accounts.peek(person.ownerId), brands = activeBrands(doc).filter(w => person.workspaces.includes(w.id));
+      if (req.method === 'GET' && url.pathname === '/api/contributor/me') {
+        const names = new Map(activeBrands(doc).map(w => [w.id, w.name]));
+        return send(res, 200, {
+          contributor: { name: person.name, area: person.area }, organization: doc?.organizationName || '',
+          brands: brands.map(w => ({ id: w.id, name: w.name })),
+          suggestions: suggestions.mine(person).map(s => ({ id: s.id, title: s.title, brand: names.get(s.workspace) || 'Marca arquivada', createdAt: s.createdAt, reason: s.status === 'declined' ? s.reason : '', ...suggestionStatus(s, doc?.pieces) })),
+        });
+      }
+      if (req.method === 'POST' && url.pathname === '/api/contributor/suggestions') return send(res, 200, { suggestion: suggestions.submit(person, await read(req), brands.map(w => w.id)) });
+      return send(res, 404, { error: 'Rota não encontrada.' });
+    }
+    if (url.pathname.startsWith('/api/team/')) {
+      const user = accounts.lookup(req);
+      if (!user) return send(res, 401, { error: 'Sugestões de colaboradores exigem uma conta.' });
+      const brandIds = () => activeBrands(accounts.peek(user.id)).map(w => w.id);
+      if (req.method === 'GET' && url.pathname === '/api/team/contributors') return send(res, 200, { contributors: suggestions.list(user.id) });
+      if (req.method === 'POST' && url.pathname === '/api/team/contributors') return send(res, 200, suggestions.invite(user.id, await read(req), brandIds()));
+      if (req.method === 'POST' && url.pathname === '/api/team/contributors/remove') return send(res, 200, suggestions.remove(user.id, (await read(req)).id));
+      if (req.method === 'GET' && url.pathname === '/api/team/suggestions') return send(res, 200, { suggestions: suggestions.forOwner(user.id) });
+      if (req.method === 'POST' && url.pathname === '/api/team/suggestions/decide') return send(res, 200, { suggestion: suggestions.decide(user.id, await read(req), user.name) });
+      return send(res, 404, { error: 'Rota não encontrada.' });
     }
     if (url.pathname.startsWith('/api/auth/') || url.pathname.startsWith('/api/account/')) {
       const user=accounts.lookup(req);

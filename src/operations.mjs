@@ -515,7 +515,9 @@ export function contextPacket(state, brief) {
       .map((s) => ({
         id: s.id,
         title: s.title,
-        origin: s.origin,
+        // A colleague's account guides the piece but is not a public record, and its author stays unnamed.
+        origin: s.internal ? `Relato interno · ${s.internalArea || 'colaborador'}` : s.origin,
+        ...(s.internal ? { usage: 'Relato interno de colaborador: use como ponto de partida e contexto. Não cite o nome de quem relatou nem o apresente como documento público; confirme fatos e números com fonte pública antes de afirmá-los.' } : {}),
         url: s.url,
         editorialRole: s.editorialRole || 'reference',
         summary: s.summary,

@@ -6,7 +6,7 @@ import { PLAYBOOKS } from './playbooks.mjs';
 import { productionSettings, DURATION_OPTIONS, durationLabel, scriptTiming } from './production.mjs';
 import { BrandDNA } from "./BrandDNA";
 import { CampaignBrief } from "./Campaigns";
-import { RequestForm } from "./Continuity";
+import { SuggestionInbox } from "./SuggestionInbox";
 import React, { useContext, useEffect, useState } from "react";
 import {
   ArrowRight,
@@ -188,7 +188,7 @@ export function Radar() {
   return (
     <>
       <Heading
-        eyebrow="INTELIGÊNCIA DE PAUTA"
+        eyebrow="INTELIGÊNCIA DE IDEIAS"
         title="Encontre o próximo assunto."
         text="Sugestões a partir do acervo. Escolha uma ideia para levar à escrita."
       >
@@ -218,6 +218,7 @@ export function Radar() {
         onChange={setTab}
         items={[
           ["pautas", "Ideias"],
+          ["sugestoes", "Sugestões"],
           ["regras", "Ajustes"],
           ["historico", "Execuções"],
         ]}
@@ -333,6 +334,7 @@ export function Radar() {
         </>
       )}
       
+      {tab === "sugestoes" && <SuggestionInbox />}
       {tab === "regras" && <RadarSettings />}
       {tab === "historico" && (
         <section className="r-panel">
@@ -978,7 +980,6 @@ export function Kanban() {
           ["pessoa", "Por pessoa"],
         ]}
       />
-      <RequestForm />
       <div className="r-filter">
         <label className="search-input">
           <Search size={17} />

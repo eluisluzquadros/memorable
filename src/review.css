@@ -1091,3 +1091,43 @@ html:has(.app-shell) { scrollbar-width: thin; scrollbar-color: #c9d2df #fafbfd; 
   .sidebar-compact .sidebar-logo { padding: 0 0 18px; }
   .sidebar-compact .sidebar nav a .nav-count { top: 2px; right: 2px; min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; line-height: 16px; }
 }
+/* Suggestion inbox (Vigiar) and contributor access (Organização) */
+.sg-inbox { display: grid; gap: 0; }
+.sg-head { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+.sg-head p { max-width: 64ch; }
+.sg-empty { color: #596572; padding: 18px 0 6px; }
+.sg-list { display: grid; gap: 14px; margin-top: 18px; }
+.sg-item { border: 1px solid #dfe5ef; border-radius: 12px; padding: 20px; display: grid; gap: 10px; }
+.sg-item header { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.sg-item header span { color: #596572; font-size: 14px; }
+.sg-item h3 { margin: 0; font-size: 18px; }
+.sg-item p { margin: 0; line-height: 1.55; }
+.sg-item > a { display: inline-flex; gap: 4px; align-items: center; color: #214cff; font-size: 14px; overflow-wrap: anywhere; }
+.sg-origin { color: #596572; }
+.sg-item .r-actions { justify-content: flex-end; }
+.sg-decline { display: grid; gap: 12px; }
+.sg-decline label { display: grid; gap: 6px; font-weight: 600; font-size: 14px; }
+.sg-history { margin-top: 20px; }
+.sg-history ul { list-style: none; padding: 0; margin: 12px 0 0; }
+.sg-history li { display: grid; grid-template-columns: 1fr auto; gap: 2px 16px; padding: 12px 0; border-top: 1px solid #e6ebf2; }
+.sg-history li span, .sg-history li small { color: #596572; font-size: 13px; grid-column: 1; }
+.sg-history li em { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+.sg-status { font-style: normal; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: #eaf0ff; color: #1d3fcc; }
+.sg-status.sg-declined { background: #f1f2f4; color: #5b5f66; }
+.r-note-inline { color: #596572; }
+.ct-panel .ct-form fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 14px; min-width: 0; }
+.ct-form .ct-brands { display: flex !important; flex-wrap: wrap; gap: 10px 20px !important; }
+.ct-brands legend { font-weight: 600; margin-bottom: 8px; width: 100%; }
+.ct-form .button { justify-self: start; }
+.ct-created { margin-top: 18px; padding: 18px; border-radius: 12px; background: #f2f5ff; border: 1px solid #c9d6ff; display: grid; gap: 10px; }
+.ct-created p { margin: 0; }
+.ct-created dl { margin: 0; display: grid; gap: 6px; }
+.ct-created dl div { display: flex; gap: 12px; flex-wrap: wrap; }
+.ct-created dt { color: #596572; min-width: 80px; }
+.ct-created dd { margin: 0; overflow-wrap: anywhere; }
+.ct-created .button { justify-self: start; }
+.ct-list { list-style: none; padding: 0; margin: 20px 0 0; }
+.ct-list li { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 0; border-top: 1px solid #e6ebf2; flex-wrap: wrap; }
+.ct-list li div { display: grid; gap: 2px; min-width: 0; }
+.ct-list li span, .ct-list li small { color: #596572; font-size: 13px; overflow-wrap: anywhere; }
+.ct-panel > p b { overflow-wrap: anywhere; }

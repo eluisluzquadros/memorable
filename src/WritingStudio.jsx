@@ -320,9 +320,11 @@ export function WritingStudio() {
               return (
                 <article key={item.id}>
                   <small>
-                    {tab === "selected"
-                      ? "ESCOLHA DA EQUIPE"
-                      : "SUGESTÃO DO RADAR"}
+                    {tab !== "selected"
+                      ? "SUGESTÃO DO RADAR"
+                      : item.origin === "suggestion"
+                        ? `SUGESTÃO DE ${String(item.author || "colaborador").toUpperCase()}`
+                        : "ESCOLHA DA EQUIPE"}
                   </small>
                   <h2>{item.title}</h2>
                   <p>{source?.summary || source?.text.slice(0, 180)}</p>

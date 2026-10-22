@@ -3,6 +3,7 @@ import AuthPage from './AuthPage';
 import { Brand } from './Landing';
 import { accountWriter as makeAccountWriter } from './account-persistence.mjs';
 import { isClassicHash } from './routes.mjs';
+import ContributePage from './Contribute';
 async function api(url, options) { const response=await fetch(url,options);let data;try{data=await response.json();}catch{throw new Error('Serviço local indisponível. Execute npm run dev:full.');}if(!response.ok)throw new Error(data.error || 'Não foi possível concluir.');return data; }
 export const accountWriter = (revision,report,userId) => makeAccountWriter(revision,report,userId,api);
 export function AccountRoot({ Component }) {
@@ -19,6 +20,7 @@ export function AccountRoot({ Component }) {
  }
  function exportRecovery(){const url=URL.createObjectURL(new Blob([JSON.stringify(recovery,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='memorable-recuperacao.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),500);}
  useEffect(()=>{const protect=e=>{if(session?.writer.isPending()){e.preventDefault();e.returnValue='';}};window.addEventListener('beforeunload',protect);return()=>window.removeEventListener('beforeunload',protect);},[session]);
+ if(route.startsWith('#sugerir'))return <ContributePage/>;
  if(checking)return <main className="account-loading"><Brand/><p role="status">Preparando seu espaço…</p></main>;
  const alerts=<>{notice&&<aside className="account-notice" role="alert">{notice}{session&&<button onClick={logout} disabled={leaving}>Tentar sair novamente</button>}</aside>}{recovery&&<aside className="account-notice">Cópia de recuperação de {recovery.name}.<button onClick={exportRecovery}>Exportar alterações não salvas</button></aside>}</>;
  if(route.startsWith('#auth'))return <>{alerts}<AuthPage onAuthenticated={login} user={session?.user} onLogout={logout} leaving={leaving} request={api}/></>;

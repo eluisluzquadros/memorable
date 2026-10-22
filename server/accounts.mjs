@@ -62,6 +62,8 @@ const cookieToken = req => { const cookies = req.headers.cookie?.split(';').map(
    }catch(error){db.exec('ROLLBACK');throw error;}
   },
   backup(user) { const row=db.prepare('SELECT document,revision,created_at FROM account_state_backups WHERE user_id=? ORDER BY revision DESC LIMIT 1').get(user.id);return row?{state:JSON.parse(row.document),revision:row.revision,createdAt:row.created_at}:null; },
+  // Read-only view of an organization document, for routes that act for someone other than its owner.
+  peek(userId){const row=db.prepare('SELECT document FROM account_state WHERE user_id=?').get(userId);return row?JSON.parse(row.document):null;},
   workspaceActive(userId,workspace){const row=db.prepare('SELECT document FROM account_state WHERE user_id=?').get(userId);return Boolean(row&&JSON.parse(row.document).workspaces?.some(w=>w.id===workspace&&!w.archived));},
   save(user, input) {
    if(!input.state || !Array.isArray(input.state.pieces) || !Array.isArray(input.state.sources) || !Number.isInteger(input.revision)) throw new Error('Estado inválido.');
