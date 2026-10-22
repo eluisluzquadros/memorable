@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
 import { AppContext } from "./context";
+import { BrandSources } from "./BrandSources";
+import { strategicSource } from "./operations.mjs";
 
 // Verbal DNA fields map one to one onto the voice sheet (Configurações > Ficha de voz).
 const VERBAL = ["tone", "audience", "positioning", "pillars", "say", "avoid", "examples", "checklist"];
@@ -7,6 +9,11 @@ export function BrandDNA({ onVoice }) {
   const { state, setState, notify, workspace } = useContext(AppContext);
   const [url, setUrl] = useState(""),
     [documentation, setDocumentation] = useState("");
+  // Official brand materials feed the DNA; every one is selected unless the team unticks it.
+  const [excluded, setExcluded] = useState([]);
+  const ownedIds = state.sources.filter((s) => s.workspace === state.workspace && strategicSource(s) && s.text?.trim()).map((s) => s.id);
+  const selected = ownedIds.filter((id) => !excluded.includes(id));
+  const toggle = (id) => setExcluded((x) => (x.includes(id) ? x.filter((i) => i !== id) : [...x, id]));
   const [draft, setDraft] = useState(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
@@ -20,6 +27,7 @@ export function BrandDNA({ onVoice }) {
     setBusy(false);
     setUrl("");
     setDocumentation("");
+    setExcluded([]);
     return () => {
       requestId.current++;
       controller.current?.abort();
@@ -59,7 +67,7 @@ export function BrandDNA({ onVoice }) {
       const response = await fetch("/api/brand-dna", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim(), documentation, brandName: workspace?.name || "", roles: state.modelRoles || {} }),
+        body: JSON.stringify({ url: url.trim(), documentation, brandName: workspace?.name || "", roles: state.modelRoles || {}, materials: state.sources.filter((s) => selected.includes(s.id)).slice(0, 12).map((s) => ({ title: s.title, origin: s.origin || s.url || s.title, text: String(s.text || "").slice(0, 20000) })) }),
         signal: active.signal,
       });
       let result;
@@ -130,14 +138,15 @@ export function BrandDNA({ onVoice }) {
       <div className="dna-heading">
         <h2>Comece pelo que já é seu.</h2>
         <p>
-          Seu site e sua documentação dão origem a uma ficha visual e verbal que
-          a equipe pode conferir e ajustar.
+          Site, materiais e a entrevista da marca dão origem a uma ficha visual e
+          verbal que a equipe confere e ajusta antes de aplicar.
         </p>
       </div>
+      {admin && <BrandSources selected={selected} onToggle={toggle} onAdded={(id) => setExcluded((x) => x.filter((i) => i !== id))} />}
       <form onSubmit={extract}>
         <fieldset disabled={!admin || busy}>
           <label>
-            Site da marca
+            Site da marca <span className="bs-optional">opcional</span>
             <input
               aria-label="Site da marca"
               type="url"
@@ -160,13 +169,13 @@ export function BrandDNA({ onVoice }) {
             />
           </label>
           <p className="field-help">
-            Extraímos o texto e os estilos públicos do site. Se ele depender de
-            JavaScript, tentamos uma leitura renderizada em navegador isolado.
+            Lemos o site (home e páginas principais), os materiais marcados acima
+            e a documentação colada. Cores e fontes só vêm do site ou da documentação.
             Você confere a proposta antes de aplicar.
           </p>
           <button
             className="button primary"
-            disabled={!url && !documentation.trim()}
+            disabled={!url && !documentation.trim() && !selected.length}
           >
             {busy ? "Lendo identidade…" : "Extrair proposta de DNA"}
           </button>
@@ -209,6 +218,8 @@ export function BrandDNA({ onVoice }) {
                     ? "Página renderizada e lida."
                     : current.quality.method === "documentation"
                       ? "Documentação lida."
+                      : current.quality.method === "materials"
+                        ? "Materiais da marca lidos."
                       : "Página e estilos lidos."}
               </strong>
               <p>

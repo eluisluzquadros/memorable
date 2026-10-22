@@ -31,3 +31,19 @@ test("every voice field is proposed with evidence, and invented examples are dro
   assert.equal(evidence.avoid.status, "suggested");
   assert.ok(["tone", "audience", "positioning", "pillars", "say", "avoid", "examples", "checklist"].every((k) => voice[k]));
 });
+
+test("a brand without a website gets its DNA from the interview and its own materials", async () => {
+  const { extractBrand } = await import("../server/brand.mjs");
+  const interview = "Pergunta: O que vocês fazem e vendem?\nResposta: Assessoria jurídica para escritórios parceiros em todo o Brasil.\nPergunta: Como vocês falam com o cliente?\nResposta: Direto, técnico e cordial.";
+  let seen;
+  const voiceModel = { name: "fake", model: async (_s, data) => { seen = data; return { tone: "Direto, técnico e cordial", positioning: "Assessoria para escritórios parceiros", evidence: { tone: { quote: "Direto, técnico e cordial.", url: "Entrevista da marca", status: "observado" } } }; } };
+  const dna = await extractBrand({ brandName: "Esfera Legal", materials: [{ title: "Entrevista da marca", origin: "Entrevista da marca", text: interview }] }, { voiceModel, getPublic: () => { throw new Error("no network"); } });
+  assert.equal(seen.marca, "Esfera Legal");
+  assert.equal(seen.corpus[0].url, "Entrevista da marca");
+  assert.equal(dna.tone, "Direto, técnico e cordial");
+  assert.equal(dna.fieldEvidence.tone.status, "observed");
+  assert.equal(dna.quality.method, "materials");
+  assert.equal(dna.quality.materials, 1);
+  assert.ok(dna.sources.includes("Entrevista da marca"));
+  await assert.rejects(extractBrand({ brandName: "X" }, { voiceModel }), /site, uma documentação ou um material/);
+});

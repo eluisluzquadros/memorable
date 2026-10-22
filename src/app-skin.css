@@ -939,3 +939,95 @@ select option {
     grid-template-columns: 1fr;
   }
 }
+/* Brand materials feeding the DNA */
+.bs-panel {
+  margin: 18px 0 20px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-2);
+  display: grid;
+  gap: 14px;
+}
+.bs-head h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+.bs-head p {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 14px;
+  max-width: 64ch;
+}
+.bs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.bs-list label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-direction: row;
+}
+.bs-list span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.bs-list small {
+  color: var(--fg-muted);
+  overflow-wrap: anywhere;
+}
+.bs-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.bs-upload {
+  position: relative;
+  flex-direction: row;
+  cursor: pointer;
+}
+.bs-upload input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.bs-upload:focus-within {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+.bs-interview {
+  display: grid;
+  gap: 14px;
+  padding-top: 6px;
+}
+.bs-interview label {
+  display: grid;
+  gap: 6px;
+  font-weight: 650;
+}
+.bs-interview-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  color: var(--fg-muted);
+  font-size: 14px;
+}
+.bs-optional {
+  font-weight: 400;
+  color: var(--fg-muted);
+  font-size: 13px;
+}
+.bs-actions .bs-upload {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}

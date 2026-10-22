@@ -297,7 +297,7 @@ export function applyRenderedEvidence(dna, sample, origin) {
   return dna;
 }
 export async function extractBrand(
-  { url, documentation = "", brandName = "" },
+  { url, documentation = "", brandName = "", materials: brandMaterials = [] },
   {
     getPublic = fetchPublic,
     renderStatic = inspectAppliedStyles,
@@ -308,8 +308,13 @@ export async function extractBrand(
   if (typeof documentation !== "string" || documentation.length > 80000)
     throw new Error("Documentação deve conter até 80 mil caracteres.");
   if (url && typeof url !== "string") throw new Error("URL inválida.");
-  if (!url && !documentation.trim())
-    throw new Error("Informe um site ou documentação.");
+  // Brand materials: the team's own files, interview and official sources from the acervo.
+  if (!Array.isArray(brandMaterials) || brandMaterials.length > 12) throw new Error("Envie até 12 materiais da marca.");
+  const owned = brandMaterials
+    .filter((m) => m && typeof m.text === "string" && m.text.trim())
+    .map((m) => ({ title: String(m.title || "Material da marca").slice(0, 160), origin: String(m.origin || m.title || "Material da marca").slice(0, 300), text: m.text.slice(0, 20000) }));
+  if (!url && !documentation.trim() && !owned.length)
+    throw new Error("Informe um site, uma documentação ou um material da marca.");
   const materials = [],
     warnings = [];
   let page,
@@ -364,6 +369,7 @@ export async function extractBrand(
   }
   if (documentation.trim())
     materials.push({ text: documentation, origin: "Documentação fornecida" });
+  for (const m of owned) materials.push({ text: m.text, origin: m.origin });
   if (page) {
     method = "static";
     try {
@@ -387,6 +393,7 @@ export async function extractBrand(
     if (
       (!sample || needsHydration(sample)) &&
       !documentation.trim() &&
+      !owned.length &&
       extractPage(page.html).length < 120
     )
       throw new Error(
@@ -403,12 +410,13 @@ export async function extractBrand(
       const pages = [];
       if (page) pages.push({ url: page.url, text: (sample?.visibleText || extractPage(page.html)).slice(0, 8000) }, ...(await readKeyPages(page, getPublic)));
       if (documentation.trim()) pages.push({ url: "Documentação fornecida", text: documentation.slice(0, 20000) });
+      for (const m of owned) pages.push({ url: m.origin, text: m.text });
       const proposal = await proposeVoice({ brandName, pages }, voiceModel.model);
       for (const key of VOICE_FIELDS) if (proposal.voice[key]) { dna[key] = proposal.voice[key]; dna.fieldEvidence[key] = proposal.evidence[key]; }
-      dna.sources.push(...pages.map((p) => p.url).filter((u) => /^https?:/.test(u)));
+      dna.sources.push(...pages.map((p) => p.url));
       dna.pagesRead = pages.map((p) => p.url);
       warnings.push(...proposal.notes);
-      voiceNote = `Ficha de voz proposta pelo modelo ${voiceModel.name} a partir de ${pages.length} ${pages.length === 1 ? "página" : "páginas"}; cada campo traz o trecho que o sustenta e os exemplos foram conferidos no texto do site.`;
+      voiceNote = `Ficha de voz proposta pelo modelo ${voiceModel.name} a partir de ${pages.length} ${pages.length === 1 ? "fonte" : "fontes"} da marca; cada campo traz o trecho que o sustenta e os exemplos foram conferidos no texto do site.`;
     } catch (error) {
       warnings.push("A proposta completa de voz não ficou disponível (" + error.message + "). Ficaram as sugestões heurísticas.");
     }
@@ -419,10 +427,11 @@ export async function extractBrand(
     ...dna,
     quality: {
       status: partial ? "partial" : "ready",
-      method,
+      method: page ? method : owned.length ? "materials" : "documentation",
       headings: sample?.headings.length || 0,
       paragraphs: sample?.body.length || 0,
-      textCharacters: sample?.visibleText?.length || documentation.length,
+      textCharacters: (sample?.visibleText?.length || 0) + documentation.length + owned.reduce((n, m) => n + m.text.length, 0),
+      materials: owned.length,
     },
     notes: [
       ...dna.notes,
