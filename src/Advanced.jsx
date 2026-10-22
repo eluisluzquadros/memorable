@@ -925,7 +925,7 @@ export function Kanban() {
   const [view, setView] = useState("etapa");
   const [owner, setOwner] = useState("Todos");
   const [search, setSearch] = useState("");
-  const list = (view === "marca" ? state.pieces : pieces).filter(
+  const list = pieces.filter(
     (p) =>
       (owner === "Todos" || p.owner === owner) &&
       p.title.toLowerCase().includes(search.toLowerCase()),
@@ -936,15 +936,10 @@ export function Kanban() {
           name: column.name,
           items: list.filter((p) => column.statuses.includes(p.status)),
         }))
-      : view === "pessoa"
-        ? [...new Set(list.map((p) => p.owner))].map((name) => ({
-            name,
-            items: list.filter((p) => p.owner === name),
-          }))
-        : workspaceList(state).map((w) => ({
-            name: w.name,
-            items: list.filter((p) => p.workspace === w.id),
-          }));
+      : [...new Set(list.map((p) => p.owner))].map((name) => ({
+          name,
+          items: list.filter((p) => p.owner === name),
+        }));
   // Every drop goes through the workflow rules: review, approval and schedule keep their gates.
   const move = (id, columnName) =>
     runSafely(() => {
@@ -981,7 +976,6 @@ export function Kanban() {
         items={[
           ["etapa", "Por etapa"],
           ["pessoa", "Por pessoa"],
-          ["marca", "Por marca"],
         ]}
       />
       <RequestForm />
@@ -1053,13 +1047,6 @@ export function Kanban() {
                 <button
                   className="r-card-title"
                   onClick={() => {
-                    if (p.workspace !== state.workspace) {
-                      notify(
-                        "Selecione esta marca no topo para abrir a peça.",
-                        true,
-                      );
-                      return;
-                    }
                     setSelectedPiece(p.id);
                   }}
                 >

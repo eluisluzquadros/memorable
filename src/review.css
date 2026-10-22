@@ -1042,3 +1042,29 @@
 .piece-delete p { flex: 1 1 100%; margin: 0; color: #8a2d2d; }
 .piece-delete-trigger { color: #a12b2b; }
 .r-pill-detail { background: #fff4e0; color: #7a4b05; }
+.nav-scope-hint { margin: 8px 16px 0; padding: 10px 12px; border-radius: 10px; background: #eef2ff; color: #2c3f8f; font-size: 12.5px; line-height: 1.5; }
+
+/* Compact sidebar: an icon rail that keeps every destination one click away (Ctrl+B) */
+.sidebar-toggle { color: #405a7e; }
+@media (min-width: 851px) {
+  .sidebar-compact .sidebar { width: 76px; padding: 22px 10px 0; overflow-x: hidden; }
+  .sidebar-compact .app-content { width: calc(100% - 76px); margin-left: 76px; }
+  .sidebar-compact .sidebar-logo { flex-direction: column; gap: 14px; padding: 0 0 18px; }
+  .sidebar-compact .sidebar .brand { font-size: 0; gap: 0; }
+  .sidebar-compact .organization-label,
+  .sidebar-compact .workspace-select-wrap label,
+  .sidebar-compact .sidebar-search span,
+  .sidebar-compact .sidebar-search kbd,
+  .sidebar-compact .nav-group-label,
+  .sidebar-compact .nav-scope-hint,
+  .sidebar-compact .demo-help,
+  .sidebar-compact .user-profile > div,
+  .sidebar-compact .sidebar nav a > span:not(.nav-count) { display: none; }
+  .sidebar-compact .workspace-select-wrap { justify-content: center; padding: 8px 0; cursor: pointer; }
+  .sidebar-compact .sidebar-search { justify-content: center; padding-left: 0; padding-right: 0; }
+  .sidebar-compact .sidebar nav a,
+  .sidebar-compact .sidebar-bottom a { justify-content: center; padding-left: 0; padding-right: 0; position: relative; }
+  .sidebar-compact .sidebar-bottom a { font-size: 0; }
+  .sidebar-compact .sidebar nav a .nav-count { position: absolute; top: 4px; right: 8px; }
+  .sidebar-compact .user-profile { justify-content: center; flex-wrap: wrap; gap: 8px; }
+}

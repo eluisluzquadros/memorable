@@ -53,6 +53,9 @@ import {
   Compass,
   LogOut,
   Briefcase,
+  PanelLeftClose,
+  Megaphone,
+  PanelLeftOpen,
 } from "lucide-react";
 import { Portfolio } from "./Portfolio";
 import Landing, { Brand } from "./Landing";
@@ -98,7 +101,7 @@ const navItems = [
   ["painel", "Visão geral", LayoutDashboard],
   ["kanban", "Kanban", Layers],
   ['grupo','Visão do grupo',Building2],
-  ["campanhas", "Campanhas", Layers],
+  ["campanhas", "Campanhas", Megaphone],
   ["guardar", "Pesquisar", Search],
   ["vigiar", "Vigiar", Radio],
   ["escrever", "Escrever", PenLine],
@@ -110,6 +113,11 @@ const navItems = [
   ["resultados", "Resultados", Coins],
   ["portfolio", "Portfólio", Briefcase],
 ];
+const groupNavItems = [
+  ["grupo", "Visão geral do grupo", LayoutDashboard],
+  ["agentes", "Time de agentes", Users],
+];
+const GROUP_ROUTES = ["grupo", "agentes", "configuracoes", "organizacao"];
 const money = (n) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
     n || 0,
@@ -276,13 +284,16 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
   const [toast, setToast] = useState(null);
   const toastTimer = useRef();
   const [mobile, setMobile] = useState(false);
-  const [sidebarHidden, setSidebarHidden] = useState(() => {
-    try { return (localStorage.getItem('memorable-sidebar-hidden') ?? localStorage.getItem('skyvidya-sidebar-hidden')) === 'true'; } catch { return false; }
+  // Compact keeps every destination one click away as an icon rail; the older "hidden" preference maps to it.
+  const [sidebarCompact, setSidebarCompact] = useState(() => {
+    try { return (localStorage.getItem('memorable-sidebar-compact') ?? localStorage.getItem('memorable-sidebar-hidden') ?? localStorage.getItem('skyvidya-sidebar-hidden')) === 'true'; } catch { return false; }
   });
-  const toggleSidebar = () => setSidebarHidden(hidden => {
-    try { localStorage.setItem('memorable-sidebar-hidden', String(!hidden)); } catch {}
-    return !hidden;
+  const toggleSidebar = () => setSidebarCompact(compact => {
+    try { localStorage.setItem('memorable-sidebar-compact', String(!compact)); } catch {}
+    return !compact;
   });
+  const toggleSidebarRef = useRef(toggleSidebar);
+  toggleSidebarRef.current = toggleSidebar;
   const [modal, setModal] = useState(null);
   const [tourOpen, setTourOpen] = useState(false);
   const tourActive = useRef(false), tourRestoring = useRef(false);
@@ -372,6 +383,11 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
         tabs[next].click();
         return;
       }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        toggleSidebarRef.current();
+        return;
+      }
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setModal("search");
@@ -393,7 +409,18 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
   const goto = (tab) => {
     location.hash = `app/${tab === 'guardar' ? 'pesquisar' : tab}`;
   };
+  const isGroup = organizationType(state) === "group";
+  const [groupScope, setGroupScope] = useState(() => readRoute() === "grupo");
+  useEffect(() => {
+    if (route === "grupo" && isGroup) setGroupScope(true);
+    else if (!GROUP_ROUTES.includes(route) && route !== "landing" && route !== "motion") setGroupScope(false);
+  }, [route, isGroup]);
+  const enterGroup = () => {
+    setGroupScope(true);
+    goto("grupo");
+  };
   const changeWorkspace = (id) => {
+    setGroupScope(false);
     setState((s) => ({ ...s, workspace: id }));
     setSelectedPiece(null);
     setSelectedSource(null);
@@ -458,6 +485,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
     goto("escrever");
   };
   const pageTitle =
+    (groupScope && groupNavItems.find((i) => i[0] === route)?.[1]) ||
     navItems.find((i) => i[0] === route)?.[1] || (route==='organizacao'?'Organização e marcas':'Configurações');
   const pieceTable = (list, compact = false) => (
     <div className="table-wrap">
@@ -561,6 +589,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
         notify,
         goto,
         changeWorkspace,
+        groupScope,
         setModal,
         setSelectedPiece,
         setSelectedSource,
@@ -588,7 +617,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
           <LandingMotion account={account} onLogout={onLogout} />
         </React.Suspense>
       ) : (
-        <div data-tour-active={tourOpen} className={`app-shell ${sidebarHidden ? 'sidebar-hidden' : ''}`}>
+        <div data-tour-active={tourOpen} className={`app-shell ${sidebarCompact ? 'sidebar-compact' : ''}`}>
           <a
             href="#app-main"
             onClick={(e) => {
@@ -602,7 +631,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
           <aside id="platform-sidebar" className={`sidebar ${mobile ? "sidebar-open" : ""}`}>
             <div className="sidebar-logo">
               <Brand />
-              <button className="icon-button sidebar-toggle" onClick={toggleSidebar} aria-label="Ocultar menu lateral" aria-controls="platform-sidebar" aria-expanded={!sidebarHidden} title="Ocultar menu lateral"><ArrowLeft size={18} /></button>
+              <button className="icon-button sidebar-toggle" onClick={toggleSidebar} aria-label={sidebarCompact ? "Expandir menu lateral" : "Recolher menu lateral"} aria-controls="platform-sidebar" aria-expanded={!sidebarCompact} title={`${sidebarCompact ? "Expandir" : "Recolher"} menu (Ctrl+B)`}>{sidebarCompact ? <PanelLeftOpen size={19} /> : <PanelLeftClose size={19} />}</button>
               <button
                 className="icon-button mobile-only"
                 onClick={() => setMobile(false)}
@@ -614,20 +643,29 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
             <div className="organization-label">
               {account ? state.organizationName : 'GRUPO BBMD'}<span>{account ? organizationType(state)==='group'?'GRUPO':'CONTA' : 'DEMO'}</span>
             </div>
-            <div className="workspace-select-wrap">
+            <div className="workspace-select-wrap" onClick={() => sidebarCompact && toggleSidebar()}>
               <span
                 className="workspace-avatar"
-                style={{ background: workspace.color }}
+                style={{ background: groupScope ? "var(--ink, #172027)" : workspace.color }}
               >
-                {workspace.initials}
+                {groupScope ? <Building2 size={17} aria-hidden="true" /> : workspace.initials}
               </span>
               <label>
-                <span>Marca / espaço de trabalho</span>
+                <span>{isGroup ? "Grupo ou marca" : "Marca"}</span>
                 <select
-                  aria-label="Espaço de trabalho"
-                  value={state.workspace}
-                  onChange={(e) => changeWorkspace(e.target.value)}
+                  aria-label="Escopo: grupo ou marca"
+                  value={groupScope ? "__group__" : state.workspace}
+                  onChange={(e) => {
+                    if (e.target.value === "__group__") enterGroup();
+                    else {
+                      changeWorkspace(e.target.value);
+                      if (["grupo"].includes(route)) goto("painel");
+                    }
+                  }}
                 >
+                  {isGroup && (
+                    <option value="__group__">{(account ? state.organizationName : "Grupo BBMD") + " · todas as marcas"}</option>
+                  )}
                   {activeWorkspaces.map((w) => (
                     <option value={w.id} key={w.id}>
                       {w.name}
@@ -645,14 +683,16 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
               <kbd>⌃ K</kbd>
             </button>
             <nav aria-label="Plataforma">
-              {navItems.filter(([id])=>id!=='grupo'||!account||organizationType(state)==='group').map(([id, name, Icon], i) => (
+              {groupScope && <div className="nav-group-label">ACOMPANHAMENTO DO GRUPO</div>}
+              {(groupScope ? groupNavItems : navItems.filter(([id]) => id !== "grupo")).map(([id, name, Icon], i) => (
                 <React.Fragment key={id}>
-                  {id === 'campanhas' && <div className="nav-group-label">PLANEJAMENTO</div>}
+                  {!groupScope && id === 'campanhas' && <div className="nav-group-label">PLANEJAMENTO</div>}
                   {id === 'guardar' && <div className="nav-group-label">PRODUÇÃO DE CONTEÚDO</div>}
                   {id === 'cerebro' && <div className="nav-group-label">CONTEXTO E APRENDIZADO</div>}
                   <a
                     href={`#app/${id === 'guardar' ? 'pesquisar' : id}`}
                     className={route === id ? "active" : ""}
+                    title={sidebarCompact ? name : undefined}
                   >
                     <Icon size={19} />
                     <span>{name}</span>
@@ -663,11 +703,15 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
                 </React.Fragment>
               ))}
             </nav>
+            {groupScope && (
+              <p className="nav-scope-hint">Para pesquisar, escrever e aprovar, escolha uma marca no seletor acima.</p>
+            )}
             <div className="sidebar-bottom">
-              {account&&<a href="#app/organizacao" className={route==='organizacao'?'active':''}><Building2 size={19}/>Organização e marcas</a>}
+              {account&&<a href="#app/organizacao" title={sidebarCompact?'Organização e marcas':undefined} className={route==='organizacao'?'active':''}><Building2 size={19}/>Organização e marcas</a>}
               <a
                 className={route === "configuracoes" ? "active" : ""}
                 href="#app/configuracoes"
+                title={sidebarCompact ? "Configurações" : undefined}
               >
                 <Settings size={19} />
                 Configurações
@@ -711,7 +755,6 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
           )}
           <div className="app-content">
             <header className="app-topbar">
-              {sidebarHidden && <button className="icon-button sidebar-toggle" onClick={toggleSidebar} aria-label="Mostrar menu lateral" aria-controls="platform-sidebar" aria-expanded={false} title="Mostrar menu lateral"><Menu size={22} /></button>}
               <button
                 className="icon-button mobile-only"
                 onClick={() => setMobile(true)}
@@ -720,7 +763,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
                 <Menu size={22} />
               </button>
               <div className="breadcrumb">
-                <span>Workspace</span>
+                <span>{groupScope ? (account ? state.organizationName : "Grupo BBMD") : workspace.name}</span>
                 <ChevronRight size={15} />
                 <b>{pageTitle}</b>
               </div>
