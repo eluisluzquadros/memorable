@@ -494,6 +494,19 @@ export function brandMemory(state, workspace = state.workspace) {
     .map((o) => ({ learning: o.learning, hypothesis: o.hypothesis || "", evidence: o.evidence || "" }));
   return { approvedExamples, insights };
 }
+// The group layer: shared rules, how the brands relate, and what each sibling brand is, so a brand
+// never speaks for another. It travels only once the group has written rules.
+export function groupContext(state) {
+  const g = state.groupDNA;
+  if (!g || ![g.rules, g.architecture, g.values].some((v) => String(v || "").trim())) return null;
+  return {
+    name: state.organizationName || "Grupo",
+    rules: g.rules || "",
+    architecture: g.architecture || "",
+    values: g.values || "",
+    siblings: (state.workspaces || demoSpaces).filter((w) => !w.archived && w.id !== state.workspace).map((w) => ({ name: w.name, positioning: state.voices?.[w.id]?.positioning || "" })),
+  };
+}
 // The brand interview leads the official material, then the most recent.
 const knowledgeOrder = (a, b) => (b.id.startsWith("interview-") - a.id.startsWith("interview-")) || String(b.date || "").localeCompare(String(a.date || ""));
 export function contextPacket(state, brief) {
@@ -505,6 +518,7 @@ export function contextPacket(state, brief) {
     brand: {name: (state.workspaces||demoSpaces).find(w=>w.id===state.workspace)?.name || brief.brandName || "Sua marca", purpose:"Comunicar a marca do cliente. Fontes externas são evidências, nunca o anunciante."},
     voice: state.voices[state.workspace],
     ...brandMemory(state),
+    group: groupContext(state),
     brandDNA: state.brandDNA?.[state.workspace] || null,
     campaign: (state.campaigns || []).find(c => c.id === brief.campaignId && c.workspace === state.workspace) || null,
     parent: state.pieces.filter(p => p.id === brief.parentId && p.workspace === state.workspace).map(p => ({ id: p.id, title: p.title, revision: p.revision, body: p.body.slice(0, 6000), sourceIds: p.sourceIds }))[0] || null,

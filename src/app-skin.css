@@ -1080,3 +1080,121 @@ select option {
   align-items: center;
   gap: 10px;
 }
+/* DNA do grupo */
+.gd-panel {
+  margin-top: 24px;
+}
+.gd-panel > p {
+  color: var(--fg-muted);
+  max-width: 70ch;
+}
+.gd-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0;
+  font-size: 14px;
+}
+.gd-matrix th,
+.gd-matrix td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: middle;
+}
+.gd-matrix thead th {
+  font-size: 12px;
+  color: var(--fg-muted);
+  font-weight: 650;
+}
+.gd-matrix tbody th {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 650;
+}
+.gd-matrix .workspace-avatar {
+  width: 28px;
+  height: 28px;
+  font-size: 11px;
+}
+.gd-pos {
+  color: var(--fg-muted);
+  max-width: 44ch;
+}
+.gd-rules {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+.gd-rules label {
+  display: grid;
+  gap: 6px;
+  font-weight: 650;
+}
+.gd-actions {
+  margin-top: 16px;
+}
+.gd-result {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+  padding: 18px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.gd-result h3 {
+  margin: 0;
+  font-size: 17px;
+}
+.gd-result h4 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.gd-kind {
+  text-transform: capitalize;
+}
+.gd-result .rf-problems p {
+  margin: 4px 0 0;
+}
+.gd-suggested {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.gd-suggested li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+@media (max-width: 760px) {
+  .gd-matrix thead {
+    display: none;
+  }
+  .gd-matrix tr {
+    display: grid;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .gd-matrix th,
+  .gd-matrix td {
+    border: 0;
+    padding: 4px 0;
+  }
+}
+.gd-disclaimer {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--warn-wash);
+  color: var(--warn);
+  font-size: 14px;
+}

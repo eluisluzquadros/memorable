@@ -13,6 +13,7 @@ import { discoverChannel, importChannelItems } from './channels.mjs';
 import { createObservability } from './observability.mjs';
 import { LLM_CATALOG } from '../src/llm-catalog.mjs';
 import { refinePiece } from './refine.mjs';
+import { checkGroupCoherence } from './group.mjs';
 import { ingestFile, ingestUrl, sourceKind } from './ingestion.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dataDir = path.join(root, ".runtime");
@@ -281,6 +282,10 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === "/api/squad") {
       const critic = (!input.provider || input.provider === 'server') && providerReady() ? roleModel('reviewer', input.roles?.reviewer, accounts.lookup(req)?.id || null, url.pathname).model : writer;
       return send(res, 200, await generateSquad(input.packet, writer, critic));
+    }
+    if (url.pathname === "/api/group-coherence") {
+      if (!providerReady()) throw new Error("Configure um provedor de IA no serviço para checar a coerência do grupo.");
+      return send(res, 200, await checkGroupCoherence(input, roleModel('reviewer', input.roles?.reviewer, accounts.lookup(req)?.id || null, url.pathname).model));
     }
     if (url.pathname === "/api/refine") {
       if (!providerReady()) throw new Error("Configure um provedor de IA no serviço para refinar.");

@@ -4,6 +4,7 @@ import {AppContext} from './context';
 import {workspaceList,addBrand,renameBrand,archiveBrand,renameOrganization} from './account-state.mjs';
 import './organization.css';
 import {Contributors} from './Contributors';
+import {GroupDNA} from './GroupDNA';
 const reviewCount=pieces=>pieces.filter(p=>p.status==='Em revisão').length;
 
 function BrandRow({brand,state,setState,notify,onOpen}){
@@ -37,5 +38,5 @@ export function GroupOverview(){
   return <div className="organization-page"><div className="page-heading"><div><h1>{state.organizationName || 'Grupo BBMD'}</h1><p>Acompanhe todas as marcas. Abra uma delas para pesquisar, criar e revisar no contexto certo.</p></div><button className="button secondary" onClick={()=>goto('organizacao')}>Gerenciar marcas <ArrowRight size={16}/></button></div>
     <div className="group-metrics">{[[brands.length,'Marcas ativas','cada uma com contexto próprio'],[pieces.length,'Conteúdos','em todas as marcas ativas'],[reviewCount(pieces),'Em revisão','aguardando decisão humana'],[pieces.filter(p=>p.status==='Agendado').length,'Na agenda','agendamentos locais']].map(([value,label,help])=><div key={label}><span>{label}</span><b>{value}</b><small>{help}</small></div>)}</div>
     <div className="group-brand-grid">{brands.map(brand=>{const own=pieces.filter(p=>p.workspace===brand.id);return <article className="group-brand-card" key={brand.id}><header><span className="workspace-avatar" style={{background:brand.color}}>{brand.initials}</span><h2>{brand.name}</h2></header><p>{state.voices[brand.id]?.audience || 'Defina o público desta marca nas configurações.'}</p><dl><div><dt>Conteúdos</dt><dd>{own.length}</dd></div><div><dt>Em revisão</dt><dd>{reviewCount(own)}</dd></div><div><dt>Fontes próprias</dt><dd>{state.sources.filter(s=>s.workspace===brand.id).length}</dd></div></dl><div className="card-actions"><button className="button secondary" onClick={()=>{changeWorkspace(brand.id);goto('painel');}}>Abrir marca <ArrowRight size={16}/></button>{reviewCount(own)>0&&<button className="text-button" onClick={()=>{changeWorkspace(brand.id);goto('aprovar');}}>Conferir revisão →</button>}</div></article>;})}</div>
-    <p className="field-help">Esta visão consolida o andamento. A geração e a aprovação continuam vinculadas à marca escolhida. {account?'Marcas arquivadas ficam fora dos totais ativos.':'Os dados deste grupo pertencem à demonstração BBMD.'}</p></div>;
+    <GroupDNA/><p className="field-help">Esta visão consolida o andamento. A geração e a aprovação continuam vinculadas à marca escolhida. {account?'Marcas arquivadas ficam fora dos totais ativos.':'Os dados deste grupo pertencem à demonstração BBMD.'}</p></div>;
 }
