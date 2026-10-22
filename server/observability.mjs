@@ -8,6 +8,8 @@ import { catalogModel, estimateCost } from "../src/llm-catalog.mjs";
 
 const ROLES = [
   [/Content Planner|Trend Hunter/i, "Planejador"],
+  [/Revisor de refino/i, "Revisor (refino)"],
+  [/aplicando as recomendações do revisor/i, "Redator (refino)"],
   [/Copywriter|Ghostwriter/i, "Redator"],
   [/Visual Creator|AV Producer|SEO/i, "Produção e SEO"],
   [/roteirista/i, "Roteirista"],
@@ -18,7 +20,7 @@ const ROLES = [
   [/Ajuste o conteúdo a partir do conselho/i, "Reescrita"],
   [/Revise o lote pela perspectiva/i, "Comitê de roteiro"],
   [/estrategista editorial/i, "Radar"],
-  [/juiz|avaliador cego/i, "Juiz do benchmark"],
+  [/juiz|avaliador cego/i, "Juiz cego"],
 ];
 export const roleOf = (system) => ROLES.find(([pattern]) => pattern.test(system))?.[1] || "Outro";
 

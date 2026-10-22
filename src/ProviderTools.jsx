@@ -84,6 +84,7 @@ export function ProviderTools({
           provider,
           model,
           variant,
+          roles: state.modelRoles || {},
           threshold: state.agentConfig.threshold,
           maxRounds: state.agentConfig.maxRounds,
         }),

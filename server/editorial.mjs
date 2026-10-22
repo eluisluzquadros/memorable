@@ -86,10 +86,10 @@ async function revise(packet, variant, issues, model) {
   return typeof result.body === "string" && result.body.trim() ? { ...next, body: result.body } : variant;
 }
 
-export async function reviewGenerated(packet, versions, model, { rounds = 2 } = {}) {
+export async function reviewGenerated(packet, versions, model, { rounds = 2, critic = model } = {}) {
   let current = versions;
   for (let round = 0; ; round++) {
-    const reviews = await critique(packet, current, model);
+    const reviews = await critique(packet, current, critic);
     const pending = current.map((v, i) => [...mechanicalIssues(packet, v), ...reviewIssues(reviews[i])]);
     if (pending.every((p) => !p.length) || round === rounds) {
       // Mechanical failures that survive every rewrite are never handed over as AI work.

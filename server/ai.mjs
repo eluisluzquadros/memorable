@@ -396,7 +396,7 @@ export async function councilAI(
   }
   return { variant: current, audit: { ...rounds.at(-1), rounds } };
 }
-export async function generateSquad(packet, model = defaultModel) {
+export async function generateSquad(packet, model = defaultModel, critic = model) {
   const settings = productionSettings(packet?.brief);
   if (!packet?.brand?.name?.trim())
     throw new Error("Defina a marca que está produzindo o conteúdo.");
@@ -441,7 +441,7 @@ export async function generateSquad(packet, model = defaultModel) {
     }));
     return {
       mode: "provider",
-      versions: await reviewGenerated(packet, versions, model),
+      versions: await reviewGenerated(packet, versions, model, { critic }),
     };
   }
 
@@ -477,6 +477,7 @@ export async function generateSquad(packet, model = defaultModel) {
       packet,
       versions.map((v) => ({ ...production, ...v, mode: "provider" })),
       model,
+      { critic },
     ),
     plan,
     mode: "provider",

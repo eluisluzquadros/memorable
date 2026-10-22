@@ -12,6 +12,7 @@ import { createIntegrations } from './integrations.mjs';
 import { discoverChannel, importChannelItems } from './channels.mjs';
 import { createObservability } from './observability.mjs';
 import { LLM_CATALOG } from '../src/llm-catalog.mjs';
+import { refinePiece } from './refine.mjs';
 import { ingestFile, ingestUrl, sourceKind } from './ingestion.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dataDir = path.join(root, ".runtime");
@@ -23,6 +24,20 @@ const integrations = createIntegrations(dataDir);
 const suggestions = createSuggestions(path.join(dataDir, 'suggestions.sqlite'));
 const activeBrands = doc => (doc?.workspaces || []).filter(w => !w.archived);
 const observability = createObservability(dataDir);
+// Each role can run on its own model: the account's choice first, then MEMORABLE_MODEL_<ROLE>, then the default.
+const ROLE_ENV = { writer: 'MEMORABLE_MODEL_WRITER', reviewer: 'MEMORABLE_MODEL_REVIEWER', judge: 'MEMORABLE_MODEL_JUDGE' };
+function roleModelName(role, requested) {
+  for (const candidate of [requested, process.env[ROLE_ENV[role]]]) {
+    if (!candidate) continue;
+    try { return allowedServerModel(candidate); } catch { /* Outside the catalog or no OpenRouter: fall through. */ }
+  }
+  return serverModelName();
+}
+const roleDefaults = () => providerReady() ? Object.fromEntries(Object.keys(ROLE_ENV).map(role => [role, roleModelName(role)])) : null;
+function roleModel(role, requested, owner, route) {
+  const name = roleModelName(role, requested);
+  return { name, model: observability.instrument(serverModel(name), { owner, route, provider: 'server', runTag: role }) };
+}
 const modelChoice = () => { try { return providerReady() && !!allowedServerModel(LLM_CATALOG[0].id); } catch { return false; } };
 // Live OpenRouter prices refresh the catalog at most every six hours.
 let livePrices = { at: 0, byId: new Map() };
@@ -220,7 +235,7 @@ const server = http.createServer(async (req, res) => {
       const configured = user ? integrations.status(user.id).connections.filter(c => ['anthropic','openai','gemini'].includes(c.provider) && c.configured).map(c => c.provider) : [];
       return send(res,200,{authenticated:!!user, serverModel:providerReady()?serverModelName():null, modelChoice:modelChoice(), providers:[...(providerReady() ? ['server'] : []),...configured]});
     }
-    if (req.method === 'GET' && url.pathname === '/api/models') return send(res,200,{ modelChoice:modelChoice(), defaultModel:providerReady()?serverModelName():null, models:await catalogWithPrices() });
+    if (req.method === 'GET' && url.pathname === '/api/models') return send(res,200,{ modelChoice:modelChoice(), defaultModel:providerReady()?serverModelName():null, roleDefaults:roleDefaults(), models:await catalogWithPrices() });
     if (req.method === 'GET' && url.pathname === '/api/observability') {
       const user = accounts.lookup(req);
       return send(res,200,observability.summary({ owner:user?.id || null, days:Math.min(365, Math.max(1, Number(url.searchParams.get('days')) || 30)) }));
@@ -243,7 +258,7 @@ const server = http.createServer(async (req, res) => {
       if (input.provider && input.provider !== 'server') {
         if (!user) return send(res,401,{error:'Entre na sua conta e conecte Claude, OpenAI ou Gemini em Configurações.'});
         writer = await integrations.writer(user.id,input.provider,input.model);
-      } else if (providerReady()) writer = serverModel(input.model);
+      } else if (providerReady()) writer = serverModel(input.model || roleModelName('writer', input.roles?.writer));
       if (writer) writer = observability.instrument(writer, { owner:user?.id || null, route:url.pathname, provider:input.provider || 'server' });
     }
     if (url.pathname === '/api/radar/analyse') return send(res,200,await analyseRadar(input.packet,writer));
@@ -261,8 +276,19 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, await extractBrand(input));
     if (url.pathname === "/api/video-scripts/generate")
       return send(res, 200, await generateVideoScripts(input.packet, input.selectedTopics, writer));
-    if (url.pathname === "/api/squad")
-      return send(res, 200, await generateSquad(input.packet, writer));
+    if (url.pathname === "/api/squad") {
+      const critic = (!input.provider || input.provider === 'server') && providerReady() ? roleModel('reviewer', input.roles?.reviewer, accounts.lookup(req)?.id || null, url.pathname).model : writer;
+      return send(res, 200, await generateSquad(input.packet, writer, critic));
+    }
+    if (url.pathname === "/api/refine") {
+      if (!providerReady()) throw new Error("Configure um provedor de IA no serviço para refinar.");
+      const owner = accounts.lookup(req)?.id || null, roles = input.roles || {};
+      return send(res, 200, await refinePiece(input.packet, input.piece, {
+        reviewer: roleModel('reviewer', roles.reviewer, owner, url.pathname),
+        writer: roleModel('writer', roles.writer, owner, url.pathname),
+        judge: roleModel('judge', roles.judge, owner, url.pathname),
+      }));
+    }
     if (url.pathname === "/api/council")
       return send(
         res,

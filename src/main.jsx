@@ -102,6 +102,8 @@ import { Campaigns, PieceLineage } from "./Campaigns";
 import { AccountRoot } from './Account';
 import { ThemeSwitch, ThemeSetting } from "./ThemeSwitch";
 import { StageRail } from "./StageRail";
+import { RefinePanel } from "./RefinePanel";
+import { ModelRoles } from "./ModelRoles";
 
 const navItems = [
   ["painel", "Visão geral", LayoutDashboard],
@@ -1977,6 +1979,7 @@ function Configuracoes() {
         </div>
         <ThemeSetting />
       </section>
+      <ModelRoles />
       <VoiceSettings />
       <Connections />
       <div className="settings-layout">
@@ -2568,6 +2571,7 @@ function PieceDetail({
             </div>
           </aside>
         </div>
+        {!editing && <RefinePanel piece={piece} canEdit={canEdit} onApplied={setBody} />}
         {!editing && <PieceCouncil piece={piece} />}
         {!editing && piece.delivery?.editorialReview && <AiReview delivery={piece.delivery} />}
         {!editing && <PieceLineage piece={piece} />}

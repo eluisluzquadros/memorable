@@ -305,8 +305,10 @@ select option {
     -24px 34px 70px -30px var(--shadow),
     inset 1px 1px 0 color-mix(in srgb, #fff 12%, transparent);
 }
+/* The sticky dialog header stays opaque enough that scrolled content never runs under its title */
 .dialog-head {
-  background: transparent;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(14px);
 }
 .dialog::backdrop {
   background: rgba(8, 9, 12, 0.5);
@@ -741,4 +743,199 @@ select option {
   letter-spacing: 0.01em;
   text-transform: none;
   color: var(--fg-muted);
+}
+/* Refino panel inside the content detail */
+.rf-panel {
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-2);
+}
+.rf-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.rf-head h3 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+.rf-head p,
+.rf-wait {
+  color: var(--fg-muted);
+  max-width: 60ch;
+  margin: 0;
+  font-size: 14px;
+}
+.rf-wait {
+  margin-top: 12px;
+}
+.rf-result {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+.rf-result h4 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.rf-problems {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.rf-problems li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: start;
+  font-size: 15px;
+}
+.rf-problems q {
+  display: block;
+  margin-top: 4px;
+  color: var(--fg-muted);
+  font-size: 13.5px;
+}
+.rf-recommendation p {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--accent-wash);
+  font-size: 15px;
+  line-height: 1.6;
+}
+.rf-sev {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 650;
+  text-transform: capitalize;
+}
+.rf-sev-high {
+  background: var(--danger-wash);
+  color: var(--danger);
+}
+.rf-sev-mid {
+  background: var(--warn-wash);
+  color: var(--warn);
+}
+.rf-sev-low {
+  background: var(--surface-3);
+  color: var(--fg-muted);
+}
+.rf-versions {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 16px;
+}
+.rf-versions h4 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.rf-text {
+  margin: 0;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  white-space: pre-wrap;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.6;
+  max-height: 420px;
+  overflow: auto;
+}
+.rf-changes {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--fg-muted);
+  font-size: 14px;
+}
+.rf-judge table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.rf-judge th,
+.rf-judge td {
+  padding: 7px 4px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+.rf-judge td {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.rf-avg th,
+.rf-avg td {
+  font-weight: 750;
+}
+.rf-verdict {
+  margin: 10px 0;
+  font-size: 14px;
+}
+.rf-models {
+  margin: 12px 0 0;
+  display: grid;
+  gap: 4px;
+  font-size: 12.5px;
+}
+.rf-models div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.rf-models dt {
+  color: var(--fg-muted);
+}
+.rf-models dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+.rf-actions {
+  justify-content: flex-end;
+}
+.rf-applied {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ok);
+  font-weight: 600;
+  margin: 0;
+}
+@media (max-width: 760px) {
+  .rf-versions {
+    grid-template-columns: 1fr;
+  }
+}
+.mr-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.mr-grid label {
+  display: grid;
+  gap: 6px;
+  font-weight: 650;
+}
+.mr-warning {
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--warn-wash);
+  color: var(--warn);
+  font-size: 14px;
+}
+@media (max-width: 900px) {
+  .mr-grid {
+    grid-template-columns: 1fr;
+  }
 }
