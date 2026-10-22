@@ -13,7 +13,7 @@ try {
   const modal=page.getByRole('dialog',{name:'Adicionar ao acervo'});
   await modal.getByLabel('Link da fonte (opcional)').fill('https://example.com/');
   await modal.getByRole('button',{name:'Extrair conteúdo'}).click();
-  await page.getByText('EXTRAÇÃO CONCLUÍDA',{exact:true}).waitFor();
+  await page.getByText('Extração concluída',{exact:true}).waitFor();
   assert.ok(await modal.getByLabel('Conteúdo',{exact:true}).inputValue());
   await modal.getByRole('button',{name:/Guardar referência/}).click();
   await page.getByText('Example Domain',{exact:true}).click();

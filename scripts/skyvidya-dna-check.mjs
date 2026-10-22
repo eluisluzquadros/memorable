@@ -83,7 +83,7 @@ try {
     .getByRole("button", { name: "Validar e aplicar DNA", exact: true })
     .click();
   await page.reload();
-  await page.getByText("DNA VALIDADO · VERSÃO 1", { exact: true }).waitFor();
+  await page.getByText("DNA validado · versão 1", { exact: true }).waitFor();
   const approved = await state();
   assert.equal(approved.brandDNA[original.workspace].primary, "#ff5c2e");
   assert.equal(
@@ -183,7 +183,7 @@ try {
   );
   await page.unrouteAll({ behavior: "wait" });
   await page.reload();
-  await page.getByText("DNA VALIDADO · VERSÃO 1", { exact: true }).waitFor();
+  await page.getByText("DNA validado · versão 1", { exact: true }).waitFor();
   for (const [name, width] of [
     ["desktop", 1440],
     ["mobile", 390],

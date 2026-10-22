@@ -68,7 +68,7 @@ try {
 
   // 2. Portfolio case built from the approved piece, with evidence-only results and export.
   await page.goto(base + "/#app/portfolio");
-  await page.getByRole("heading", { name: "Portfólio", exact: true }).waitFor();
+  await page.getByRole("heading", { name: "Seu trabalho vira case.", exact: true }).waitFor();
   await page.getByRole("button", { name: "Montar case" }).click();
   await page.getByLabel("Título do case").fill("Um episódio, sete peças");
   await page.getByLabel("Desafio do cliente").fill("Explicar contratos para quem nunca contratou um escritório.");

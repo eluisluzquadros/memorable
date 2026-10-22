@@ -191,8 +191,8 @@ export function BrandDNA({ onVoice }) {
           <div className="dna-heading">
             <small>
               {draft
-                ? "PROPOSTA · AGUARDA SUA VALIDAÇÃO"
-                : `DNA VALIDADO · VERSÃO ${saved.revision}`}
+                ? "Proposta · aguarda a sua validação"
+                : `DNA validado · versão ${saved.revision}`}
             </small>
             <h3>Uma identidade, decisões explícitas.</h3>
           </div>

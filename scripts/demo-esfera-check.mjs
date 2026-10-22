@@ -11,11 +11,11 @@ const sourceTitle='Esfera Legal · validação do fluxo';
 const title='Como a Esfera Legal apoia advogados parceiros?';
 try {
   await page.goto('http://localhost:5173/#app/pesquisar',{waitUntil:'networkidle'});
-  await page.getByRole('heading',{name:'Pesquise. Encontre o próximo conteúdo.'}).waitFor();
+  await page.getByRole('heading',{name:'Tudo o que inspira a sua marca.'}).waitFor();
   await page.getByRole('button',{name:'Adicionar ao acervo'}).click();
   await page.getByPlaceholder('https://www.esferalegal.com.br/').fill('https://www.esferalegal.com.br/');
   await page.getByRole('button',{name:'Extrair agora'}).click();
-  await page.getByText('EXTRAÇÃO CONCLUÍDA',{exact:true}).waitFor({timeout:30000});
+  await page.getByText('Extração concluída',{exact:true}).waitFor({timeout:30000});
   const chars=(await page.getByLabel('Conteúdo',{exact:true}).inputValue()).length;
   assert.ok(chars>1000);
   await page.getByLabel('Título',{exact:true}).fill(sourceTitle);

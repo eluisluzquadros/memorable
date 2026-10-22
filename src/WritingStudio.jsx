@@ -226,9 +226,9 @@ export function WritingStudio() {
     <div className="writing-studio">
       <header className="page-heading">
         <div>
-          <h1>Uma ideia. Um conteúdo seu.</h1>
+          <h1>Uma ideia, todos os formatos.</h1>
           <p>
-            A referência fundamenta. A mensagem e o próximo passo são da sua
+            A referência dá a base. A mensagem e o convite final falam com a voz da sua
             marca.
           </p>
         </div>
@@ -316,12 +316,12 @@ export function WritingStudio() {
               const source = sources.find((s) => s.id === item.sourceId);
               return (
                 <article key={item.id}>
-                  <small>
+                  <small className="label">
                     {tab !== "selected"
-                      ? "SUGESTÃO DO RADAR"
+                      ? "Sugestão do radar"
                       : item.origin === "suggestion"
-                        ? `SUGESTÃO DE ${String(item.author || "colaborador").toUpperCase()}`
-                        : "ESCOLHA DA EQUIPE"}
+                        ? `Sugestão de ${item.author || "colaborador"}`
+                        : "Escolha da equipe"}
                   </small>
                   <h2>{item.title}</h2>
                   <p>{source?.summary || source?.text.slice(0, 180)}</p>
@@ -387,7 +387,7 @@ export function WritingStudio() {
         <section className="ws-setup">
           <div className="ws-section-title">
             <div>
-              <small>2 · CRIAR</small>
+              <small className="label">2 · Criar</small>
               <h2>O que sua marca vai dizer?</h2>
               <p>
                 Defina a intenção. A IA planeja, escreve e submete o texto a uma
@@ -524,7 +524,7 @@ export function WritingStudio() {
             </label>
             {picked && (
               <div className="ws-reference">
-                <small>FUNDAMENTAÇÃO · NÃO É O ANUNCIANTE</small>
+                <small className="label">Fundamentação · não é o anunciante</small>
                 <p>{picked.summary || picked.text.slice(0, 240)}</p>
               </div>
             )}
@@ -627,7 +627,7 @@ export function WritingStudio() {
         <section className="ws-edit">
           <div className="ws-section-title">
             <div>
-              <small>3 · REVISAR</small>
+              <small className="label">3 · Revisar</small>
               <h2>O texto antes dos arquivos.</h2>
               <p>
                 {brief.format} · {packet.brand.name} ·{" "}
@@ -772,7 +772,7 @@ export function WritingStudio() {
         <section className="ws-media">
           <div className="ws-section-title">
             <div>
-              <small>4 · MÍDIA</small>
+              <small className="label">4 · Mídia</small>
               <h2>Dê forma ao conteúdo.</h2>
               <p>
                 Imagens e vídeos usam uma conexão e créditos do provedor. Nenhum

@@ -653,7 +653,7 @@ export function councilGate(state, piece) {
     !audit.passed
   )
     throw new Error(
-      "Execute o conselho na versão atual e resolva os bloqueios antes de enviar à aprovação humana.",
+      "Refine a versão atual e resolva os bloqueios antes de enviar à aprovação humana.",
     );
 }
 export function executionRecord(state, piece, delivery) {

@@ -101,7 +101,7 @@ try {
   assert.match(source.origin, /Sugestão interna · Ana Tributário · Tributário/);
   assert.ok(saved.writingQueue.some((q) => q.sourceId === source.id && q.origin === "suggestion"));
   await page.goto(base + "/#app/escrever");
-  await page.getByText("SUGESTÃO DE ANA TRIBUTÁRIO").first().waitFor();
+  await page.getByText("Sugestão de Ana Tributário").first().waitFor();
 
   // The contributor sees the outcome of each idea.
   await other.reload();

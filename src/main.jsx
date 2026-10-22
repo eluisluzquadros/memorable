@@ -824,9 +824,9 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
             <footer className="app-footer">
               <span>
                 Memorable.{" "}
-                <span>Inteligência no processo. Pessoas na decisão.</span>
+                <span>O jeito certo de deixar sua marca no mundo.</span>
               </span>
-              <span>Protótipo de validação · Memorable</span>
+              <span>Versão de validação</span>
             </footer>
           </div>
         </div>
@@ -1028,7 +1028,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
               </div>
             )}
             {(activeSource.summary || activeSource.keywords?.length) && <section className="source-insights" aria-label="Resumo">
-              <small>RESUMO</small>
+              <small className="label">Resumo</small>
               {activeSource.summary && <p>{activeSource.summary}</p>}
               {activeSource.keywords?.length > 0 && <div className="source-keywords">{activeSource.keywords.map(keyword => <span key={keyword}>{keyword}</span>)}</div>}
               {activeSource.extraction?.method && <small>{activeSource.extraction.method} · {new Date(activeSource.extraction.extractedAt).toLocaleString('pt-BR')}</small>}
@@ -1184,10 +1184,10 @@ function Dashboard() {
             }).format(new Date())}
           </div>
           <h1>
-            Sua operação,
-            <br className="mobile-only" /> em perspectiva.
+            Sua marca,
+            <br className="mobile-only" /> em movimento.
           </h1>
-          <p>O que está em movimento e o que precisa do seu olhar.</p>
+          <p>O que está sendo criado, o que espera a sua decisão e o que já está no mundo.</p>
         </div>
         <button className="button primary" onClick={() => goto("escrever")}>
           <Plus size={18} />
@@ -1353,8 +1353,8 @@ function Guardar() {
     <>
       <div className="page-heading">
         <div>
-          <h1>Pesquise. Encontre o próximo conteúdo.</h1>
-          <p>Importe sites, vídeos e documentos. Reúna evidências, ideias e referências para alimentar a criação.</p>
+          <h1>Tudo o que inspira a sua marca.</h1>
+          <p>Traga sites, vídeos, canais e documentos. Cada referência vira base para conteúdos com fonte.</p>
         </div>
         <button className="button primary" onClick={() => setModal("source")}>
           <Plus size={18} />
@@ -1509,8 +1509,8 @@ function Aprovar() {
     <>
       <div className="page-heading">
         <div>
-          <h1>O critério tem nome.</h1>
-          <p>Um quadro para acompanhar. Um lugar para decidir.</p>
+          <h1>A última palavra é sua.</h1>
+          <p>Confira texto e fontes e aprove a versão que vai para o mundo.</p>
         </div>
         <div className="review-role-note">
           <ShieldCheck size={18} />
@@ -1661,8 +1661,8 @@ function Publicar() {
     <>
       <div className="page-heading">
         <div>
-          <h1>Cada conteúdo, no seu momento.</h1>
-          <p>O conteúdo aprovado encontra seu próximo destino.</p>
+          <h1>Sua marca onde o público está.</h1>
+          <p>Agende cada conteúdo aprovado por canal e exporte no formato de cada rede.</p>
         </div>
         <button
           className="button secondary"
@@ -1827,8 +1827,8 @@ function Caderno() {
     <>
       <div className="page-heading">
         <div>
-          <h1>O critério também fica.</h1>
-          <p>Decisões, ajustes e contexto. A memória editorial da equipe.</p>
+          <h1>O que você decide, a IA aprende.</h1>
+          <p>Cada ajuste que a equipe valida vira orientação para os próximos conteúdos.</p>
         </div>
         <button
           className="button secondary"
@@ -1967,7 +1967,7 @@ function Configuracoes() {
       <div className="page-heading">
         <div>
           <h1>Uma marca com a sua voz.</h1>
-          <p>Identidade, orçamento e conexões da operação.</p>
+          <p>Identidade, orçamento e conexões da sua marca.</p>
         </div>
       </div>
       <section className="r-panel settings-appearance">
@@ -2295,7 +2295,7 @@ function SourceForm({ state, setState, notify, onClose }) {
             placeholder="Será preenchido pela extração. Você também pode colar ou revisar o conteúdo manualmente."
           />
         </label>
-        {form.summary && <section className="ingest-preview"><small>EXTRAÇÃO CONCLUÍDA</small><p>{form.summary}</p>{form.keywords?.length > 0 && <div className="source-keywords">{form.keywords.map(keyword => <span key={keyword}>{keyword}</span>)}</div>}<small>{form.extraction?.method} · confira o conteúdo antes de guardar</small></section>}
+        {form.summary && <section className="ingest-preview"><small className="label">Extração concluída</small><p>{form.summary}</p>{form.keywords?.length > 0 && <div className="source-keywords">{form.keywords.map(keyword => <span key={keyword}>{keyword}</span>)}</div>}<small>{form.extraction?.method} · confira o conteúdo antes de guardar</small></section>}
         <p className="field-help">Websites e páginas públicas são lidos pela plataforma. Vídeos do YouTube usam legenda pública; áudio/vídeo exige uma conexão OpenAI para transcrição. Redes sociais precisam de conexão autorizada da conta ou de um arquivo exportado.</p>
         <label className="checkbox-label">
           <input

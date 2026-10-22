@@ -346,10 +346,10 @@ export function Results() {
       <div className="page-heading">
         <div>
           
-          <h1>O que o conteúdo ensinou?</h1>
+          <h1>O que funcionou, para fazer mais.</h1>
           <p>
-            Registre evidência, resultado e aprendizado. Produzir mais só
-            importa se a decisão melhora.
+            Registre resultados com evidência e transforme o que deu certo em
+            critério para os próximos conteúdos.
           </p>
         </div>
       </div>

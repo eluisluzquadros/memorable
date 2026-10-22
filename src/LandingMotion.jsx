@@ -633,7 +633,7 @@ export default function LandingMotion({ account, onLogout }) {
       </main>
       <footer className="mx-foot">
         <Brand />
-        <span>Inteligência no processo. Pessoas na decisão.</span>
+        <span>O jeito certo de deixar sua marca no mundo.</span>
         <span>Imagens geradas com IA · conteúdo de demonstração</span>
       </footer>
     </div>

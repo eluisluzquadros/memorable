@@ -152,7 +152,7 @@ export const BOARD_COLUMNS = [
   { name: "Publicado", statuses: ["Publicado"], target: "Publicado" },
 ];
 export const boardColumn = (status) => BOARD_COLUMNS.find((c) => c.statuses.includes(status)) || BOARD_COLUMNS[1];
-export const STATUS_DETAIL = { Pedido: "Sem fonte ainda", "Em conferência": "Checado pelo conselho", Ajustes: "Ajustes pedidos pelo aprovador" };
+export const STATUS_DETAIL = { Pedido: "Sem fonte ainda", "Em conferência": "Refinado, aguardando envio", Ajustes: "Ajustes pedidos pelo aprovador" };
 // What people read: the same words as the board columns, never the internal status names.
 export const STATUS_LABEL = { Pedido: "Ideia", "Pauta escolhida": "Ideia", Rascunho: "Escrevendo", "Em conferência": "Escrevendo", Ajustes: "Ajustes pedidos", "Em revisão": "Em aprovação" };
 export const statusLabel = (status) => STATUS_LABEL[status] || status;

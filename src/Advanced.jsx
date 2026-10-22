@@ -187,8 +187,8 @@ export function Radar() {
   return (
     <>
       <Heading
-        title="Encontre o próximo assunto."
-        text="Sugestões a partir do acervo. Escolha uma ideia para levar à escrita."
+        title="O próximo assunto chega até você."
+        text="Os canais e referências que você acompanha viram ideias priorizadas para a sua marca. Escolha uma e leve para a escrita."
       >
         <div className="r-actions">
           <button className="button secondary" onClick={run}>
@@ -961,7 +961,7 @@ export function Kanban() {
     <>
       <Heading
         title="Todo o trabalho, à vista."
-        text="Acompanhe etapas, responsáveis e prazos. A decisão de aprovação tem seu próprio espaço."
+        text="Em que etapa está cada conteúdo, quem cuida dele e até quando."
       >
         <button className="button primary" onClick={() => goto("escrever")}>
           Novo conteúdo
@@ -1279,8 +1279,8 @@ export function PieceCouncil({ piece }) {
             }));
             notify(
               result.piece.council.passed
-                ? "Conselho concluído. Envie à revisão humana."
-                : "O conselho encontrou pendências. Confira os critérios.",
+                ? "Refino concluído. Envie para a sua aprovação."
+                : "O refino encontrou pontos a ajustar. Confira os critérios.",
             );
           }, notify)
         }
@@ -1290,7 +1290,7 @@ export function PieceCouncil({ piece }) {
       </button>
       {!piece.council && (
         <p className="field-help">
-          O conselho precisa avaliar esta versão antes do envio ao aprovador.
+          Refine esta versão antes do envio ao aprovador.
         </p>
       )}
       {piece.delivery && <Delivery data={piece.delivery} />}
@@ -1348,8 +1348,8 @@ export function Squad() {
   return (
     <>
       <Heading
-        title="Um time com contexto comum."
-        text="Cada especialidade tem uma entrega. Fontes, voz e decisões acompanham a produção."
+        title="Um time de especialistas para a sua marca."
+        text="Pesquisa, estratégia, redação, roteiro e revisão trabalham juntos, com as fontes, a voz e as decisões da sua marca."
       />
       <Note>
         Em Escrever, escolha o modo local ou os agentes com Claude, OpenAI ou Gemini conectados. O time compartilha fontes, contexto da marca e critérios validados. Imagens e vídeos são gerados separadamente no estúdio de mídia.
@@ -1377,7 +1377,7 @@ export function Squad() {
       </div>
       <div className="r-two-columns">
         <section className="r-panel">
-          <h2>Conselho antes do humano</h2>
+          <h2>Refinado antes de chegar até você</h2>
           <p>
             Cinco lentes: contraponto, primeiros princípios, expansão, olhar
             externo e execução. Bloqueios de fonte e privacidade prevalecem
@@ -1399,12 +1399,12 @@ export function Squad() {
                     "Use nota de 4 a 5 e limite de 1 a 5 rodadas.",
                   );
                 setState((s) => ({ ...s, agentConfig: config }));
-                notify("Critérios do conselho salvos.");
+                notify("Critérios de refino salvos.");
               }, notify);
             }}
           >
             <fieldset disabled={state.role !== "Administrador"}>
-              <legend className="sr-only">Configurações do conselho</legend>
+              <legend className="sr-only">Critérios de refino</legend>
               <div className="field-pair">
                 <label>
                   Nota mínima (de 5)
@@ -1438,7 +1438,7 @@ export function Squad() {
                   />
                 </label>
               </div>
-              <button className="button primary">Salvar conselho</button>
+              <button className="button primary">Salvar critérios</button>
             </fieldset>
           </form>
           <Note>

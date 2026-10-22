@@ -100,7 +100,7 @@ export function ProviderTools({
       notify(
         kind === "squad"
           ? "Pacote produzido pelo provedor de IA. Confira fontes e conteúdo."
-          : "Conselho de IA concluído. Confira pareceres e síntese.",
+          : "Refino concluído. Confira as notas e a síntese.",
       );
     } catch (e) {
       if (alive.current) {
@@ -193,7 +193,7 @@ export function ProviderTools({
             disabled={!ready || Boolean(busy)}
             onClick={() => call("council")}
           >
-            {busy === "council" ? "Conselho avaliando…" : "Conselho com IA"}
+            {busy === "council" ? "Refinando…" : "Refinar com IA"}
           </button>
         )}
       </div>

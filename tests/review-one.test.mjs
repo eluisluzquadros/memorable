@@ -132,7 +132,7 @@ test("council cannot approve a missing source or sensitive identifiers; rounds a
     body: s.pieces[0].body + " CPF 123.456.789-00",
   });
   assert.equal(sensitive.piece.council.passed, false);
-  assert.throws(() => councilGate(s, s.pieces[0]), /conselho/);
+  assert.throws(() => councilGate(s, s.pieces[0]), /Refine a versão atual/);
 });
 test("editing and source changes invalidate the council, approval and agenda", () => {
   let s = initialState();
@@ -150,7 +150,7 @@ test("editing and source changes invalidate the council, approval and agenda", (
   const next = mergeCollection(s, { sources: [changed] });
   assert.equal(next.pieces[0].scheduledAt, null);
   assert.equal(next.pieces[0].status, "Em conferência");
-  assert.throws(() => councilGate(next, next.pieces[0]), /conselho/);
+  assert.throws(() => councilGate(next, next.pieces[0]), /Refine a versão atual/);
 });
 test("expiry prevents recommendations and new drafts; duplicate coverage is flagged", () => {
   const s = initialState();

@@ -39,8 +39,8 @@ export function Portfolio() {
     <>
       <div className="page-heading">
         <div>
-          <h1>Portfólio</h1>
-          <p>Transforme fluxos concluídos em cases para apresentar a clientes e investidores. Números só aparecem quando foram registrados com evidência em Resultados.</p>
+          <h1>Seu trabalho vira case.</h1>
+          <p>Transforme fluxos concluídos em cases para mostrar a clientes e investidores. Números aparecem só quando registrados com evidência em Resultados.</p>
         </div>
         <button className="button primary" onClick={() => setForm({ ...empty })} disabled={!ready.length} title={ready.length ? undefined : "Aprove ao menos um conteúdo para montar um case."}>
           <Plus size={17} /> Montar case

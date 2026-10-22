@@ -5,7 +5,7 @@ const providers = [
   { id: 'higgsfield', name: 'Higgsfield (MCP)', detail: 'Imagens e vídeos pelas ferramentas disponíveis na sua conta MCP.' },
   { id: 'higgsfield-api', name: 'Higgsfield (API)', detail: 'Chave da Higgsfield Cloud no formato ID:SECRET. O serviço gera imagens Soul e vídeos Kling/Hailuo sem expor a chave no navegador.' },
   { id: 'blotato', name: 'Blotato', detail: 'Ferramentas de distribuição e conteúdo da sua conta MCP.' },
-  { id: 'anthropic', name: 'Claude (Anthropic)', detail: 'Recomendado para a escrita: ideias, redação, roteiros e conselho editorial dos agentes.' },
+  { id: 'anthropic', name: 'Claude (Anthropic)', detail: 'Recomendado para a escrita: ideias, redação, roteiros e refino na voz da sua marca.' },
   { id: 'openai', name: 'OpenAI', detail: 'Escrita de conteúdo e roteiros pelos agentes, transcrição de fontes e geração de imagens.' },
   { id: 'gemini', name: 'Gemini', detail: 'Escrita de conteúdo e roteiros pelos agentes, imagens e vídeos com Veo.' },
   { id: 'meta', name: 'Meta / Instagram', detail: 'Importa as legendas de uma conta profissional conectada à API oficial do Instagram.' },

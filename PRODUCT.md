@@ -13,3 +13,12 @@ Verdade do produto, hoje:
 - Dados de demonstração e cases de demonstração são rotulados como tal. Metas do piloto não são resultados obtidos.
 
 Documentos de origem: ../mvp/README.md e PRD.md; o pedido atual prevalece sobre o antigo modelo comercial.
+
+## Voz da Memorable
+
+- Assinatura: "Memorable! O jeito certo de deixar sua marca no mundo." Promessa: "Viralize sua Marca com IA — da pesquisa à publicação, em um só fluxo."
+- O título diz o ganho para quem usa ("A última palavra é sua.", "Refinado até soar como você."), nunca a técnica por trás ("conselho", "pipeline", "agentes" como mecanismo). A linha de apoio diz o que dá para fazer ali.
+- Não vender ausência de defeito ("sem frase cortada", "reprova o que está fraco"): qualquer ferramenta séria já entrega isso.
+- Vocabulário do fluxo, sempre igual: Pesquisar, Vigiar, Escrever, Refinar, Aprovar, Publicar; ideia, conteúdo, marca.
+- Rótulos em caixa normal (frase), nunca em maiúsculas espaçadas.
+- A verdade do produto continua valendo: nenhum benefício que o produto não entrega.
