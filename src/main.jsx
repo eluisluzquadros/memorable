@@ -2223,7 +2223,7 @@ function SourceForm({ state, setState, notify, onClose }) {
             placeholder="Será preenchido pela extração. Você também pode colar ou revisar o conteúdo manualmente."
           />
         </label>
-        {form.summary && <section className="ingest-preview"><small className="label">Extração concluída</small><p>{form.summary}</p>{form.keywords?.length > 0 && <div className="source-keywords">{form.keywords.map(keyword => <span key={keyword}>{keyword}</span>)}</div>}<small>{form.extraction?.method} · confira o conteúdo antes de guardar</small></section>}
+        {form.summary && <section className="ingest-preview"><small className="label">Extração concluída</small><p>{form.summary}</p>{form.keywords?.length > 0 && <div className="source-keywords">{form.keywords.map(keyword => <span key={keyword}>{keyword}</span>)}</div>}<small>{form.keywordSource === 'model' ? 'Resumo e temas sugeridos pela IA a partir do texto' : 'Resumo e palavras-chave automáticos'} · {form.extraction?.method} · confira antes de guardar</small></section>}
         <p className="field-help">Websites e páginas públicas são lidos pela plataforma. Vídeos do YouTube usam legenda pública; áudio/vídeo exige uma conexão OpenAI para transcrição. Redes sociais precisam de conexão autorizada da conta ou de um arquivo exportado.</p>
         <label className="checkbox-label">
           <input

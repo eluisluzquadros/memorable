@@ -43,3 +43,24 @@ test('article reading removes page chrome and rejects a byline as the source sum
   const result=await ingestUrl({url:'https://example.com/article'},{getPublic:async()=>({url:'https://example.com/article',html:'<html><head><title>Dados e decisões</title><meta name="description" content="Por Uma Autora, analista de riscos climáticos da instituição."></head><body><nav>Skip to content</nav><header>Assessoria de Imprensa Entre em contato</header><article><div class="entry-meta">Publicado em 24/06/2026</div><p>Para aplicações em seguros e gestão de portfólio, a fonte de dados precisa ser validada no território, no tipo de variável e no uso pretendido.</p><p>Satélites, reanálises e modelos são indispensáveis, mas não substituem a necessidade de manter e qualificar a observação em solo.</p><p>Documentar limitações ajuda a compreender a incerteza antes de decidir sobre um risco climático específico.</p></article><aside>Notícias recomendadas</aside></body></html>'})});
   assert.match(result.summary,/fonte de dados precisa ser validada/);assert.doesNotMatch(result.summary,/^Por /);assert.doesNotMatch(result.text,/Skip to content|Assessoria de Imprensa|Notícias recomendadas/);
 });
+
+test('keywords skip function words, forms, addresses and one-off names, and keep named phrases whole', async () => {
+  const { keywordsOf } = await import('../server/keywords.mjs');
+  const text = 'O Esfera Conecta reúne advogados para falar de gestão, capital e liderança. Quer crescer? O Esfera Conecta é pelo crescimento da advocacia. ' +
+    'Gestão de escritórios e capital para escritórios no Esfera Conecta. Local: Av. Nilo Peçanha, Porto Alegre. Selecione Imprensa. Palestra de Fulano Beltrano. ' +
+    'A Esfera Legal apoia a advocacia trabalhista. A Esfera Legal investe em gestão.';
+  const keywords = keywordsOf(text);
+  assert.equal(keywords[0], 'Esfera Conecta');
+  assert.ok(keywords.includes('Esfera Legal'));
+  assert.ok(keywords.includes('gestão'), 'accents preserved');
+  for (const noise of ['pelo', 'quer', 'Nilo Peçanha', 'Selecione Imprensa', 'Fulano Beltrano']) assert.ok(!keywords.includes(noise), noise);
+});
+
+test('model themes must share a word with the text, otherwise the heuristic stays', async () => {
+  const { enrichReference } = await import('../server/keywords.mjs');
+  const reference = { title: 'Esfera Conecta', text: 'O Esfera Conecta reúne advogados para falar de gestão de escritórios, capital, inovação e liderança na advocacia trabalhista.' };
+  const good = await enrichReference(reference, async () => ({ resumo: 'Evento que reúne advogados para discutir gestão, capital, inovação e liderança.', temas: ['gestão de escritórios', 'capital', 'inovação', 'Criptomoedas'] }));
+  assert.deepEqual(good.keywords, ['gestão de escritórios', 'capital', 'inovação']);
+  assert.equal(good.keywordSource, 'model');
+  await assert.rejects(enrichReference(reference, async () => ({ resumo: 'Curto.', temas: ['Criptomoedas', 'Metaverso'] })), /sustentados/);
+});

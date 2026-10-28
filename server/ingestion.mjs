@@ -1,8 +1,7 @@
 import { fetchPublic, extractPage } from './collector.mjs';
 import { safeUrl } from '../src/operations.mjs';
 import {articleText} from './article-text.mjs';
-
-const STOP_WORDS = new Set('a o os as um uma uns umas de da do das dos em no na nos nas para por com sem sobre entre que e ou mas se ao aos à às é são foi foram ser tem têm como mais menos muito muita muitos muitas também ainda já não sim sua seu suas seus este esta estes estas esse essa esses essas aquele aquela aqueles aquelas onde quando quem qual quais porque pelos pelas isso isto aquilo'.split(' '));
+import { keywordsOf } from './keywords.mjs';
 const SOCIAL_HOSTS = /(^|\.)(instagram\.com|facebook\.com|linkedin\.com|tiktok\.com|x\.com|twitter\.com)$/i;
 const TEXT_EXTENSIONS = new Set(['txt','md','csv','json','html','htm','xml']);
 const AUDIO_VIDEO_EXTENSIONS = new Set(['mp3','mp4','mpeg','mpga','m4a','ogg','wav','webm','flac']);
@@ -22,11 +21,7 @@ export function analyseText(text) {
     ? [...new Intl.Segmenter('pt-BR', { granularity: 'sentence' }).segment(normalized)].map(({ segment }) => segment)
     : (normalized.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [normalized]);
   const summary = sentences.filter(sentence => sentence.trim().length > 25).slice(0, 3).join(' ').trim().slice(0, 750);
-  const counts = new Map();
-  for (const raw of normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().match(/[a-z0-9]{4,}/g) || []) {
-    if (!STOP_WORDS.has(raw)) counts.set(raw, (counts.get(raw) || 0) + 1);
-  }
-  const keywords = [...counts].sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0], 'pt-BR')).slice(0, 8).map(([word]) => word);
+  const keywords = keywordsOf(normalized);
   return { text: normalized.slice(0, 100000), transcript: normalized.slice(0, 100000), summary, keywords };
 }
 function metadata(html, name) {

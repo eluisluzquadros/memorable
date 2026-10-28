@@ -14,6 +14,7 @@ import { createObservability } from './observability.mjs';
 import { LLM_CATALOG } from '../src/llm-catalog.mjs';
 import { refinePiece } from './refine.mjs';
 import { checkGroupCoherence } from './group.mjs';
+import { enrichReference } from './keywords.mjs';
 import { ingestFile, ingestUrl, sourceKind } from './ingestion.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dataDir = path.join(root, ".runtime");
@@ -38,6 +39,12 @@ const roleDefaults = () => providerReady() ? Object.fromEntries(Object.keys(ROLE
 function roleModel(role, requested, owner, route) {
   const name = roleModelName(role, requested);
   return { name, model: observability.instrument(serverModel(name), { owner, route, provider: 'server', runTag: role }) };
+}
+// A reference read on request gets the reviewer's summary and themes; the local heuristic stays as fallback.
+async function enrich(reference, user, route, roles = {}) {
+  if (!providerReady() || !reference?.text) return { ...reference, keywordSource: 'heuristic' };
+  try { return { ...reference, ...(await enrichReference(reference, roleModel('reviewer', roles?.reviewer, user?.id || null, route).model)) }; }
+  catch { return { ...reference, keywordSource: 'heuristic' }; }
 }
 const modelChoice = () => { try { return providerReady() && !!allowedServerModel(LLM_CATALOG[0].id); } catch { return false; } };
 // Live OpenRouter prices refresh the catalog at most every six hours.
@@ -142,7 +149,7 @@ const server = http.createServer(async (req, res) => {
       if (url.pathname === '/api/ingest/url') {
         const user = accounts.lookup(req);
         const isInstagram = (() => { try { return sourceKind(input.url) === 'social'; } catch { return false; } })();
-        return send(res,200,await ingestUrl(input, isInstagram ? { instagram: user ? value => integrations.ingestInstagram(user.id, value) : undefined } : {}));
+        return send(res,200,await enrich(await ingestUrl(input, isInstagram ? { instagram: user ? value => integrations.ingestInstagram(user.id, value) : undefined } : {}), user, url.pathname, input.roles));
       }
       if (url.pathname === '/api/ingest/channel') {
         const user = accounts.lookup(req);
@@ -152,7 +159,7 @@ const server = http.createServer(async (req, res) => {
       if (url.pathname === '/api/ingest/file') {
         const user = accounts.lookup(req);
         const isMedia = /^(audio|video)\//i.test(String(input.mimeType || '')) || /\.(mp3|mp4|mpeg|mpga|m4a|ogg|wav|webm|flac)$/i.test(String(input.name || ''));
-        return send(res,200,await ingestFile(input, isMedia ? { transcribe: user ? media => integrations.transcribe(user.id, media) : undefined } : {}));
+        return send(res,200,await enrich(await ingestFile(input, isMedia ? { transcribe: user ? media => integrations.transcribe(user.id, media) : undefined } : {}), user, url.pathname, input.roles));
       }
       return send(res,404,{error:'Rota de ingestão não encontrada.'});
     }
