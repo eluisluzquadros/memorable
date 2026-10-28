@@ -27,12 +27,12 @@ try {
   storage=await context.storageState();await context.close();
   ({context,page}=await open(storage));
   assert.equal(await page.locator('.guided-tour').count(),0);
-  await page.getByRole('button',{name:'Ocultar menu lateral',exact:true}).click();
+  await page.getByRole('button',{name:'Recolher menu lateral',exact:true}).click();
   await page.getByRole('button',{name:'Tour guiado',exact:true}).click();
   await page.getByRole('button',{name:'Começar tour',exact:true}).click();
-  await page.waitForURL('**/#app/configuracoes');
+  await page.waitForURL('**/#app/cerebro/dna');
   await page.getByRole('button',{name:'Próximo',exact:true}).click();await page.waitForURL('**/#app/pesquisar');
-  await page.getByRole('button',{name:'Voltar',exact:true}).click();await page.waitForURL('**/#app/configuracoes');
+  await page.getByRole('button',{name:'Voltar',exact:true}).click();await page.waitForURL('**/#app/cerebro/dna');
   await page.getByRole('button',{name:'Próximo',exact:true}).click();
   for(const route of ['vigiar','escrever','aprovar','publicar','cerebro']) {
     await page.getByRole('button',{name:'Próximo',exact:true}).click();await page.waitForURL(`**/#app/${route}`);
@@ -52,13 +52,13 @@ try {
   assert.equal(after.onboarding.tour.status,'completed');
   storage=await context.storageState();await context.close();
   ({context,page}=await open(storage));
-  await page.goto('http://localhost:5173/#app/configuracoes');
+  await page.goto('http://localhost:5173/#app/cerebro/dna');
   await page.getByRole('combobox',{name:'Papel na demonstração'}).selectOption('Administrador');
   await page.getByLabel('Tom de voz',{exact:true}).fill('Tom em edição ainda não salvo');
   await page.getByRole('button',{name:'Tour guiado',exact:true}).click();
   await page.getByRole('button',{name:'Começar tour',exact:true}).click();
   await page.getByRole('button',{name:'Próximo',exact:true}).click();await page.waitForURL('**/#app/pesquisar');
-  await page.getByRole('button',{name:'Pular tour',exact:true}).click();await page.waitForURL('**/#app/configuracoes');
+  await page.getByRole('button',{name:'Pular tour',exact:true}).click();await page.waitForURL('**/#app/cerebro/dna');
   assert.equal(await page.getByLabel('Tom de voz',{exact:true}).inputValue(),'Tom em edição ainda não salvo');
   await context.close();
   ({context,page}=await open(storage,390));

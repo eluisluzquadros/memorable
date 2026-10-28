@@ -61,7 +61,7 @@ export function ProviderTools({
       if (kind === "squad" && !packet.brief.deadline)
         throw new Error("Defina um prazo antes de produzir.");
       if (!ready)
-        throw new Error("Conecte um provedor de escrita em Configurações.");
+        throw new Error("Conecte um provedor de escrita em Configurações > Conexões.");
       if (
         kind === "squad" &&
         state.pieces
@@ -132,7 +132,7 @@ export function ProviderTools({
         </p>
       )}
       {!ready && (
-        <a className="button primary" href="#app/configuracoes">
+        <a className="button primary" href="#app/configuracoes/conexoes">
           Conectar IA <span aria-hidden="true">→</span>
         </a>
       )}

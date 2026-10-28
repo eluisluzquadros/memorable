@@ -25,7 +25,7 @@ try {
   page.on("pageerror", (e) => errors.push(e.message));
   let sent;
   await page.route("**/api/brand-dna", async (r) => { sent = JSON.parse(r.request().postData()); await r.fulfill({ json: proposal }); });
-  await page.goto("http://localhost:5173/#app/configuracoes");
+  await page.goto("http://localhost:5173/#app/cerebro/materiais");
   await page.getByLabel("Papel na demonstração").selectOption("Administrador");
   await page.getByLabel("Escopo: grupo ou marca").selectOption("esfera");
   await page.getByRole("button", { name: /Responder entrevista da marca/ }).click();
@@ -40,8 +40,10 @@ try {
   assert.deepEqual(report.violations.map((v) => v.id), [], "axe on brand materials");
   await page.locator(".bs-panel").screenshot({ path: ".impeccable/review/dna-materials.png" });
   // No website: the extraction button works on materials alone.
+  await page.getByRole("tab", { name: "DNA e voz" }).click();
+  await page.getByText("Entrevista da marca", { exact: true }).waitFor();
   await page.getByRole("button", { name: "Extrair proposta de DNA" }).click();
-  await page.getByLabel("Pilares editoriais (um por linha)").first().waitFor();
+  await page.getByLabel("Pilares editoriais (um por linha) (DNA)").waitFor();
   assert.equal(sent.url, "");
   assert.equal(sent.brandName, "Esfera Legal");
   assert.equal(sent.materials.length, 2);

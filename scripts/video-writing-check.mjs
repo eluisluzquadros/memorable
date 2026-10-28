@@ -12,7 +12,7 @@ try {
  fs.mkdirSync('qa',{recursive:true});await page.screenshot({path:'qa/writing-video-unified.png',fullPage:true});
  await page.setViewportSize({width:390,height:844});
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
- await page.goto('http://localhost:5173/#app/configuracoes');
+ await page.goto('http://localhost:5173/#app/configuracoes/conexoes');
  assert.ok(await page.getByText('Higgsfield',{exact:true}).count());
  assert.equal(errors.length,0,errors.join('\n'));
  console.log('PASS: vídeo integrado às três entradas, CTA IA, layout mobile e conexões sem erros React.');

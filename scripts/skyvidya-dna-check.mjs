@@ -18,7 +18,7 @@ async function state() {
   );
 }
 try {
-  await page.goto(base + "/#app/configuracoes");
+  await page.goto(base + "/#app/cerebro/dna");
   await page.getByRole("button", { name: "Pular tour", exact: true }).click();
   await page.getByLabel("Papel na demonstração").selectOption("Administrador");
   const original = await state();
@@ -59,7 +59,7 @@ try {
   );
   await page.getByText("Página renderizada e lida.", { exact: true }).waitFor();
   assert.equal(
-    await page.getByLabel("Cor principal", { exact: true }).inputValue(),
+    await page.getByLabel("Cor principal (DNA)", { exact: true }).inputValue(),
     result.primary,
   );
   assert.deepEqual((await state()).voices, original.voices);
@@ -129,7 +129,7 @@ try {
         .locator("option")
         .evaluateAll(
           (options, workspace) =>
-            options.map((o) => o.value).find((id) => id !== workspace),
+            options.map((o) => o.value).find((id) => id !== workspace && id !== "__group__"),
           original.workspace,
         );
       await page
@@ -178,7 +178,7 @@ try {
     .filter({ hasText: "O serviço de extração não respondeu corretamente." })
     .waitFor();
   assert.equal(
-    await page.getByLabel("Cor principal", { exact: true }).inputValue(),
+    await page.getByLabel("Cor principal (DNA)", { exact: true }).inputValue(),
     "#ff5c2e",
   );
   await page.unrouteAll({ behavior: "wait" });

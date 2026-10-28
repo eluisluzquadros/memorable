@@ -77,7 +77,7 @@ export function GroupDNA() {
                 <td>{filled} de {VOICE_FIELDS.length}</td>
                 <td className="gd-pos">{voice.positioning || "—"}</td>
                 <td>
-                  <button className="text-button" onClick={() => { changeWorkspace(w.id); goto("configuracoes"); }} aria-label={`Abrir o DNA de ${w.name}`}>
+                  <button className="text-button" onClick={() => { changeWorkspace(w.id); goto("cerebro/dna"); }} aria-label={`Abrir o DNA de ${w.name}`}>
                     Abrir DNA <ArrowRight size={14} aria-hidden="true" />
                   </button>
                 </td>

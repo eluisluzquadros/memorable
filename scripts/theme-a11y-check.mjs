@@ -1,6 +1,6 @@
 import { chromium } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
-const routes = ["app/painel","app/kanban","app/vigiar","app/escrever","app/aprovar","app/publicar","app/guardar","app/campanhas","app/cerebro","app/caderno","app/agentes","app/resultados","app/portfolio","app/grupo","app/configuracoes","auth","sugerir"];
+const routes = ["app/painel","app/kanban","app/vigiar","app/escrever","app/aprovar","app/publicar","app/guardar","app/campanhas","app/cerebro","app/caderno","app/agentes","app/resultados","app/portfolio","app/grupo","app/configuracoes","app/configuracoes/orcamento","app/configuracoes/aparencia","app/configuracoes/conta","app/cerebro/dna","app/cerebro/materiais","app/organizacao/grupo","auth","sugerir"];
 const b = await chromium.launch({ channel: "chrome", headless: true });
 const seen = new Map();
 for (const scheme of ["light","dark"]) {

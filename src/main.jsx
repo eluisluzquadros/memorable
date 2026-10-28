@@ -101,6 +101,7 @@ import { Campaigns, PieceLineage } from "./Campaigns";
 import { AccountRoot } from './Account';
 import { ThemeSwitch, ThemeSetting } from "./ThemeSwitch";
 import { StageRail } from "./StageRail";
+import { Subtabs, Subpanel, useSubtab } from "./Subtabs";
 import { RefinePanel } from "./RefinePanel";
 
 const navItems = [
@@ -227,7 +228,8 @@ function Dialog({ title, children, onClose, wide = false }) {
 }
 
 const readRoute = () => {
-  const route = location.hash.startsWith('#app/') ? location.hash.slice(5) : isClassicHash(location.hash) ? 'landing' : 'motion';
+  // Sub-tabs live after the page (#app/cerebro/dna); the page is the first segment.
+  const route = location.hash.startsWith('#app/') ? location.hash.slice(5).split(/[/?]/)[0] : isClassicHash(location.hash) ? 'landing' : 'motion';
   return route === 'pesquisar' ? 'guardar' : route;
 };
 function App({ account, initialData, persist, syncStatus, onLogout }) {
@@ -305,11 +307,14 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
   const tourActive = useRef(false), tourRestoring = useRef(false);
   tourActive.current = tourOpen;
   const tourOrigin = useRef(null);
+  // The exact address the tour started from, sub-tab included, restored when it closes.
+  const tourOriginHash = useRef("");
   const tourSessionKey = `memorable-tour-dismissed:${account?.id || 'demo'}`;
   const tourDismissed = useRef(false);
   const startTour = () => {
     if (modal || selectedPiece || selectedSource) return;
     tourOrigin.current = route;
+    tourOriginHash.current = location.hash;
     setMobile(false);
     setTourOpen(true);
   };
@@ -321,7 +326,8 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
     if(tourOrigin.current && tourOrigin.current !== 'landing') {
       tourRestoring.current = route !== tourOrigin.current;
       setRoute(tourOrigin.current);
-      goto(tourOrigin.current);
+      if (tourOriginHash.current.startsWith(`#app/${tourOrigin.current}`)) location.hash = tourOriginHash.current.slice(1);
+      else goto(tourOrigin.current);
     }
   };
   const [query, setQuery] = useState("");
@@ -574,6 +580,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
     try { dismissed ||= sessionStorage.getItem(tourSessionKey) === 'true'; } catch {}
     if(!['landing','motion'].includes(route) && !modal && !selectedPiece && !selectedSource && !tourOpen && shouldOfferTour(state.onboarding?.tour,dismissed)) {
       tourOrigin.current = route;
+      tourOriginHash.current = location.hash;
       setTourOpen(true);
     }
   },[route,modal,selectedPiece,selectedSource,tourOpen,state.onboarding?.tour]);
@@ -844,7 +851,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
           <div className="dialog-body">
             <p>
               Isso remove os conteúdos, fontes e decisões criados nesta demo e
-              restaura os exemplos iniciais. Exporte os dados nas configurações
+              restaura os exemplos iniciais. Exporte os dados em Configurações
               se quiser preservá-los.
             </p>
             <div className="dialog-actions">
@@ -1902,61 +1909,40 @@ function Configuracoes() {
     pieceTable,
   } = React.useContext(AppContext);
   const [budget, setBudget] = useState(state.budgets[state.workspace]);
+  // The account and the platform. Brand identity and voice live in Segundo cérebro.
+  const [tab, setTab] = useSubtab("configuracoes", ["conexoes", "orcamento", "aparencia", "conta"]);
   return (
     <>
       <div className="page-heading">
         <div>
-          <h1>Uma marca com a sua voz.</h1>
-          <p>Identidade, orçamento e conexões da sua marca.</p>
+          <h1>A plataforma, do seu jeito.</h1>
+          <p>Conexões com provedores, orçamento, aparência e os dados da sua conta.</p>
         </div>
       </div>
-      <section className="r-panel settings-appearance">
+      <Subtabs
+        label="Seções de configurações"
+        value={tab}
+        onChange={setTab}
+        items={[
+          ["conexoes", "Conexões"],
+          ["orcamento", "Orçamento"],
+          ["aparencia", "Aparência"],
+          ["conta", account ? "Dados da conta" : "Demonstração"],
+        ]}
+      />
+      {tab === "aparencia" && <Subpanel id="aparencia"><section className="r-panel settings-appearance">
         <div>
           <h2>Aparência</h2>
           <p>Claro em papel ou escuro como o estúdio da landing. Seguindo o sistema, a plataforma acompanha o modo do seu computador.</p>
         </div>
         <ThemeSetting />
-      </section>
-      <VoiceSettings />
-      <Connections />
-      <div className="settings-layout">
+      </section></Subpanel>}
+      {tab === "conexoes" && <Subpanel id="conexoes"><Connections /></Subpanel>}
+      {tab === "orcamento" && <Subpanel id="orcamento"><div className="settings-layout settings-single">
         <section className="settings-section">
-          <h2>Identidade da marca</h2>
-          <div className="workspace-identity">
-            <span
-              className="workspace-avatar"
-              style={{ background: workspace.color }}
-            >
-              {workspace.initials}
-            </span>
-            <div>
-              <h3>{workspace.name}</h3>
-              <p>{account ? 'Marca da sua conta' : 'Grupo BBMD · marca de demonstração'}</p>
-            </div>
-          </div>
-          <dl>
-            <div>
-              <dt>Voz</dt>
-              <dd>{state.voices[state.workspace].tone}</dd>
-            </div>
-            <div>
-              <dt>Público</dt>
-              <dd>{state.voices[state.workspace].audience}</dd>
-            </div>
-            <div>
-              <dt>Critério editorial</dt>
-              <dd>Fontes preservadas, linguagem clara e revisão humana.</dd>
-            </div>
-          </dl>
-          {account && <button className="button secondary" onClick={()=>goto('organizacao')}>Gerenciar organização e marcas <ArrowRight size={16}/></button>}
-          <p className="field-help">
-            {account ? 'Defina identidade, público e critérios editoriais para orientar suas criações.' : 'Perfis demonstrativos. A implantação define identidade, acessos e critérios com cada equipe.'}
-          </p>
-        </section>
-        <section className="settings-section">
-          <h2>Orçamento estimado</h2>
+          <h2>Orçamento de {workspace.name}</h2>
           <p>
-            Nova criação respeita o teto. Revisão e aprovação continuam
+            Nova criação respeita o teto desta marca. Revisão e aprovação continuam
             disponíveis.
           </p>
           <div className="budget-summary">
@@ -2020,6 +2006,8 @@ function Configuracoes() {
           </div>
           <small>Custos ilustrativos, sem cobrança real.</small>
         </section>
+      </div></Subpanel>}
+      {tab === "conta" && <Subpanel id="conta"><div className="settings-layout settings-single">
         <section className="settings-section">
           <h2>{account ? 'Dados da sua conta' : 'Seu ambiente de demonstração'}</h2>
           <p>
@@ -2046,7 +2034,7 @@ function Configuracoes() {
             Reiniciar demonstração
           </button>}
         </section>
-      </div>
+      </div></Subpanel>}
     </>
   );
 }

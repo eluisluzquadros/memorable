@@ -1198,3 +1198,19 @@ select option {
   color: var(--warn);
   font-size: 14px;
 }
+/* Group dashboard: a way into the group's DNA */
+.gd-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+.gd-link p {
+  color: var(--fg-muted);
+  margin: 4px 0 0;
+}
+.settings-single {
+  grid-template-columns: minmax(0, 640px);
+}

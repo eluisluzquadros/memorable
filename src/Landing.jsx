@@ -479,7 +479,7 @@ export default function Landing() {
                 <i />
               </span>
               <p>
-                <a href="#app/configuracoes">Conhecer o DNA da marca <ArrowUpRight size={16} /></a>
+                <a href="#app/cerebro/dna">Conhecer o DNA da marca <ArrowUpRight size={16} /></a>
               </p>
             </div>
           </div>

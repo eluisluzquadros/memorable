@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { Upload, FileText, MessageSquareText, Check } from "lucide-react";
+import { Upload, FileText, MessageSquareText, Check, ArrowRight } from "lucide-react";
 import { AppContext } from "./context";
 import { strategicSource } from "./operations.mjs";
 
@@ -75,7 +75,7 @@ function Interview({ onSaved }) {
 }
 
 // Official brand material: the team picks what feeds the DNA; files go to the acervo first.
-export function BrandSources({ selected = [], onToggle = () => {}, onAdded = () => {}, selectable = true, title = "Materiais da marca", intro = "Além do site, use o que a marca já produziu: apresentações, propostas, manuais, gravações. Sem site, comece pela entrevista." }) {
+export function BrandSources({ selected = [], onToggle = () => {}, onAdded = () => {}, selectable = true, manage = true, onManage = null, title = "Materiais da marca", intro = "Além do site, use o que a marca já produziu: apresentações, propostas, manuais, gravações. Sem site, comece pela entrevista." }) {
   const { state, setState, notify } = useContext(AppContext);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -151,7 +151,12 @@ export function BrandSources({ selected = [], onToggle = () => {}, onAdded = () 
       ) : (
         <p className="field-help">Nenhum material oficial ainda. Envie um arquivo, responda a entrevista ou marque referências do acervo como “Conteúdo oficial da marca”.</p>
       )}
-      <div className="bs-actions">
+      {!manage && onManage && (
+        <button type="button" className="text-button" onClick={onManage}>
+          Adicionar material ou responder a entrevista <ArrowRight size={15} aria-hidden="true" />
+        </button>
+      )}
+      {manage && <div className="bs-actions">
         <label className={`button secondary bs-upload ${busy ? "is-busy" : ""}`}>
           <Upload size={16} aria-hidden="true" /> {busy ? "Lendo arquivo…" : "Enviar material (PDF, Word, texto, áudio)"}
           <input type="file" accept=".pdf,.docx,.txt,.md,.csv,.html,.json,.mp3,.m4a,.wav,.mp4,.webm" onChange={upload} disabled={busy} />
@@ -159,7 +164,7 @@ export function BrandSources({ selected = [], onToggle = () => {}, onAdded = () 
         <button type="button" className="button secondary" aria-expanded={interviewOpen} onClick={() => setInterviewOpen((v) => !v)}>
           <MessageSquareText size={16} aria-hidden="true" /> {state.brandInterview?.[state.workspace] ? "Editar entrevista da marca" : "Responder entrevista da marca"}
         </button>
-      </div>
+      </div>}
       {error && <p className="form-error" role="alert">{error}</p>}
       {interviewOpen && <Interview onSaved={(id) => { onAdded(id); setInterviewOpen(false); }} />}
     </div>

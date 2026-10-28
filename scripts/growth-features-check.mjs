@@ -87,7 +87,7 @@ try {
   assert.equal((await state()).cases.length, 1);
 
   // 3. Providers: Claude for writing, Higgsfield by MCP and by API.
-  await page.goto(base + "/#app/configuracoes");
+  await page.goto(base + "/#app/configuracoes/conexoes");
   for (const name of ["Claude (Anthropic)", "Higgsfield (MCP)", "Higgsfield (API)"]) await page.getByRole("heading", { name, exact: true }).first().waitFor();
 
   // 4. New formats from the Higgsfield benchmark with their own duration rules.

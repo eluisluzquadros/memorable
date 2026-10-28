@@ -6,7 +6,7 @@ import { strategicSource } from "./operations.mjs";
 // Verbal DNA fields map one to one onto the voice sheet (Configurações > Ficha de voz).
 const VERBAL = ["tone", "audience", "positioning", "pillars", "say", "avoid", "examples", "checklist"];
 export function BrandDNA({ onVoice }) {
-  const { state, setState, notify, workspace } = useContext(AppContext);
+  const { state, setState, notify, workspace, goto } = useContext(AppContext);
   const [url, setUrl] = useState(""),
     [documentation, setDocumentation] = useState("");
   // Official brand materials feed the DNA; every one is selected unless the team unticks it.
@@ -142,7 +142,7 @@ export function BrandDNA({ onVoice }) {
           verbal que a equipe confere e ajusta antes de aplicar.
         </p>
       </div>
-      {admin && <BrandSources selected={selected} onToggle={toggle} onAdded={(id) => setExcluded((x) => x.filter((i) => i !== id))} />}
+      {admin && <BrandSources selected={selected} onToggle={toggle} manage={false} onManage={() => goto("cerebro/materiais")} intro="Marque o que deve alimentar a extração. Sem site, comece pela entrevista." />}
       <form onSubmit={extract}>
         <fieldset disabled={!admin || busy}>
           <label>
@@ -300,7 +300,7 @@ export function BrandDNA({ onVoice }) {
                     <label>
                       {label}
                       <Field
-                        aria-label={label}
+                        aria-label={`${label} (DNA)`}
                         rows={["examples", "pillars", "avoid", "checklist", "say"].includes(key) ? 5 : 3}
                         value={current[key] || ""}
                         maxLength={4000}

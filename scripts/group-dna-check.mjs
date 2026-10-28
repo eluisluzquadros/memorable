@@ -26,7 +26,7 @@ try {
     page.on("pageerror", (e) => errors.push(e.message));
     let sent;
     await page.route("**/api/group-coherence", async (r) => { sent = JSON.parse(r.request().postData()); await r.fulfill({ json: recorded }); });
-    await page.goto("http://localhost:5173/#app/grupo");
+    await page.goto("http://localhost:5173/#app/organizacao/grupo");
     // On a phone the role moves into the drawer.
     if (width > 850) await page.getByLabel("Papel na demonstração").selectOption("Administrador");
     else {

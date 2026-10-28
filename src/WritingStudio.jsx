@@ -432,9 +432,9 @@ export function WritingStudio() {
               <b>{packet.brand.name}</b>
               <p>
                 {packet.voice.positioning ||
-                  "Complete a mensagem acima ou configure o posicionamento em Configurações."}
+                  "Complete a mensagem acima ou defina o posicionamento no Segundo cérebro."}
               </p>
-              <a href="#app/configuracoes">Revisar contexto da marca</a>
+              <a href="#app/cerebro/dna">Revisar contexto da marca</a>
             </div>
             <div className="field-pair">
               <label>

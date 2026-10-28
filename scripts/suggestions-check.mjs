@@ -55,7 +55,7 @@ try {
   assert.equal(await page.getByText("Anotar uma ideia do time", { exact: false }).count(), 0);
 
   // Invite a contributor and read the one-time password.
-  await page.goto(base + "/#app/organizacao");
+  await page.goto(base + "/#app/organizacao/colaboradores");
   const email = `qa-contrib-${stamp}@example.test`;
   await page.getByLabel("Nome", { exact: true }).fill("Ana Tributário");
   await page.getByLabel("E-mail", { exact: true }).fill(email);
@@ -109,7 +109,7 @@ try {
   await other.getByText("Resposta do time: Já publicamos sobre holding em setembro.").waitFor();
 
   // Ending the access ends the session.
-  await page.goto(base + "/#app/organizacao");
+  await page.goto(base + "/#app/organizacao/colaboradores");
   await page.getByRole("button", { name: "Encerrar acesso de Ana Tributário" }).click();
   await page.getByText("Acesso de Ana Tributário encerrado.", { exact: false }).waitFor();
   assert.equal((await guest.request.get(base + "/api/contributor/me")).status(), 401);

@@ -27,7 +27,7 @@ try{
  await page.getByLabel('Origem / autoria',{exact:true}).fill('Minha equipe');
  await page.getByLabel('Conteúdo',{exact:true}).fill('Conteúdo próprio de pesquisa para a marca Skyvidya QA. A plataforma deve preservar esta referência exclusivamente na conta que a criou e não compartilhar com a demonstração ou com outra conta.');
  await page.getByRole('button',{name:'Guardar referência',exact:true}).click();await saved();
- await page.goto(base+'/#app/configuracoes');
+ await page.goto(base+'/#app/cerebro/dna');
  assert.equal(await page.getByLabel('Tom de voz',{exact:true}).isEnabled(),true);
  assert.equal(await page.getByRole('button',{name:'Reiniciar demonstração',exact:true}).count(),0);
  await page.goto(base+'/#app/organizacao');await page.getByLabel('Nome da organização',{exact:true}).fill('Skyvidya Studio');await page.getByRole('button',{name:'Salvar organização',exact:true}).click();await saved();
@@ -42,7 +42,7 @@ try{
  await page.goto(base+'/');await page.getByRole('button',{name:'Sair',exact:true}).click();await page.getByRole('heading',{name:'Bom ter você de volta.',exact:true}).waitFor();
  await page.getByLabel('E-mail',{exact:true}).fill(emails[0]);await page.getByLabel('Senha',{exact:true}).fill(password);await page.getByRole('button',{name:'Entrar no meu espaço',exact:true}).click();await page.waitForURL('**/#app/painel');await saved();
  assert.equal((await state()).sources[0].title,'Fonte privada Skyvidya QA');
- await page.goto(base+'/#app/configuracoes');
+ await page.goto(base+'/#app/configuracoes/orcamento');
  await page.route('**/api/account/state',route=>route.request().method()==='PUT'?route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:'Conflito de teste: alterações ainda não salvas.'})}):route.continue());
  await page.getByLabel('Teto da marca (R$)',{exact:true}).fill('456');await page.getByRole('button',{name:'Salvar orçamento',exact:true}).click();
  await logout();
