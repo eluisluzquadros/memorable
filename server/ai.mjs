@@ -192,6 +192,11 @@ export async function generateVideoScripts(
     throw new Error(
       `O roteirista não entregou ${settings.versionCount} versão(ões) por pauta.`,
     );
+  // The script may also lean on brand knowledge (approved DNA, official material), as the copy path allows.
+  const cited = new Set([
+    ...allowed,
+    ...(packet.brandKnowledge || []).map((k) => k.id),
+  ]);
   for (const topic of selectedTopics) {
     const group = scripts.filter((s) => s.topicId === topic.id);
     if (
@@ -211,8 +216,10 @@ export async function generateVideoScripts(
           "body",
         ].some((k) => !text(s[k])) ||
         !Array.isArray(s.sourceIds) ||
-        !s.sourceIds.includes(topic.sourceId) ||
-        s.sourceIds.some((id) => !allowed.has(id)) ||
+        // The squad defers source checks to its editor loop, which cites the selected references.
+        (validate && !s.sourceIds.includes(topic.sourceId)) ||
+        !s.sourceIds.length ||
+        s.sourceIds.some((id) => !cited.has(id)) ||
         !Array.isArray(s.scenes) ||
         s.scenes.length < 1 ||
         s.scenes.length > 24 ||

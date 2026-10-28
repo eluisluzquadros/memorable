@@ -28,10 +28,24 @@ export async function fetchPublic(raw, redirects = 0, {asset=false,maxBytes=2*10
     throw new Error(
       "A coleta aceita somente as portas padrão de páginas públicas.",
     );
-  const addresses = await dns.lookup(url.hostname, { all: true });
-  if (!addresses.length || addresses.some((a) => !publicAddress(a.address)))
+  let addresses;
+  try {
+    addresses = await dns.lookup(url.hostname, { all: true });
+  } catch (error) {
+    // Many sites only publish DNS for the www host (esferalegal.com.br → www.esferalegal.com.br).
+    if (error.code !== "ENOTFOUND" || url.hostname.startsWith("www.") || url.hostname.split(".").length > 3)
+      throw new Error(`Não encontramos o endereço "${url.hostname}". Confira o link.`);
+    url.hostname = `www.${url.hostname}`;
+    try {
+      addresses = await dns.lookup(url.hostname, { all: true });
+    } catch {
+      throw new Error(`Não encontramos o endereço "${url.hostname.replace(/^www\./, "")}". Confira o link.`);
+    }
+  }
+  const blocked = addresses.find((a) => !publicAddress(a.address));
+  if (!addresses.length || blocked)
     throw new Error(
-      "Endereços locais e redes privadas não são fontes públicas.",
+      `Endereços locais e redes privadas não são fontes públicas. "${url.hostname}" resolveu para ${blocked?.address || "nenhum endereço"}; se o site é público, verifique VPN, proxy ou filtro de DNS.`,
     );
   const ip = addresses[0];
   return new Promise((resolve, reject) => {

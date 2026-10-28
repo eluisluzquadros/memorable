@@ -49,3 +49,24 @@ test('Isaac: provedor validado, três versões e quatro pareceres consultivos', 
     await assert.rejects(()=>generateVideoScripts({sources:[{id:'s',text:'Fonte'}]},[{id:'t',title:'Tema',sourceId:'foreign'}]), /fonte/);
   } finally { globalThis.fetch=oldFetch; keys.forEach((k,i)=>{if(previous[i]===undefined)delete process.env[k];else process.env[k]=previous[i];}); }
 });
+
+test('Roteiro: pode citar o conhecimento da marca (DNA aprovado), mas não fontes inventadas', async () => {
+  const keys = ['SKYVIDYA_AI_URL', 'SKYVIDYA_AI_KEY', 'SKYVIDYA_AI_MODEL'];
+  const previous = keys.map(k => process.env[k]);
+  const oldFetch = globalThis.fetch;
+  const packet = { brief:{versionCount:1,durationSeconds:30}, sources:[{id:'s',text:'Fonte'}], brandKnowledge:[{id:'dna-x',text:'Site oficial'}], calibration:[] };
+  const script = sourceIds => ({ topicId:'t', title:'Tema', strategy:'a', hook:'Pergunta', technique:'Exemplo', trigger:'Curiosidade', cta:'Pergunte', body:'Contexto', scenes:speeches.map(speech=>({duration:10,speech,visual:'Câmera'})), sourceIds, warnings:[] });
+  try {
+    process.env.SKYVIDYA_AI_URL = 'https://example.com/mock'; process.env.SKYVIDYA_AI_KEY = 'test'; process.env.SKYVIDYA_AI_MODEL = 'mock';
+    let ids = ['s', 'dna-x'];
+    globalThis.fetch = async (_url, init) => {
+      const system = JSON.parse(init.body).messages[0].content;
+      const content = /roteirista/.test(system) ? { scripts: [script(ids)] } : { reason:'Conferir evidências', score:4, blockers:[] };
+      return { ok:true, json:async()=>({choices:[{message:{content:JSON.stringify(content)}}]}) };
+    };
+    const result = await generateVideoScripts(packet, [{id:'t',title:'Tema',sourceId:'s'}]);
+    assert.deepEqual(result.scripts[0].sourceIds, ['s', 'dna-x']);
+    ids = ['s', 'inventada'];
+    await assert.rejects(()=>generateVideoScripts(packet, [{id:'t',title:'Tema',sourceId:'s'}]), /fontes não fornecidas/);
+  } finally { globalThis.fetch=oldFetch; keys.forEach((k,i)=>{if(previous[i]===undefined)delete process.env[k];else process.env[k]=previous[i];}); }
+});

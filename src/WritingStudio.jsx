@@ -127,10 +127,17 @@ export function WritingStudio() {
       notify(e.message, true);
     }
   }
+  // The model may also cite brand knowledge that is not a reference in the library (e.g. the approved DNA);
+  // the piece keeps the library references it used, or the ones chosen for it.
+  function draftSourceIds() {
+    const known = new Set(state.sources.map((s) => s.id));
+    const cited = (draft?.sourceIds || []).filter((id) => known.has(id));
+    return cited.length ? cited : packet.sources.map((s) => s.id);
+  }
   function materialize() {
     assertEditor(state);
     if (!draft) throw new Error("Crie ou escreva o conteúdo primeiro.");
-    const ids = draft.sourceIds || packet.sources.map((s) => s.id);
+    const ids = draftSourceIds();
     let next;
     if (savedId && state.pieces.some((p) => p.id === savedId)) {
       next = transition(state, savedId, "edit", {
@@ -726,7 +733,7 @@ export function WritingStudio() {
                   ...activeBrief,
                   workspace: state.workspace,
                   brief: packet.brief,
-                  sourceIds: draft.sourceIds || packet.sources.map((s) => s.id),
+                  sourceIds: draftSourceIds(),
                   body: draft.body,
                   revision: 1,
                 });

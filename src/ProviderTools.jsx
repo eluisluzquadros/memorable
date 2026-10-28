@@ -82,7 +82,8 @@ export function ProviderTools({
         body: JSON.stringify({
           packet,
           provider,
-          model,
+          // The text-model field belongs to connected providers; the service picks its own (by role) otherwise.
+          model: provider === "server" ? undefined : model,
           variant,
           roles: state.modelRoles || {},
           threshold: state.agentConfig.threshold,

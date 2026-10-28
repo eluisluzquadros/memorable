@@ -69,3 +69,5 @@
 .ws-review-pending { display: block; background: var(--warn-wash); border: 1px solid var(--line); color: var(--fg); }
 .ws-review-pending p { margin: 0 0 6px; font-weight: 600; }
 .ws-review-pending ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 14px; }
+
+.r-council-checks small { color: #4e607b; }

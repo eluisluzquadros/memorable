@@ -266,7 +266,7 @@ const server = http.createServer(async (req, res) => {
       if (input.provider && input.provider !== 'server') {
         if (!user) return send(res,401,{error:'Entre na sua conta e conecte Claude, OpenAI ou Gemini em Configurações.'});
         writer = await integrations.writer(user.id,input.provider,input.model);
-      } else if (providerReady()) writer = serverModel(input.model || roleModelName('writer', input.roles?.writer));
+      } else if (providerReady()) writer = serverModel(roleModelName('writer', input.model || input.roles?.writer));
       if (writer) writer = observability.instrument(writer, { owner:user?.id || null, route:url.pathname, provider:input.provider || 'server' });
     }
     if (url.pathname === '/api/radar/analyse') return send(res,200,await analyseRadar(input.packet,writer));

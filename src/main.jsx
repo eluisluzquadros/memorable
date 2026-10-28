@@ -2120,19 +2120,23 @@ function SourceForm({ state, setState, notify, onClose }) {
             );
             return;
           }
-          if (!form.title.trim() || !form.text.trim()) {
-            setError("Extraia uma fonte ou informe título e conteúdo manualmente.");
+          if (!form.text.trim()) {
+            setError("Extraia uma fonte pela URL ou arquivo, ou cole o conteúdo manualmente.");
             return;
           }
           if (form.url && !/^https?:\/\//i.test(form.url)) {
             setError("Use um endereço começando com https:// ou http://.");
             return;
           }
+          // The title is automatic: extraction fills it; otherwise the page host or the first line of the text.
+          const host = (() => { try { return new URL(form.url).hostname.replace(/^www\./, ""); } catch { return ""; } })();
+          const title = form.title.trim() || host || form.text.trim().split(/\n/)[0].slice(0, 80);
           setState((s) => ({
             ...s,
             sources: [
               {
                 ...form,
+                title,
                 id: crypto.randomUUID(),
                 workspace: s.workspace,
                 citable: !!form.origin.trim(),
@@ -2193,11 +2197,10 @@ function SourceForm({ state, setState, notify, onClose }) {
         <label>
           Título
           <input
-            required
             maxLength={160}
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
-            placeholder="Ex.: entrevista sobre atendimento"
+            placeholder="Preenchido pela extração"
           />
         </label>
         <div className="field-pair">
