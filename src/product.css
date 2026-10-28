@@ -159,35 +159,6 @@
   margin-top: auto;
   padding-top: 23px;
 }
-.demo-help {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--accent-wash);
-  border-radius: 8px;
-  margin: 17px 0;
-  padding: 12px 8px;
-}
-.demo-help-icon {
-  color: var(--blue);
-}
-.demo-help p {
-  font-size: 11px;
-  line-height: 1.6;
-  flex: 1;
-}
-.demo-help p b {
-  font-weight: 600;
-}
-.demo-help p span {
-  display: block;
-  color: var(--fg-muted);
-  font-size: 10px;
-}
-.demo-help .icon-button {
-  min-width: 27px;
-  padding: 4px;
-}
 .user-profile {
   border-top: 1px solid var(--line);
   padding: 18px 4px 21px;
@@ -2390,10 +2361,7 @@
   .sidebar .organization-label {
     font-size: 10px;
   }
-  .demo-help p > span {
-    font-size: 9px;
   }
-}
 @media (max-width: 850px) {
   .sidebar {
     transform: translateX(-100%);
@@ -2446,10 +2414,7 @@
   .sidebar-search kbd {
     display: block;
   }
-  .demo-help p > span {
-    font-size: 10px;
-  }
-  .workspace-select-wrap select {
+    .workspace-select-wrap select {
     font-size: 13px;
   }
   .app-main {

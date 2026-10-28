@@ -1057,7 +1057,6 @@
   .sidebar-compact .sidebar-search kbd,
   .sidebar-compact .nav-group-label,
   .sidebar-compact .nav-scope-hint,
-  .sidebar-compact .demo-help,
   .sidebar-compact .user-profile > div,
   .sidebar-compact .sidebar nav a > span:not(.nav-count) { display: none; }
   .sidebar-compact .workspace-select-wrap { justify-content: center; padding: 8px 0; cursor: pointer; }

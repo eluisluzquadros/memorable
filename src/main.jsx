@@ -47,7 +47,6 @@ import {
   CheckCircle2,
   Filter,
   Play,
-  HelpCircle,
   Brain,
   Building2,
   Compass,
@@ -735,22 +734,6 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
                 <Settings size={19} />
                 Configurações
               </a>
-              <div className="demo-help">
-                <span className="demo-help-icon">
-                  <Play size={16} />
-                </span>
-                <p>
-                  <b>Seu próximo capítulo.</b>
-                  <span>Explore o fluxo com liberdade.</span>
-                </p>
-                <button
-                  className="icon-button"
-                  aria-label="Sobre a demonstração"
-                  onClick={() => setModal("help")}
-                >
-                  <HelpCircle size={17} />
-                </button>
-              </div>
               <div className="user-profile">
                 <span className="avatar">
                   {(account?.name || state.role).slice(0,2).toUpperCase()}
@@ -852,50 +835,6 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
             <X size={17} />
           </button>
         </div>
-      )}
-      {modal === "help" && (
-        <Dialog
-          title="Uma ideia, de ponta a ponta."
-          onClose={() => setModal(null)}
-        >
-          <div className="dialog-body">
-            <p>
-              {account ? 'Seu espaço reúne apenas o contexto e o conteúdo da sua conta. As alterações ficam salvas no serviço local.' : 'Experimente a Memorable com o contexto Grupo BBMD. As ações e o histórico ficam salvos neste navegador.'}
-            </p>
-            <ol className="help-steps">
-              <li>
-                Encontre ou adicione uma fonte em <b>Pesquisar</b>.
-              </li>
-              <li>
-                Explore abordagens em <b>Escrever</b> e salve o rascunho.
-              </li>
-              <li>
-                Envie para revisão. Troque o papel para <b>Aprovador</b>.
-              </li>
-              <li>
-                Confira o texto e as fontes, aprove e defina uma data em{" "}
-                <b>Publicar</b>.
-              </li>
-            </ol>
-            <div className="quiet-note">
-              <ShieldCheck size={20} />
-              <p>
-                IA opcional e coleta web dependem do serviço local. Publicação
-                nas redes e autenticação multiusuário ainda não estão
-                conectadas.
-              </p>
-            </div>
-            <button
-              className="button primary"
-              onClick={() => {
-                setModal(null);
-                goto("guardar");
-              }}
-            >
-              Começar pelo acervo <ArrowRight size={18} />
-            </button>
-          </div>
-        </Dialog>
       )}
       {modal === "reset" && !account && (
         <Dialog
