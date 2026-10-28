@@ -1,4 +1,5 @@
 import { rankedTopics, sourceValid } from './operations.mjs';
+import { visibleTo } from "./visibility.mjs";
 
 export const ISAAC_BASE = [
   ['podcast', 'Transcrições do Bastidores', 1],
@@ -13,7 +14,7 @@ export const ISAAC_BASE = [
 ];
 export function isaacTopics(state) { return rankedTopics(state).filter(t => !t.blocked).slice(0, 20); }
 export function isaacBase(state, assignments = {}) {
-  const sources = state.sources.filter(s => (s.workspace === state.workspace || s.shared) && sourceValid(s));
+  const sources = state.sources.filter(s => visibleTo(s, state.workspace) && sourceValid(s));
   return ISAAC_BASE.map(([id, label, target]) => ({ id, label, target, sources: sources.filter(s => assignments[s.id] === id) }));
 }
 export function structuredScripts(topics) {

@@ -177,21 +177,53 @@ export function SourceMetadata({ source }) {
   );
 }
 // Deleting a reference is visible in the reference's own footer. A reference shared by another brand
-// can only be deleted there, and the footer says whose it is and opens it.
+// can be removed from this brand only, or deleted for the whole group by an administrator.
 export function SourceDelete({ source }) {
   const { state, setState, notify, setSelectedSource, changeWorkspace } = useContext(AppContext);
   const [confirm, setConfirm] = useState(false);
   const count = state.pieces.filter((p) => p.sourceIds.includes(source.id)).length;
   if (source.workspace !== state.workspace) {
     const owner = workspaceList(state, { includeArchived: true }).find((w) => w.id === source.workspace);
+    const here = state.pieces.filter((p) => p.workspace === state.workspace && p.sourceIds.includes(source.id));
+    const admin = state.role === "Administrador";
+    const hide = () => {
+      try {
+        assertEditor(state);
+        const ws = state.workspace;
+        setState((s) => ({
+          ...s,
+          sources: s.sources.map((x) => (x.id === source.id ? { ...x, hiddenIn: [...new Set([...(x.hiddenIn || []), ws])] } : x)),
+          // Only this brand's contents lose the reference; the owner and the other brands keep it.
+          pieces: s.pieces.map((p) => (p.workspace === ws && p.sourceIds.includes(source.id) ? invalidateSourceDependents([p], new Set([source.id]))[0] : p)),
+          events: [{ id: crypto.randomUUID(), workspace: ws, title: source.title, event: "Referência compartilhada removida desta marca.", action: "source-hide", author: s.role, at: new Date().toISOString() }, ...s.events],
+        }));
+        setSelectedSource(null);
+        notify("Referência removida desta marca. Ela continua com a marca de origem.");
+      } catch (e) {
+        notify(e.message, true);
+      }
+    };
     return (
       <div className="source-delete source-delete-foreign">
-        <p>Esta referência é de <b>{owner?.name || "outra marca"}</b> e chega aqui pela biblioteca compartilhada. Só a marca de origem pode editá-la ou excluí-la.</p>
-        {owner && !owner.archived && (
-          <button className="text-button" onClick={() => { changeWorkspace(source.workspace); setSelectedSource(source.id); }}>
-            Abrir em {owner.name} <ArrowRight size={15} aria-hidden="true" />
-          </button>
+        <p>Esta referência é de <b>{owner?.name || "outra marca"}</b> e chega aqui pela biblioteca compartilhada.</p>
+        {here.length > 0 && <p><AlertTriangle size={15} aria-hidden="true" /> Usada por {here.length} {here.length === 1 ? "conteúdo" : "conteúdos"} desta marca, que {here.length === 1 ? "vai precisar" : "vão precisar"} de outra fonte antes de uma nova aprovação.</p>}
+        {confirm ? (
+          <div className="dialog-actions">
+            <button className="button secondary" onClick={() => setConfirm(false)}>Cancelar</button>
+            <button className="button danger" onClick={remove}><Trash2 size={16} aria-hidden="true" /> Excluir para todo o grupo</button>
+          </div>
+        ) : (
+          <div className="source-delete-actions">
+            <button className="button secondary" onClick={hide}><Trash2 size={16} aria-hidden="true" /> Remover desta marca</button>
+            {admin && <button className="text-button danger-text" onClick={() => setConfirm(true)}>Excluir para todo o grupo</button>}
+            {owner && !owner.archived && (
+              <button className="text-button" onClick={() => { changeWorkspace(source.workspace); setSelectedSource(source.id); }}>
+                Abrir em {owner.name} <ArrowRight size={15} aria-hidden="true" />
+              </button>
+            )}
+          </div>
         )}
+        {confirm && <p>Some do acervo de {owner?.name || "origem"} e de todas as marcas do grupo{count ? `, e ${count} ${count === 1 ? "conteúdo perde" : "conteúdos perdem"} a fonte` : ""}.</p>}
       </div>
     );
   }

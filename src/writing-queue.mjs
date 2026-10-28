@@ -1,10 +1,11 @@
 import { assertEditor, sourceValid } from "./operations.mjs";
+import { visibleTo } from "./visibility.mjs";
 export function queueIdea(state, title, sourceId, extra = {}) {
   assertEditor(state);
   const source = state.sources.find(
     (s) =>
       s.id === sourceId &&
-      (s.workspace === state.workspace || s.shared) &&
+      visibleTo(s, state.workspace) &&
       sourceValid(s),
   );
   if (!source) throw new Error("Escolha uma referência válida desta marca.");

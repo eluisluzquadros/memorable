@@ -1225,3 +1225,14 @@ select option {
   display: block;
   font-size: 14px;
 }
+.source-delete-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+/* Destructive text actions read as such in both themes */
+.app-shell .danger-text,
+.dialog .danger-text {
+  color: var(--danger);
+}

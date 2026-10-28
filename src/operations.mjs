@@ -1,4 +1,5 @@
 import {workspaces as demoSpaces} from './demo-workspaces.mjs';
+import { visibleTo } from "./visibility.mjs";
 import { brandTone } from './brand-tones.mjs';
 import { editorialIssues, EDITORIAL_STANDARD } from './editorial-quality.mjs';
 import { localVariants } from './local-scaffold.mjs';
@@ -377,7 +378,7 @@ export function rankedTopics(state, workspace = state.workspace) {
     .filter((t) => t.length > 4))];
   const sources = state.sources.filter(
     (s) =>
-      (s.workspace === workspace || s.shared) &&
+      visibleTo(s, workspace) &&
       sourceValid(s) &&
       !s.id.endsWith("-voice"),
   );
@@ -428,7 +429,7 @@ export function rankedTopics(state, workspace = state.workspace) {
           !state.sources.some(
             (s) =>
               s.id === t.sourceId &&
-              (s.workspace === workspace || s.shared) &&
+              visibleTo(s, workspace) &&
               sourceValid(s),
           ) || t.breakdown.risk >= 8,
       };
@@ -512,7 +513,7 @@ const knowledgeOrder = (a, b) => (b.id.startsWith("interview-") - a.id.startsWit
 export function contextPacket(state, brief) {
   const ids = brief.sourceIds || [brief.source].filter(Boolean);
   const settings = productionSettings(brief);
-  const inspiration = state.sources.find(s => s.id === brief.inspirationId && (s.workspace === state.workspace || s.shared) && sourceValid(s));
+  const inspiration = state.sources.find(s => s.id === brief.inspirationId && visibleTo(s, state.workspace) && sourceValid(s));
   return {
     workspace: state.workspace,
     brand: {name: (state.workspaces||demoSpaces).find(w=>w.id===state.workspace)?.name || brief.brandName || "Sua marca", purpose:"Comunicar a marca do cliente. Fontes externas são evidências, nunca o anunciante."},
@@ -544,7 +545,7 @@ export function contextPacket(state, brief) {
       .filter(
         (s) =>
           ids.includes(s.id) &&
-          (s.workspace === state.workspace || s.shared) &&
+          visibleTo(s, state.workspace) &&
           sourceValid(s),
       )
       .map((s) => ({
@@ -573,7 +574,7 @@ export function evaluateCouncil(state, piece) {
   const sourceList = state.sources.filter(
     (s) =>
       piece.sourceIds?.includes(s.id) &&
-      (s.workspace === piece.workspace || s.shared),
+      visibleTo(s, piece.workspace),
   );
   const text = piece.body || "";
   const voice = state.voices?.[piece.workspace];

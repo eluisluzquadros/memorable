@@ -1,4 +1,5 @@
 import { Connections, MediaStudio } from "./Connections";
+import { visibleTo } from "./visibility.mjs";
 import { ChannelImport } from "./ChannelImport";
 import { isClassicHash } from "./routes.mjs";
 import { queueIdea } from './writing-queue.mjs';
@@ -2110,7 +2111,7 @@ function SourceForm({ state, setState, notify, onClose }) {
           if (
             state.sources.some(
               (x) =>
-                (x.workspace === state.workspace || x.shared) &&
+                visibleTo(x, state.workspace) &&
                 x.text.trim() === form.text.trim(),
             )
           ) {

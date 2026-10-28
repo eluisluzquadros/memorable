@@ -51,6 +51,7 @@ import {
 } from "./operations.mjs";
 import { createPiece, transition, planKanbanMove, BOARD_COLUMNS, boardColumn, STATUS_DETAIL } from "./workflow.mjs";
 import { workspaceList } from './account-state.mjs';
+import { visibleTo } from './visibility.mjs';
 const useApp = () => useContext(AppContext);
 const fmt = (d) =>
   d
@@ -447,7 +448,7 @@ export function MonitorSources() {
             }, notify);
           }}
         >
-          {!form.id && <label>Referência para acompanhar<select required aria-label="Referência para acompanhar" value={form.sourceId||''} onChange={e=>{const source=state.sources.find(s=>s.id===e.target.value);setForm(source?{...empty,sourceId:source.id,name:source.title,url:source.url}:empty);}}><option value="">Escolha no acervo</option>{state.sources.filter(s=>(s.workspace===state.workspace||s.shared)&&s.url&&sourceValid(s)).map(s=><option key={s.id} value={s.id}>{s.title}</option>)}</select></label>}
+          {!form.id && <label>Referência para acompanhar<select required aria-label="Referência para acompanhar" value={form.sourceId||''} onChange={e=>{const source=state.sources.find(s=>s.id===e.target.value);setForm(source?{...empty,sourceId:source.id,name:source.title,url:source.url}:empty);}}><option value="">Escolha no acervo</option>{state.sources.filter(s=>visibleTo(s,state.workspace)&&s.url&&sourceValid(s)).map(s=><option key={s.id} value={s.id}>{s.title}</option>)}</select></label>}
           <label>
             Nome
             <input

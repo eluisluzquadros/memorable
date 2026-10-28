@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState, useContext } from 'react';
+import { visibleTo } from "./visibility.mjs";
 import { AppContext } from './context';
 import { sourceValid, sourceFingerprint, assertEditor } from './operations.mjs';
 import { defaultTextModel, textProviderLabel } from './text-providers.mjs';
 export function RadarAnalysis() {
   const {state,setState,notify} = useContext(AppContext);
   const [providers,setProviders]=useState([]), [provider,setProvider]=useState(''), [model,setModel]=useState(defaultTextModel('anthropic')), [busy,setBusy]=useState(false), [error,setError]=useState('');
-  const sources=state.sources.filter(s=>(s.workspace===state.workspace||s.shared)&&sourceValid(s)&&!s.id.endsWith('-voice')).slice(0,20);
+  const sources=state.sources.filter(s=>visibleTo(s, state.workspace)&&sourceValid(s)&&!s.id.endsWith('-voice')).slice(0,20);
   const snapshot=JSON.stringify({workspace:state.workspace,role:state.role,voice:state.voices[state.workspace],sources:sources.map(s=>[s.id,sourceFingerprint([s]),s.editorialRole])});
   const current=useRef(snapshot);current.current=snapshot;
   const abort=useRef(null),alive=useRef(true);

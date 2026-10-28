@@ -1,4 +1,5 @@
 import { workspaces } from './demo-workspaces.mjs';
+import { visibleTo } from "./visibility.mjs";
 import podcastData from "./podcast-data.mjs";
 import { relationships, propagateChange } from "./strategy.mjs";
 import {
@@ -122,7 +123,7 @@ export function initialState() {
   );
 }
 export function accessibleSources(state, workspace) {
-  return state.sources.filter((s) => s.workspace === workspace || s.shared);
+  return state.sources.filter((s) => visibleTo(s, workspace));
 }
 export function blockers(state, piece) {
   const sources = accessibleSources(state, piece.workspace);

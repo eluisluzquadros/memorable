@@ -1,4 +1,5 @@
 import React, { useContext, useState } from 'react';
+import { visibleTo } from "./visibility.mjs";
 import { AppContext } from './context';
 import { assertEditor, contextPacket, sourceValid } from './operations.mjs';
 import { createPiece } from './workflow.mjs';
@@ -11,7 +12,7 @@ export function IsaacStudio() {
   const [active, setActive] = useState(0);
   const [error, setError] = useState('');
   const run = (state.isaacRuns || []).find(r => r.workspace === state.workspace && !r.archived) || { id: crypto.randomUUID(), workspace: state.workspace, assignments: {}, selected: [], scripts: [], deadline: '', events: [] };
-  const sources = state.sources.filter(s => (s.workspace === state.workspace || s.shared) && sourceValid(s));
+  const sources = state.sources.filter(s => visibleTo(s, state.workspace) && sourceValid(s));
   const base = isaacBase(state, run.assignments);
   const topics = isaacTopics(state);
   const selectedTopics = topics.filter(t => run.selected.includes(t.id));
