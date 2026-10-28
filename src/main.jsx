@@ -103,7 +103,6 @@ import { AccountRoot } from './Account';
 import { ThemeSwitch, ThemeSetting } from "./ThemeSwitch";
 import { StageRail } from "./StageRail";
 import { RefinePanel } from "./RefinePanel";
-import { ModelRoles } from "./ModelRoles";
 
 const navItems = [
   ["painel", "Visão geral", LayoutDashboard],
@@ -1979,7 +1978,6 @@ function Configuracoes() {
         </div>
         <ThemeSetting />
       </section>
-      <ModelRoles />
       <VoiceSettings />
       <Connections />
       <div className="settings-layout">

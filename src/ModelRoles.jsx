@@ -30,8 +30,8 @@ export function ModelRoles() {
   };
   return (
     <section className="r-panel mr-panel">
-      <h2>Modelos por função</h2>
-      <p>Cada função pode usar um modelo diferente. Use o painel de custos para comparar qualidade, tempo e preço antes de trocar.</p>
+      <h2>Quem faz o quê</h2>
+      <p>Cada função do time pode usar um modelo diferente. Quem escreve não deve ser quem avalia: compare qualidade, tempo e preço antes de trocar.</p>
       {error && <p className="form-error">{error}</p>}
       {catalog && !catalog.roleDefaults && <p className="field-help">Configure um provedor de IA no serviço para escolher modelos.</p>}
       {catalog?.roleDefaults && (
