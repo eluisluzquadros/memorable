@@ -7,7 +7,7 @@ import ContributePage from './Contribute';
 async function api(url, options) { const response=await fetch(url,options);let data;try{data=await response.json();}catch{throw new Error('Serviço local indisponível. Execute npm run dev:full.');}if(!response.ok)throw new Error(data.error || 'Não foi possível concluir.');return data; }
 export const accountWriter = (revision,report,userId) => makeAccountWriter(revision,report,userId,api);
 export function AccountRoot({ Component }) {
- const [route,setRoute]=useState(location.hash),[session,setSession]=useState(null),[checking,setChecking]=useState(true),[status,setStatus]=useState('Salvo no SQLite');
+ const [route,setRoute]=useState(location.hash),[session,setSession]=useState(null),[checking,setChecking]=useState(true),[status,setStatus]=useState('Salvo');
  const [notice,setNotice]=useState(''),[recovery,setRecovery]=useState(null),[leaving,setLeaving]=useState(false);
  const leavingRef=useRef(false),sessionRef=useRef(null);sessionRef.current=session;
  async function load(user){const data=await api('/api/account/state');setSession({user,data,writer:accountWriter(data.revision,setStatus,user.id)});setNotice('');setRecovery(null);try{const saved=JSON.parse(localStorage.getItem(`memorable-recovery:${user.id}`));if(saved?.userId===user.id)setRecovery(saved);}catch{}return data;}

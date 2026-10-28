@@ -16,7 +16,7 @@ page.setDefaultTimeout(30000);
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 const state = async () => (await (await context.request.get(base + "/api/account/state")).json()).state;
-const saved = () => page.getByText("Salvo no SQLite", { exact: true }).waitFor();
+const saved = () => page.getByText("Salvo", { exact: true }).waitFor();
 async function qa(name) {
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 1000 });

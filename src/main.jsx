@@ -780,7 +780,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
               <div className="topbar-right">
                 <ThemeSwitch />
                 <button className="tour-launcher" onClick={startTour} aria-label="Tour guiado" title="Repetir tour guiado"><Compass size={17}/><span>Tour guiado</span></button>
-                {account ? <><span className="account-sync" role="status">{syncStatus}</span><button className="text-button" onClick={onLogout}>Sair da conta</button></> : <a className="text-button" href="#auth">Entrar / Criar conta</a>}
+                {account ? <><span className={syncStatus === "Salvo" ? "sr-only" : "account-sync"} role="status">{syncStatus}</span><button className="text-button" onClick={onLogout}>Sair da conta</button></> : <a className="text-button" href="#auth">Entrar / Criar conta</a>}
                 <span className="demo-indicator">
                   <span />
                   {account ? account.name : 'Demonstração local'}

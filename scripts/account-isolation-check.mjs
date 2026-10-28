@@ -9,7 +9,7 @@ const stamp=Date.now(),password='qa-only-long-password-123',emails=[`qa-isolatio
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 const base='http://localhost:5173';
 async function state(){const r=await context.request.get(base+'/api/account/state');assert.equal(r.status(),200);return (await r.json()).state;}
-async function saved(){await page.getByText('Salvo no SQLite',{exact:true}).waitFor();}
+async function saved(){await page.getByText('Salvo',{exact:true}).waitFor();}
 async function skipTour(){const skip=page.getByRole('button',{name:'Pular tour',exact:true});await skip.waitFor();await page.getByLabel('Não mostrar automaticamente novamente').check();await skip.click();}
 async function register(name,email){await page.goto(base+'/#auth');await page.getByRole('button',{name:'Criar conta',exact:true}).click();await page.getByLabel('Seu nome',{exact:true}).fill(name);await page.getByLabel('E-mail',{exact:true}).fill(email);await page.getByLabel('Senha',{exact:true}).fill(password);await page.getByRole('button',{name:'Continuar',exact:true}).click();await page.getByLabel('Nome do negócio / marca',{exact:true}).fill('Negócio QA');await page.getByRole('button',{name:'Criar minha conta',exact:true}).click();await page.waitForURL('**/#app/painel');await skipTour();await saved();}
 async function logout(){await page.getByRole('button',{name:'Sair da conta',exact:true}).first().click();await page.getByRole('heading',{name:'Bom ter você de volta.',exact:true}).waitFor();assert.equal((await context.request.get(base+'/api/account/state')).status(),401);}

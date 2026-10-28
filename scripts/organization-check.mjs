@@ -8,7 +8,7 @@ const context=await browser.newContext({viewport:{width:1440,height:1000},reduce
 const page=await context.newPage();page.setDefaultTimeout(15000);fs.mkdirSync('qa',{recursive:true});
 const email=`qa-group-${Date.now()}@example.test`,password='qa-only-long-password-123',base='http://localhost:5173';
 const errors=[];page.on('pageerror',error=>errors.push(error.message));
-const saved=()=>page.getByText('Salvo no SQLite',{exact:true}).waitFor();
+const saved=()=>page.getByText('Salvo',{exact:true}).waitFor();
 async function state(){return (await (await context.request.get(base+'/api/account/state')).json()).state;}
 async function axe(){const violations=(await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations;assert.deepEqual(violations.map(v=>({id:v.id,targets:v.nodes.map(n=>n.target)})),[]);}
 const row=name=>page.locator('.brand-management-row').filter({has:page.getByRole('textbox',{name:`Nome da marca ${name}`,exact:true})});

@@ -9,7 +9,7 @@ export function accountWriter(revision, report, userId, request) {
         const state=pending;pending=null;
         try {
           const result=await request('/api/account/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({state,revision,userId})});
-          revision=result.revision;report('Salvo no SQLite');
+          revision=result.revision;report('Salvo');
         }catch(error){if(!pending)pending=state;report(error.message);throw error;}
       }
     })();

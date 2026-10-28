@@ -94,7 +94,7 @@ try {
   await second.getByLabel(/Por que não segue/).fill("Já publicamos sobre holding em setembro.");
   await second.getByRole("button", { name: "Enviar resposta" }).click();
   await page.getByText("Resposta enviada para Ana Tributário.").waitFor();
-  await page.getByText("Salvo no SQLite", { exact: true }).waitFor();
+  await page.getByText("Salvo", { exact: true }).waitFor();
   const saved = await teamState();
   const source = saved.sources.find((s) => s.internal);
   assert.ok(source, "internal source in the acervo");
