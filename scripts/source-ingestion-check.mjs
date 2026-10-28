@@ -5,10 +5,12 @@ import fs from 'node:fs';
 const browser = await chromium.launch({ executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe', headless:true });
 try {
   const page = await browser.newPage({ viewport:{width:1440,height:1000} });
+  // The guided tour opens on a first visit; these checks start past it.
+  await page.addInitScript(() => { try { sessionStorage.setItem('memorable-tour-dismissed:demo', 'true'); } catch {} });
   const errors=[]; page.on('pageerror', error => errors.push(error.message));
   await page.goto('http://localhost:5173/#app/guardar');
   const old = page.getByText('Example Domain',{exact:true});
-  if (await old.count()) { await old.first().click(); const existing=page.getByRole('dialog',{name:'Referência do acervo'}); await existing.getByText('Editar referência, validade e gestão',{exact:true}).click(); await existing.getByRole('button',{name:'Excluir referência'}).click(); await existing.getByRole('button',{name:'Excluir definitivamente'}).click(); }
+  if (await old.count()) { await old.first().click(); const existing=page.getByRole('dialog',{name:'Referência do acervo'}); await existing.getByRole('button',{name:'Excluir do acervo'}).click(); await existing.getByRole('button',{name:'Excluir definitivamente'}).click(); }
   await page.getByRole('button',{name:'Adicionar ao acervo'}).click();
   const modal=page.getByRole('dialog',{name:'Adicionar ao acervo'});
   await modal.getByLabel('Link da fonte (opcional)').fill('https://example.com/');

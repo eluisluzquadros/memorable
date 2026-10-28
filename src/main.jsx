@@ -96,7 +96,7 @@ import "./theme.css";
 import "./styles.css";
 import "./review.css";
 import "./app-skin.css";
-import { SourceMetadata,SourceRefresh, PublicationControls, Results } from "./Continuity";
+import { SourceMetadata,SourceRefresh, SourceDelete, PublicationControls, Results } from "./Continuity";
 import { Campaigns, PieceLineage } from "./Campaigns";
 import { AccountRoot } from './Account';
 import { ThemeSwitch, ThemeSetting } from "./ThemeSwitch";
@@ -1036,6 +1036,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
                 Material sem origem não pode fundamentar a aprovação.
               </div>
             )}
+            <SourceDelete source={activeSource} />
             <div className="dialog-actions">
               <button
                 className="button secondary"

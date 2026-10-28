@@ -1214,3 +1214,14 @@ select option {
 .settings-single {
   grid-template-columns: minmax(0, 640px);
 }
+/* Reference footer: delete, or whose reference it is when shared by another brand */
+.source-delete {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+.source-delete-foreign p {
+  color: var(--fg-muted);
+  display: block;
+  font-size: 14px;
+}

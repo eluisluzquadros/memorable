@@ -9,6 +9,7 @@ import {
 } from "./operations.mjs";
 import { transition } from "./workflow.mjs";
 import { invalidateSourceDependents } from './strategy.mjs';
+import { workspaceList } from './account-state.mjs';
 import { Download, Check, ExternalLink, ArrowRight, Trash2, AlertTriangle } from "lucide-react";
 export function RequestForm() {
   const {state,setState,notify} = useContext(AppContext);
@@ -42,7 +43,6 @@ export function SourceMetadata({ source }) {
   const [shared, setShared] = useState(source.shared);
   const [whySaved, setWhySaved] = useState(source.whySaved || '');
   const [pattern, setPattern] = useState(source.pattern || '');
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const count = state.pieces.filter((p) =>
     p.sourceIds.includes(source.id),
   ).length;
@@ -173,19 +173,58 @@ export function SourceMetadata({ source }) {
           <Check size={16} />
         </button>
       </form>
-      {source.workspace === state.workspace && <div className="source-delete">
-        {count > 0 && <p><AlertTriangle size={15} /> Esta referência é usada por {count} {count === 1 ? "conteúdo" : "conteúdos"}. A exclusão vai bloquear novas aprovações até que uma fonte seja vinculada novamente.</p>}
-        {confirmDelete ? <div className="dialog-actions"><button className="button secondary" onClick={() => setConfirmDelete(false)}>Cancelar</button><button className="button danger" onClick={() => {
-          try {
-            assertEditor(state);
-            setState(s => ({ ...s, sources: s.sources.filter(x => x.id !== source.id), pieces: invalidateSourceDependents(s.pieces, new Set([source.id])), events: [{ id:crypto.randomUUID(), workspace:source.workspace, title:source.title, event:'Referência excluída do acervo.', action:'source-delete', author:state.role, at:new Date().toISOString() }, ...s.events] }));
-            const collectedId=source.collectionId||source.id;
-            if (collectedId.startsWith('web-')) fetch('/api/collected/remove', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ workspace:source.workspace, id:collectedId }) }).catch(() => {});
-            setSelectedSource(null); notify('Referência excluída do acervo.');
-          } catch (e) { notify(e.message, true); }
-        }}><Trash2 size={16} /> Excluir definitivamente</button></div> : <button className="text-button danger-text" onClick={() => setConfirmDelete(true)}><Trash2 size={16} /> Excluir referência</button>}
-      </div>}
     </details>
+  );
+}
+// Deleting a reference is visible in the reference's own footer. A reference shared by another brand
+// can only be deleted there, and the footer says whose it is and opens it.
+export function SourceDelete({ source }) {
+  const { state, setState, notify, setSelectedSource, changeWorkspace } = useContext(AppContext);
+  const [confirm, setConfirm] = useState(false);
+  const count = state.pieces.filter((p) => p.sourceIds.includes(source.id)).length;
+  if (source.workspace !== state.workspace) {
+    const owner = workspaceList(state, { includeArchived: true }).find((w) => w.id === source.workspace);
+    return (
+      <div className="source-delete source-delete-foreign">
+        <p>Esta referência é de <b>{owner?.name || "outra marca"}</b> e chega aqui pela biblioteca compartilhada. Só a marca de origem pode editá-la ou excluí-la.</p>
+        {owner && !owner.archived && (
+          <button className="text-button" onClick={() => { changeWorkspace(source.workspace); setSelectedSource(source.id); }}>
+            Abrir em {owner.name} <ArrowRight size={15} aria-hidden="true" />
+          </button>
+        )}
+      </div>
+    );
+  }
+  function remove() {
+    try {
+      assertEditor(state);
+      setState((s) => ({
+        ...s,
+        sources: s.sources.filter((x) => x.id !== source.id),
+        pieces: invalidateSourceDependents(s.pieces, new Set([source.id])),
+        events: [{ id: crypto.randomUUID(), workspace: source.workspace, title: source.title, event: "Referência excluída do acervo.", action: "source-delete", author: s.role, at: new Date().toISOString() }, ...s.events],
+      }));
+      const collectedId = source.collectionId || source.id;
+      if (collectedId.startsWith("web-")) fetch("/api/collected/remove", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workspace: source.workspace, id: collectedId }) }).catch(() => {});
+      setSelectedSource(null);
+      notify("Referência excluída do acervo.");
+    } catch (e) {
+      notify(e.message, true);
+    }
+  }
+  return (
+    <div className="source-delete">
+      {count > 0 && <p><AlertTriangle size={15} aria-hidden="true" /> Usada por {count} {count === 1 ? "conteúdo" : "conteúdos"}. Ao excluir, {count === 1 ? "ele precisa" : "eles precisam"} de outra fonte antes de uma nova aprovação.</p>}
+      {source.shared && <p>Está na biblioteca compartilhada: some também para as outras marcas do grupo.</p>}
+      {confirm ? (
+        <div className="dialog-actions">
+          <button className="button secondary" onClick={() => setConfirm(false)}>Cancelar</button>
+          <button className="button danger" onClick={remove}><Trash2 size={16} aria-hidden="true" /> Excluir definitivamente</button>
+        </div>
+      ) : (
+        <button className="text-button danger-text" onClick={() => setConfirm(true)}><Trash2 size={16} aria-hidden="true" /> Excluir do acervo</button>
+      )}
+    </div>
   );
 }
 export function PublicationControls({ piece }) {
