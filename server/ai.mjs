@@ -68,10 +68,19 @@ function chatCompletionsModel(modelName) {
         ...(openRouter ? { usage: { include: true } } : {}),
       }),
     });
-    if (!response.ok)
+    if (!response.ok) {
+      if (response.status === 402)
+        throw new Error(
+          "Os créditos do provedor de IA acabaram ou o limite da chave foi atingido. Recarregue o saldo no OpenRouter e gere de novo. Nenhum resultado local será apresentado como IA.",
+        );
+      if (response.status === 429)
+        throw new Error(
+          "O provedor de IA limitou as requisições por agora. Aguarde um minuto e gere de novo.",
+        );
       throw new Error(
         `Provedor de IA respondeu HTTP ${response.status}. Nenhum resultado local será apresentado como IA.`,
       );
+    }
     const result = await response.json();
     observe?.({ inputTokens: result.usage?.prompt_tokens, outputTokens: result.usage?.completion_tokens, ...(Number.isFinite(result.usage?.cost) ? { cost: result.usage.cost } : {}) });
     try {
