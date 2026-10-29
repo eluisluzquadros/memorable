@@ -1,0 +1,405 @@
+{
+  "experiment": "EXP-308 rodada 1 · Redator",
+  "at": "2026-10-29T04:52:25.150Z",
+  "writers": [
+    "anthropic/claude-opus-5.5",
+    "openai/gpt-6.1-sol",
+    "openai/gpt-6.1-terra"
+  ],
+  "planner": "google/gemini-4-argon",
+  "judge": "google/gemini-4-argon",
+  "briefs": [
+    {
+      "id": "conecta",
+      "workspace": "esfera",
+      "source": "77432716-34c9-4c3c-bab5-247bb972fcfe",
+      "title": "O que o Esfera Conecta trouxe para quem lidera escritório",
+      "objective": "Informar",
+      "format": "LinkedIn",
+      "plan": {
+        "thesis": "Liderar um escritório trabalhista exige ir além da técnica jurídica: o Esfera Conecta evidenciou que gestão, tecnologia, jurimetria e acesso a capital são os pilares que separam o crescimento estratégico do mero aumento de volume operacional — exatamente os elementos que compõem a estrutura de crescimento integrado da Esfera Legal.",
+        "evidence": [
+          "O Esfera Conecta reuniu cerca de 500 advogados, sócios, gestores e parceiros do mercado jurídico em 21 de outubro de 2026, no Teatro Unisinos (Porto Alegre/RS), para discutir o que a faculdade não ensina: gestão, capital, inovação, liderança e vendas (Fonte: 77432716-34c9-4c3c-bab5-247bb972fcfe).",
+          "A programação destacou que gestão, tecnologia, capital, posicionamento e liderança passaram a decidir quem cresce, incluindo debates sobre como a jurimetria transforma dados judiciais em decisões (Fonte: 77432716-34c9-4c3c-bab5-247bb972fcfe).",
+          "A curadoria do evento reflete a vivência da Esfera Legal como um ecossistema completo de fomento à advocacia trabalhista, que une geração de oportunidades, CRM e gestão, execução processual (via BBMD Advogados, com mais de 12 anos de atuação) e financiamento com antecipação de honorários (via 2b Ativos Judiciais) sem exigir vínculo societário (Fonte: dna-esfera; 77432716-34c9-4c3c-bab5-247bb972fcfe)."
+        ],
+        "outline": [
+          "Problema do público: Advogados trabalhistas e gestores de escritórios dominam a técnica processual, mas esbarram na falta de previsibilidade financeira e no gargalo operacional quando tentam escalar sem preparo em gestão, tecnologia e capital.",
+          "Tese própria: O Esfera Conecta mostrou que o crescimento sustentável na advocacia não vem apenas de captar mais causas, mas de estruturar os pilares que a faculdade não ensina: gestão, capital, inovação, jurimetria e liderança.",
+          "Evidência: Realizado em 21 de outubro de 2026 no Teatro Unisinos, em Porto Alegre, o encontro reuniu cerca de 500 convidados entre sócios, gestores e parceiros para debater como dados judiciais orientam decisões e como a estrutura de capital sustenta a operação.",
+          "Contraponto: Crescer com estratégia é diferente de apenas aumentar de tamanho; acumular processos sem suporte operacional ou recorrer a dívidas compromete a autonomia do escritório, enquanto a antecipação da participação futura nos honorários e a execução integrada geram fluxo de caixa previsível sem vínculo societário.",
+          "Progressão: A pauta debatida no palco do Esfera Conecta é a aplicação prática do ecossistema da Esfera Legal no dia a dia: o advogado parceiro foca 100% no cliente e preserva a autonomia total sobre o seu escritório, enquanto a Esfera cuida da tecnologia (CRM), da execução processual (via BBMD Advogados) e do financiamento com antecipação de honorários (via 2b Ativos Judiciais).",
+          "Próximo passo ligado à oferta: Convite direto para que líderes de escritórios reflitam sobre seus gargalos atuais de escala e interajam nos comentários ('Qual dúvida você gostaria de esclarecer?'), abrindo espaço para conhecer o modelo de parceria da Esfera Legal."
+        ],
+        "risks": [
+          "A fonte disponível sobre o Esfera Conecta (77432716-34c9-4c3c-bab5-247bb972fcfe) é a página institucional pré-evento/programação; não há relatos pós-evento, citações literais das falas dos palestrantes ou métricas de resultados pós-encontro. O texto deve se ater aos temas pautados e à tese central da curadoria, sem inventar aprendizados específicos ou declarações não registradas nas fontes.",
+          "Ausência de contribuição original ou experiência prática informada no brief ('experience' está vazio), exigindo ancorar a síntese exclusivamente nos pilares documentados no evento e no DNA da marca."
+        ],
+        "patternUsed": "Estrutura de síntese executiva para LinkedIn: contraste imediato entre domínio técnico e visão de negócios (inspirado no ritmo direto do exemplo aprovado), desdobramento dos pilares debatidos no evento (gestão, dados/jurimetria e capital), conexão direta com a estrutura de crescimento integrado da marca e fechamento com pergunta aberta para engajamento consultivo."
+      },
+      "verdict": {
+        "ranking": [
+          "B",
+          "C",
+          "A"
+        ],
+        "reason": "A versão B entrega exatamente a tese do briefing com a melhor estrutura para o LinkedIn, usando o tom direto e de alto impacto da marca e mantendo total fidelidade às fontes (enquanto a versão A inventa regras operacionais de aprovação que não constam no material base)."
+      },
+      "versions": [
+        {
+          "writer": "anthropic/claude-opus-5.5",
+          "body": "Ninguém aprende a gerir escritório na faculdade.\n\nFoi dessa lacuna que nasceu a pauta do Esfera Conecta, em 21 de outubro, no Teatro Unisinos, em Porto Alegre.\n\nFoi um dia inteiro sobre o que vem depois da petição: gestão, capital, inovação, liderança e vendas.\n\nTrês temas da programação falam direto com quem lidera escritório trabalhista.\n\n1. Crescer não é o mesmo que aumentar de tamanho.\nMais processos sem estrutura viram mais prazos, mais audiências e mais pressão no caixa. A pergunta do sócio muda. Não é quantas causas entram. É o que sustenta cada uma até a sentença.\n\n2. Dados judiciais também orientam decisões.\nUm dos painéis tratou de jurimetria e do que os processos não contam sozinhos. Para quem lidera, isso significa decidir com informação, e não só com intuição.\n\n3. Capital faz parte da estratégia.\nEsperar a condenação para ver o honorário trava o planejamento. Com fluxo de caixa previsível, o escritório investe antes do resultado.\n\nEssa pauta não foi escolhida por acaso. Ela reflete o dia a dia do ecossistema Esfera Legal.\n\nA Esfera cuida da operação, do capital e da tecnologia. O BBMD Advogados conduz a execução processual. A 2b Ativos Judiciais faz a antecipação de honorários. O advogado parceiro foca 100% no cliente.\n\nTudo isso numa parceria sem vínculo societário, com autonomia total sobre o seu escritório.\n\nSe você lidera um escritório e um desses temas é o seu gargalo hoje, comece pela pergunta certa.\n\nQual dúvida você gostaria de esclarecer? Deixe nos comentários.",
+          "title": "O que o Esfera Conecta trouxe para quem lidera escritório",
+          "words": 249,
+          "issues": [],
+          "sourcesOk": true,
+          "facts": 9,
+          "factsVerbatim": 9,
+          "model": "anthropic/claude-opus-5.5",
+          "role": "redator",
+          "seconds": 29.7,
+          "inputTokens": 15705,
+          "outputTokens": 3560,
+          "cost": 0.13402,
+          "letter": "B",
+          "scores": {
+            "clareza": 5,
+            "evidencia": 5,
+            "voz": 5,
+            "utilidade": 5
+          },
+          "mean": 5,
+          "rank": 1
+        },
+        {
+          "writer": "openai/gpt-6.1-sol",
+          "body": "Entrou mais um processo. Quem acompanha cada etapa?\n\nAntes de ampliar a carteira, vale responder: quem controla os prazos, como você acompanha o andamento e como organiza o caixa enquanto os honorários não chegam?\n\nEsse é o ponto de liderança que a pauta do Esfera Conecta coloca em discussão. Gestão, tecnologia, capital e liderança aparecem ao lado da técnica jurídica. A programação também inclui jurimetria: o uso de dados judiciais para orientar decisões.\n\nPara quem lidera um escritório trabalhista, nossa leitura é direta: crescer com estratégia exige olhar para a estrutura que vai sustentar cada nova demanda.\n\nNa prática, isso significa avaliar a capacidade de acompanhar o próximo caso antes de ampliar o volume. Não apenas perguntar quantos processos podem entrar, mas como cada um será conduzido.\n\nEssa visão orienta a Esfera Legal como estrutura de crescimento integrado. O ecossistema reúne CRM e gestão, execução processual via BBMD Advogados e antecipação de honorários via 2b Ativos Judiciais. O advogado parceiro concentra sua atuação no cliente, com autonomia sobre o escritório e sem vínculo societário.\n\nA conversa sobre crescimento, portanto, começa numa decisão concreta: sua operação está preparada para a próxima demanda?\n\nSe quiser entender como essa estrutura se aplica ao seu escritório, podemos começar pela sua pergunta. Qual dúvida você gostaria de esclarecer?",
+          "title": "Mais processos pedem mais estrutura",
+          "words": 213,
+          "issues": [],
+          "sourcesOk": true,
+          "facts": 5,
+          "factsVerbatim": 5,
+          "model": "openai/gpt-6.1-sol",
+          "role": "redator",
+          "seconds": 16.9,
+          "inputTokens": 8733,
+          "outputTokens": 914,
+          "cost": 0.030971,
+          "letter": "C",
+          "scores": {
+            "clareza": 4,
+            "evidencia": 5,
+            "voz": 4,
+            "utilidade": 4
+          },
+          "mean": 4.25,
+          "rank": 2
+        },
+        {
+          "writer": "openai/gpt-6.1-terra",
+          "body": "Mais processos não são um plano de crescimento.\n\nAntes de assumir uma nova demanda, quem lidera um escritório precisa olhar além da tese jurídica: como acompanhar os prazos e organizar o capital da operação?\n\nEssa foi a perspectiva da programação do Esfera Conecta, realizado em 21 de outubro, em Porto Alegre. Gestão, tecnologia e capital estiveram na pauta. A jurimetria também teve espaço, com uma discussão proposta sobre o uso de dados judiciais nas decisões.\n\nNa Esfera Legal, essa visão se conecta a uma estrutura de crescimento integrado. O CRM apoia a gestão, o BBMD Advogados atua na execução processual e a 2b Ativos Judiciais integra o braço financeiro.\n\nApós a aprovação do cliente pela equipe BBMD, o advogado associado recebe uma antecipação sobre os honorários, antes de qualquer audiência ou resultado. A parceria não exige vínculo societário nem alteração do controle do escritório.\n\nQual dúvida você gostaria de esclarecer sobre a gestão e o crescimento do seu escritório?",
+          "title": "Crescer não é apenas receber mais processos",
+          "words": 159,
+          "issues": [],
+          "sourcesOk": true,
+          "facts": 5,
+          "factsVerbatim": 5,
+          "model": "openai/gpt-6.1-terra",
+          "role": "redator",
+          "seconds": 10.3,
+          "inputTokens": 8733,
+          "outputTokens": 811,
+          "cost": 0.0149705,
+          "letter": "A",
+          "scores": {
+            "clareza": 4,
+            "evidencia": 3,
+            "voz": 4,
+            "utilidade": 4
+          },
+          "mean": 3.75,
+          "rank": 3
+        }
+      ],
+      "firstJudge": {
+        "verdict": {
+          "ranking": [
+            "A",
+            "B",
+            "C"
+          ],
+          "reason": "A versão A entrega perfeitamente a tese do briefing, utiliza a voz exata da marca com frases curtas e de impacto, mantém fidelidade absoluta à fonte e organiza os aprendizados de forma prática e escaneável para o LinkedIn."
+        },
+        "scores": {
+          "anthropic/claude-opus-5.5": {
+            "mean": 5,
+            "rank": 1
+          },
+          "openai/gpt-6.1-sol": {
+            "mean": 4.25,
+            "rank": 2
+          },
+          "openai/gpt-6.1-terra": {
+            "mean": 3.5,
+            "rank": 3
+          }
+        },
+        "note": "juiz viu só 6.000 caracteres da fonte (defeito do teste)"
+      }
+    },
+    {
+      "id": "6x1",
+      "workspace": "esfera",
+      "source": "935d1426-d9d1-4410-b67d-494d68b6fb13",
+      "title": "Fim da escala 6x1: o que muda para escritórios e clientes",
+      "objective": "Informar",
+      "format": "LinkedIn",
+      "plan": {
+        "thesis": "A promulgação do fim da escala 6x1 e a redução da jornada para 40 horas semanais em duas etapas abrem uma janela de demandas trabalhistas para milhões de trabalhadores, mas só os escritórios com estrutura de crescimento integrado, execução processual em escala e fluxo de caixa previsível conseguirão absorver esse volume sem travar a operação.",
+        "evidence": [
+          {
+            "sourceId": "935d1426-d9d1-4410-b67d-494d68b6fb13",
+            "excerpt": "A iniciativa reduz o limite da jornada de 44 para 40 horas semanais, assegura ao trabalhador dois dias de descanso remunerado e proíbe qualquer redução salarial."
+          },
+          {
+            "sourceId": "935d1426-d9d1-4410-b67d-494d68b6fb13",
+            "excerpt": "Do total, cerca de um terço trabalha no regime 6x1, o equivalente a 14,9 milhões de trabalhadores que seriam beneficiados pela mudança para o modelo 5x2."
+          },
+          {
+            "sourceId": "935d1426-d9d1-4410-b67d-494d68b6fb13",
+            "excerpt": "Dois meses após a publicação da emenda no Diário Oficial da União (DOU), a jornada máxima cai de 44 horas para 42 horas semanais. E os trabalhadores passam a ter direito a dois dias de descanso remunerado por semana, sendo um deles preferencialmente aos domingos. Um ano e dois meses depois da publicação no DOU (14 meses), chega, definitivamente, a 40 horas."
+          },
+          {
+            "sourceId": "935d1426-d9d1-4410-b67d-494d68b6fb13",
+            "excerpt": "Cláusulas de acordos coletivos incompatíveis com as novas regras perdem validade dois meses após a publicação da emenda."
+          },
+          {
+            "sourceId": "935d1426-d9d1-4410-b67d-494d68b6fb13",
+            "excerpt": "As novas regras de duração e controle de jornada não valem para empregados com diploma superior que recebam ao menos 2,5 vezes o teto do Regime Geral de Previdência Social (RGPS) — salvo por liberalidade do empregador ou previsão em acordo coletivo —, mantidas as regras de repouso."
+          },
+          {
+            "sourceId": "dna-esfera",
+            "excerpt": "Um ecossistema completo de fomento à Advocacia Trabalhista A Esfera ajuda advogados a ampliarem seus ganhos financeiros. Não como uma plataforma. Como uma estrutura de crescimento integrado."
+          },
+          {
+            "sourceId": "dna-esfera",
+            "excerpt": "O BBMD Advogados cuida da petição inicial, acompanhamento de prazos e todas as audiências. O advogado parceiro foca no cliente. A Esfera cuida do resto."
+          },
+          {
+            "sourceId": "dna-esfera",
+            "excerpt": "A 2b Ativos Judiciais financia e antecipa os valores das condenações, eliminando a dependência de capital externo e garantindo fluxo de caixa previsível ao longo de toda a operação."
+          }
+        ],
+        "outline": [
+          "Problema do público: A promulgação da emenda constitucional que encerra a escala 6x1 afeta 14,9 milhões de trabalhadores (especialmente em comércio, serviços, indústria e logística) e cria regras de transição em 2 e 14 meses. Advogados trabalhistas verão um aumento de consultas e litígios sobre adaptação de jornada, horas extras, validade de cláusulas coletivas e irredutibilidade salarial, mas escritórios enxutos correm o risco de gargalo operacional e descapitalização até a sentença.",
+          "Tese própria: Mudanças constitucionais de grande impacto geram oportunidades reais no mercado trabalhista, porém transformar essa demanda em resultado financeiro exige mais do que conhecimento técnico: exige uma estrutura de crescimento integrado que una operação jurídica, tecnologia e capital.",
+          "Evidência factual da mudança: A nova regra reduz o limite de 44 para 42 horas semanais (com dois dias de descanso remunerado) dois meses após a publicação no DOU, chegando a 40 horas em 14 meses, sem redução salarial. Além disso, invalida cláusulas de acordos coletivos incompatíveis após dois meses e cria exceções específicas (como empregados com ensino superior que recebem ao menos 2,5 vezes o teto do RGPS e regras de aditamento para contratos da administração pública).",
+          "Contraponto estratégico: Mais demandas no mercado não significam ganho imediato para o advogado se o escritório absorver sozinho o custo de captação, a triagem de perfis elegíveis, o volume de petições e audiências e a espera de anos pela condenação.",
+          "Progressão com a solução da marca: Como ecossistema completo de fomento à Advocacia Trabalhista, a Esfera Legal permite que o advogado foque 100% no cliente e mantenha autonomia total sobre o seu escritório, em parceria sem vínculo societário. O ecossistema entrega geração de oportunidades sem custo fixo, CRM integrado, execução processual pelo BBMD Advogados (petição inicial, prazos e audiências) e antecipação da participação futura nos honorários pela 2b Ativos Judiciais, garantindo fluxo de caixa previsível.",
+          "Próximo passo e fechamento: Convite direto para o advogado discutir como preparar a operação do escritório para as novas demandas trabalhistas, encerrando com a chamada para ação: 'Qual dúvida você gostaria de esclarecer?'."
+        ],
+        "risks": [
+          "Ausência de experiência própria ou parecer técnico exclusivo da equipe no briefing (campo 'experience' vazio): o texto não deve inventar casos concretos nem teses jurídicas não previstas na fonte oficial sobre a PEC.",
+          "Cuidado ético (OAB): ao conectar a mudança constitucional à geração de oportunidades da Esfera Legal, manter tom informativo e estratégico de gestão de escritório, sem sugerir mercantilização direta ou promessa de ganho de causa.",
+          "Fidelidade terminológica: garantir que a peça posicione a Esfera Legal como estrutura de crescimento integrado (nunca 'plataforma') e trate o financiamento da 2b Ativos Judiciais como antecipação de honorários (nunca 'empréstimo')."
+        ],
+        "patternUsed": "Análise de impacto regulatório B2B (Fato novo de mercado -> Gargalo operacional do escritório -> Contraponto de gestão -> Ecossistema integrado como alavanca -> Pergunta de engajamento)."
+      },
+      "verdict": {
+        "ranking": [
+          "A",
+          "B",
+          "C"
+        ],
+        "reason": "A versão A é a que melhor incorpora o tom direto, estratégico e as frases-chave da marca, além de organizar perfeitamente as regras e exceções da nova emenda para o dia a dia do advogado trabalhista."
+      },
+      "versions": [
+        {
+          "writer": "anthropic/claude-opus-5.5",
+          "body": "Seu cliente vai perguntar: o que muda na minha escala?\n\nO Congresso promulgou a emenda que encerra a escala 6x1. A pergunta vai chegar rápido. A resposta precisa ser precisa.\n\nO que diz o texto:\n• O limite semanal cai de 44 para 40 horas.\n• O trabalhador passa a ter dois dias de descanso remunerado.\n• Qualquer redução salarial fica proibida.\n\nA transição acontece em duas datas.\nDois meses após a publicação no Diário Oficial da União, a jornada máxima cai para 42 horas.\nCatorze meses após a publicação, ela chega a 40 horas.\n\nTrês pontos devem gerar dúvida no atendimento:\n\n1. Acordos coletivos. Cláusulas incompatíveis com as novas regras perdem validade dois meses após a publicação.\n\n2. Exceções. As regras de duração e controle de jornada não valem para empregados com diploma superior que recebam ao menos 2,5 vezes o teto do RGPS. As regras de repouso continuam valendo para eles.\n\n3. Contratos com a administração pública. A redução da jornada depende de aditamento, formalizado em até um ano. O segundo dia de repouso não depende de aditamento.\n\nPor que isso importa para o escritório?\nUm levantamento do Ministério do Trabalho e Emprego aponta cerca de 14,9 milhões de trabalhadores no regime 6x1. Cada um tem uma rotina diferente. E cada rotina pede uma análise própria.\n\nAtender bem exige tempo de escuta. Esse tempo disputa espaço com petição, prazo e audiência.\n\nA Esfera Legal existe para resolver esse conflito. Somos um ecossistema completo de fomento à Advocacia Trabalhista. O advogado parceiro foca 100% no cliente. O BBMD Advogados cuida da petição inicial, dos prazos e das audiências. A Esfera cuida da operação, do capital e da tecnologia.\n\nTudo isso numa parceria sem vínculo societário. Com autonomia total sobre o seu escritório.\n\nA mudança está na Constituição. As dúvidas dos seus clientes aparecem no dia a dia.\n\nQual dúvida você gostaria de esclarecer? Deixe nos comentários.\n\nFonte das regras: Planalto (gov.br).",
+          "title": "Fim da escala 6x1: o que muda para escritórios e clientes",
+          "words": 322,
+          "issues": [],
+          "sourcesOk": true,
+          "facts": 12,
+          "factsVerbatim": 12,
+          "model": "anthropic/claude-opus-5.5",
+          "role": "redator",
+          "seconds": 40.4,
+          "inputTokens": 18529,
+          "outputTokens": 4984,
+          "cost": 0.173796,
+          "letter": "A",
+          "scores": {
+            "clareza": 5,
+            "evidencia": 4,
+            "voz": 5,
+            "utilidade": 5
+          },
+          "mean": 4.75,
+          "rank": 1
+        },
+        {
+          "writer": "openai/gpt-6.1-sol",
+          "body": "Seu cliente perguntou quando a escala 6x1 muda?\n\nAntes de responder, separe três pontos: publicação da emenda, prazo de transição e situação concreta do trabalhador. Promulgação não significa aplicação imediata de todas as regras.\n\nSegundo o comunicado do Planalto sobre o fim da escala 6x1, a transição prevê:\n\n• Dois meses após a publicação no Diário Oficial: limite de 42 horas semanais e dois dias de descanso remunerado, sendo um preferencialmente aos domingos.\n• Aos 14 meses da publicação: limite de 40 horas semanais.\n• Proibição de redução salarial.\n\nO comunicado também informa que cláusulas de acordos coletivos incompatíveis com as novas regras perdem validade após dois meses da publicação.\n\nPara o cliente, a pergunta é concreta: “Quando minha jornada precisa ser ajustada?”\n\nPara o escritório, isso pede um roteiro de atendimento: conferir a publicação oficial, identificar o regime aplicável e reunir contrato, registros de jornada e norma coletiva. Há regras específicas e exceções. O resumo da mudança não substitui a análise do texto constitucional e do caso.\n\nMais dúvidas sobre jornada não significam, automaticamente, mais ações judiciais. O primeiro trabalho é distinguir orientação, necessidade de adequação e eventual conflito.\n\nÉ nesse atendimento que a organização da operação importa. Na Esfera Legal, o CRM reúne informações do primeiro contato à sentença. A execução processual fica com o BBMD Advogados, responsável pela petição inicial, pelos prazos e pelas audiências.\n\nEssa estrutura de crescimento integrado permite ao advogado concentrar sua atuação no cliente, sem assumir sozinho todas as etapas do processo. A parceria preserva a autonomia do escritório, sem vínculo societário, e está sujeita a contrato formal.\n\nPara conhecer como essa organização funciona na prática, converse com a equipe da Esfera Legal.\n\nSobre a transição da escala 6x1, qual dúvida você gostaria de esclarecer?",
+          "title": "Escala 6x1: o atendimento começa pelo calendário",
+          "words": 292,
+          "issues": [],
+          "sourcesOk": true,
+          "facts": 8,
+          "factsVerbatim": 8,
+          "model": "openai/gpt-6.1-sol",
+          "role": "redator",
+          "seconds": 21.5,
+          "inputTokens": 10306,
+          "outputTokens": 1376,
+          "cost": 0.0395235,
+          "letter": "C",
+          "scores": {
+            "clareza": 4,
+            "evidencia": 4,
+            "voz": 4,
+            "utilidade": 4
+          },
+          "mean": 4,
+          "rank": 3
+        },
+        {
+          "writer": "openai/gpt-6.1-terra",
+          "body": "A escala 6x1 mudou. E as dúvidas já começam.\n\nSegundo o Planalto, a emenda promulgada reduz o limite semanal de 44 para 40 horas, em etapas, sem redução salarial:\n\n• Dois meses após a publicação no Diário Oficial, o limite passa a 42 horas e entram em vigor dois dias de descanso remunerado por semana.\n• Após 14 meses da publicação, o limite passa a 40 horas.\n\nNa prática, ao analisar uma jornada de 44 horas, o escritório terá de conferir quando cada etapa se aplica e quais cláusulas coletivas precisam ser revistas. As incompatíveis com as novas regras perdem validade dois meses após a publicação.\n\nA orientação também depende do contexto. Há regras específicas, por exemplo, para contratos da administração pública que envolvem mão de obra e para determinados empregados de nível superior. Vale examinar cada situação antes de concluir como será a transição.\n\nPara o advogado, organizar essa análise é tão importante quanto acompanhar os prazos. Na Esfera Legal, o CRM integra a gestão da operação, enquanto o BBMD Advogados cuida da execução processual. A estrutura também conta com financiamento pela 2b Ativos Judiciais. Assim, o parceiro pode concentrar seu trabalho no cliente, sem abrir mão da autonomia do escritório ou estabelecer vínculo societário.\n\nQual dúvida você gostaria de esclarecer?",
+          "title": "Fim da escala 6x1: como orientar clientes na transição",
+          "words": 212,
+          "issues": [],
+          "sourcesOk": true,
+          "facts": 7,
+          "factsVerbatim": 7,
+          "model": "openai/gpt-6.1-terra",
+          "role": "redator",
+          "seconds": 14.8,
+          "inputTokens": 10306,
+          "outputTokens": 1244,
+          "cost": 0.01910175,
+          "letter": "B",
+          "scores": {
+            "clareza": 5,
+            "evidencia": 5,
+            "voz": 4,
+            "utilidade": 4
+          },
+          "mean": 4.5,
+          "rank": 2
+        }
+      ],
+      "firstJudge": {
+        "verdict": {
+          "ranking": [
+            "A",
+            "C",
+            "B"
+          ],
+          "reason": "A versão A é a mais fiel ao texto de referência fornecido (sem extrapolar com informações ausentes no recorte sobre administração pública como fizeram B e C) e entrega um roteiro prático de atendimento altamente útil para o advogado trabalhista."
+        },
+        "scores": {
+          "anthropic/claude-opus-5.5": {
+            "mean": 4,
+            "rank": 3
+          },
+          "openai/gpt-6.1-sol": {
+            "mean": 4.5,
+            "rank": 1
+          },
+          "openai/gpt-6.1-terra": {
+            "mean": 3.75,
+            "rank": 2
+          }
+        },
+        "note": "juiz viu só 6.000 caracteres da fonte (defeito do teste)"
+      }
+    }
+  ],
+  "ledger": [
+    {
+      "model": "google/gemini-4-argon",
+      "role": "plano",
+      "seconds": 17.5,
+      "inputTokens": 7825,
+      "outputTokens": 994,
+      "cost": 0.02559
+    },
+    {
+      "model": "anthropic/claude-opus-5.5",
+      "role": "redator",
+      "seconds": 29.7,
+      "inputTokens": 15705,
+      "outputTokens": 3560,
+      "cost": 0.13402
+    },
+    {
+      "model": "openai/gpt-6.1-sol",
+      "role": "redator",
+      "seconds": 16.9,
+      "inputTokens": 8733,
+      "outputTokens": 914,
+      "cost": 0.030971
+    },
+    {
+      "model": "openai/gpt-6.1-terra",
+      "role": "redator",
+      "seconds": 10.3,
+      "inputTokens": 8733,
+      "outputTokens": 811,
+      "cost": 0.0149705
+    },
+    {
+      "model": "google/gemini-4-argon",
+      "role": "juiz",
+      "seconds": 6.6,
+      "inputTokens": 2891,
+      "outputTokens": 133,
+      "cost": 0.007112
+    },
+    {
+      "model": "google/gemini-4-argon",
+      "role": "plano",
+      "seconds": 20.7,
+      "inputTokens": 9103,
+      "outputTokens": 1409,
+      "cost": 0.032296
+    },
+    {
+      "model": "anthropic/claude-opus-5.5",
+      "role": "redator",
+      "seconds": 40.4,
+      "inputTokens": 18529,
+      "outputTokens": 4984,
+      "cost": 0.173796
+    },
+    {
+      "model": "openai/gpt-6.1-sol",
+      "role": "redator",
+      "seconds": 21.5,
+      "inputTokens": 10306,
+      "outputTokens": 1376,
+      "cost": 0.0395235
+    },
+    {
+      "model": "openai/gpt-6.1-terra",
+      "role": "redator",
+      "seconds": 14.8,
+      "inputTokens": 10306,
+      "outputTokens": 1244,
+      "cost": 0.01910175
+    },
+    {
+      "model": "google/gemini-4-argon",
+      "role": "juiz",
+      "seconds": 4.4,
+      "inputTokens": 3843,
+      "outputTokens": 132,
+      "cost": 0.009006
+    }
+  ],
+  "spent": 0.5038,
+  "rejudgedAt": "2026-10-29T04:56:33.129Z"
+}
