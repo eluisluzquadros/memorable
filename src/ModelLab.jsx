@@ -125,24 +125,29 @@ function RunDetail({ id }) {
 export function ModelLab() {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
-  const [task, setTask] = useState("redator");
+  const task = "redator";
+  // "Geral" ranks every content type together; each format has its own ranking and profiles.
+  const [view, setView] = useState("Geral");
   const [open, setOpen] = useState(null);
   useEffect(() => {
     fetch("/api/lab").then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error); setData(d); }).catch((e) => setError(e.message || "Laboratório indisponível."));
   }, []);
-  const rows = useMemo(() => (data?.summary.models || []).filter((m) => m.task === task).sort((a, b) => (b.mean ?? -1) - (a.mean ?? -1)), [data, task]);
+  const scope = view === "Geral" ? data?.summary : data?.summary.byFormat?.[view];
+  const rows = useMemo(() => (scope?.models || []).filter((m) => m.task === task).sort((a, b) => (b.mean ?? -1) - (a.mean ?? -1)), [scope]);
   if (error) return <p className="form-error">{error}</p>;
   if (!data) return <p className="field-help">Carregando o laboratório…</p>;
-  const { floor, profiles } = data.summary;
-  const picks = profiles[task];
+  const { floor } = data.summary;
+  const picks = scope?.profiles?.[task];
+  const formats = data.summary.formats || [];
   const maxCost = Math.max(...rows.map((r) => r.cost || 0));
   return (
     <div className="lab">
       <section className="r-panel">
         <h2>Laboratório de modelos</h2>
         <p>Cada modelo escreve o mesmo texto, com as mesmas fontes e instruções. Juízes cegos de outras famílias dão notas de 1 a 5 em clareza, evidência, voz e utilidade, sem saber quem escreveu. Um modelo é qualificado com nota média ≥ {num(floor.mean, 1)}, nenhuma evidência abaixo de {floor.evidence} e pelo menos {floor.minItems} textos avaliados.</p>
-        <div className="r-tabs" role="tablist" aria-label="Função">
-          {Object.entries(TASKS).map(([id, name]) => <button key={id} type="button" role="tab" aria-selected={task === id} onClick={() => setTask(id)}>{name}</button>)}
+        <p className="field-help">Redator: {view === "Geral" ? "todos os tipos de conteúdo juntos" : `só ${view}`}. O melhor modelo pode mudar com o formato, por isso cada tipo tem ranking e perfis próprios.</p>
+        <div className="r-tabs lab-formats" role="tablist" aria-label="Tipo de conteúdo">
+          {["Geral", ...formats].map((name) => <button key={name} type="button" role="tab" aria-selected={view === name} onClick={() => setView(name)}>{name}</button>)}
         </div>
       </section>
       {rows.length ? (
@@ -175,7 +180,7 @@ export function ModelLab() {
             <QualityCostChart rows={rows} picks={picks} floor={floor.mean} />
             <div className="lab-table-wrap" tabIndex={0} role="region" aria-label="Tabela dos modelos avaliados">
               <table className="lab-table">
-                <caption className="sr-only">Modelos avaliados para {TASKS[task]}</caption>
+                <caption className="sr-only">Redatores avaliados · {view}</caption>
                 <thead><tr><th scope="col">Modelo</th><th scope="col">Nota</th><th scope="col">Custo por texto</th><th scope="col">vs. mais caro</th><th scope="col">Tempo (p50)</th><th scope="col">Avaliados</th><th scope="col">Situação</th></tr></thead>
                 <tbody>
                   {rows.map((r) => (
@@ -208,6 +213,7 @@ export function ModelLab() {
               </button>
               <span>{STATUS[r.status] || r.status} · {usd(r.spent_usd, 2)}{r.budget_usd != null ? ` de ${usd(r.budget_usd, 2)}` : ""} · {r.outputs} saídas{r.config?.summary === false ? " · fora dos totais" : ""}</span>
               {r.notes && <small>{r.notes}</small>}
+              {(r.config?.excludedBriefs || []).map((e) => <small key={e.id}>Fora dos totais: {(r.config.briefs || []).find((b) => b.id === e.id)?.title || e.id}. {e.reason}</small>)}
               {open === r.id && <RunDetail id={r.id} />}
             </li>
           ))}

@@ -96,7 +96,7 @@ const avg = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : nul
 
 // Per task and model: judged outputs, mean score, cost, speed and how often the checks pass; then the
 // three profiles the platform offers. Only scored outputs count toward quality.
-export function labSummary(items, runs, floor = FLOOR) {
+function summarize(items, runs, floor = FLOOR) {
   // A round superseded by a later one (same texts, other judges) stays in the history, out of the totals.
   const taskOf = new Map(runs.filter((r) => r.config?.summary !== false).map((r) => [r.id, r.task]));
   const groups = new Map();
@@ -146,4 +146,25 @@ export function labSummary(items, runs, floor = FLOOR) {
     }];
   }));
   return { floor, balancedGap: BALANCED_GAP, models, profiles };
+}
+
+// The overall view and one view per content type (LinkedIn, Carrossel, Reels…): the best writer can change
+// with the format, so each format gets its own ranking and profiles. Briefs a round marks as excluded
+// (e.g. a source of another brand) stay in the history and out of every total.
+export function labSummary(items, runs, floor = FLOOR) {
+  const formatOf = new Map(), excluded = [];
+  for (const r of runs) {
+    for (const b of r.config?.briefs || []) formatOf.set(`${r.id}|${b.id}`, b.format);
+    for (const e of r.config?.excludedBriefs || []) excluded.push({ run: r.id, ...e });
+  }
+  const out = new Set(excluded.map((e) => `${e.run}|${e.id}`));
+  const kept = items.filter((i) => !out.has(`${i.run_id}|${i.brief_id}`));
+  const format = (i) => formatOf.get(`${i.run_id}|${i.brief_id}`) || "Outros";
+  const formats = [...new Set(kept.filter((i) => i.role !== "plano" && i.role !== "juiz").map(format))];
+  return {
+    ...summarize(kept, runs, floor),
+    excluded,
+    formats,
+    byFormat: Object.fromEntries(formats.map((fmt) => [fmt, summarize(kept.filter((i) => format(i) === fmt), runs, floor)])),
+  };
 }

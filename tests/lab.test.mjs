@@ -70,3 +70,18 @@ test("a model that breaks the format in more than 10% of attempts does not quali
   assert.equal(row.qualified, false);
   assert.match(row.why, /Quebrou o formato em 1 de 7 tentativas/);
 });
+
+test("overall and per-format views; excluded briefs leave every total", () => {
+  const runs = [{ id: "r", task: "redator", config: { briefs: [{ id: "a", format: "LinkedIn" }, { id: "b", format: "LinkedIn" }, { id: "c", format: "LinkedIn" }, { id: "x", format: "Reels" }, { id: "y", format: "Reels" }, { id: "z", format: "Reels" }, { id: "bad", format: "Reels" }], excludedBriefs: [{ id: "bad", reason: "fonte de outra marca" }] } }];
+  const items = [];
+  const put = (model, brief, mean) => items.push({ run_id: "r", brief_id: brief, role: "redator", model, status: "done", mean, cost_usd: 0.01, scores: { j: { evidencia: 4 } }, checks: { ok: true } });
+  for (const b of ["a", "b", "c"]) { put("texto", b, 4.8); put("video", b, 4.0); }
+  for (const b of ["x", "y", "z"]) { put("texto", b, 3.8); put("video", b, 4.7); }
+  put("texto", "bad", 1);
+  const s = labSummary(items, runs);
+  assert.deepEqual(s.formats.sort(), ["LinkedIn", "Reels"]);
+  assert.equal(s.byFormat.LinkedIn.profiles.redator.excelencia, "texto");
+  assert.equal(s.byFormat.Reels.profiles.redator.excelencia, "video");
+  assert.equal(s.models.find((m) => m.model === "texto").judged, 6, "the excluded brief is not counted");
+  assert.equal(s.excluded[0].reason, "fonte de outra marca");
+});
