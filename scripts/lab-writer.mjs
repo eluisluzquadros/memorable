@@ -38,7 +38,10 @@ const r1Text = Object.fromEntries(r1.briefs.flatMap((b) => b.versions.map((v) =>
 
 // Before paying anything: the OpenRouter key must hold more than the round could spend.
 const key = await (await fetch("https://openrouter.ai/api/v1/key", { headers: { Authorization: `Bearer ${process.env.MEMORABLE_AI_KEY}` } })).json();
-const available = key.data?.limit_remaining ?? Infinity;
+// Without a cap on the key, the account balance is what limits the round.
+const credits = key.data?.limit_remaining == null ? (await (await fetch("https://openrouter.ai/api/v1/credits", { headers: { Authorization: `Bearer ${process.env.MEMORABLE_AI_KEY}` } })).json()).data : null;
+const available = key.data?.limit_remaining ?? (credits ? credits.total_credits - credits.total_usage : Infinity);
+console.log(`Saldo disponível: US$ ${Number(available).toFixed(2)} · teto da rodada US$ ${budget}`);
 if (available < budget) {
   console.log(`A chave do OpenRouter tem US$ ${Number(available).toFixed(2)} disponíveis, menos que o teto da rodada (US$ ${budget}). Aumente o limite da chave em openrouter.ai/settings/keys ou rode com --budget menor. Nada foi gasto.`);
   process.exit(0);
