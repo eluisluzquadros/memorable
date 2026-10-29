@@ -92,6 +92,9 @@ const usePrefersReducedMotion = () => {
   return reduced;
 };
 
+// Accented capitals (the Á in MEMORÁVEL) rise above the letters, so those words sit lower to clear the menu.
+const accented = (word) => /[ÁÀÂÃÉÊÍÓÔÕÚÇ]/.test(word);
+
 function Brand() {
   return (
     <a className="mx-brand" href="#" aria-label="Memorável, início">
@@ -410,7 +413,7 @@ function Stage({ reduced, account }) {
     return (
       <section className="mx-static" id="fluxo" aria-label="Como o fluxo funciona">
         <div className="mx-static-hero">
-          <div className="mx-word is-on" aria-hidden="true" style={{ "--len": 9 }}>
+          <div className="mx-word is-on has-accent" aria-hidden="true" style={{ "--len": 9 }}>
             MEMORÁVEL
           </div>
           <img className="mx-figure" src="/motion/hero.webp" alt={figureAlt} width="1000" height="1500" />
@@ -420,7 +423,7 @@ function Stage({ reduced, account }) {
         {ACTS.slice(1).map((a) => (
           <article key={a.id} className={`mx-static-act act-${a.id}`}>
             {a.id === "mundo" && <CityScreens t={0} still />}
-            <div className="mx-word is-on" aria-hidden="true" style={{ "--len": a.word.length }}>
+            <div className={`mx-word is-on${accented(a.word) ? " has-accent" : ""}`} aria-hidden="true" style={{ "--len": a.word.length }}>
               {a.word}
             </div>
             <ActCopy act={a} />
@@ -440,7 +443,7 @@ function Stage({ reduced, account }) {
         {current.id === "mundo" && <CityScreens t={t} />}
         <div className="mx-words" aria-hidden="true">
           {ACTS.map((a, i) => (
-            <div key={a.id} className={`mx-word ${i === act ? "is-on" : i < act ? "is-past" : ""}`} style={{ "--len": a.word.length }}>
+            <div key={a.id} className={`mx-word ${i === act ? "is-on" : i < act ? "is-past" : ""}${accented(a.word) ? " has-accent" : ""}`} style={{ "--len": a.word.length }}>
               {a.word}
             </div>
           ))}

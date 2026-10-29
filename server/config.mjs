@@ -9,8 +9,13 @@ export const HOST = process.env.HOST || (process.env.PORT ? "0.0.0.0" : "127.0.0
 export const APP_ORIGIN = publicUrl || "http://localhost:5173";
 // The address of this service as seen from outside (OAuth callbacks land here).
 export const SERVICE_ORIGIN = publicUrl || `http://localhost:${PORT}`;
+// Besides the public address, the same service answers at the host's own address (Render sets
+// RENDER_EXTERNAL_URL) and at any extra addresses listed in MEMORAVEL_EXTRA_ORIGINS (comma-separated).
+const extraOrigins = [process.env.RENDER_EXTERNAL_URL, ...(process.env.MEMORAVEL_EXTRA_ORIGINS || "").split(",")]
+  .map((o) => (o || "").trim().replace(/\/+$/, ""))
+  .filter((o) => /^https:\/\/[^/]+$/.test(o));
 export const ALLOWED_ORIGINS = publicUrl
-  ? [publicUrl]
+  ? [...new Set([publicUrl, ...extraOrigins])]
   : ["http://localhost:5173", "http://127.0.0.1:5173", `http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`];
 // Browsers drop cookies without Secure on https sites behind a proxy only when asked to; set it whenever public.
 export const SECURE_COOKIES = APP_ORIGIN.startsWith("https://");
