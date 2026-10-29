@@ -8,7 +8,11 @@
     "dev:full": "node scripts/dev-full.mjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
+    "start": "node server/runtime.mjs",
     "test": "node --test tests/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=22.13"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",

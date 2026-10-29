@@ -16,7 +16,28 @@ import { refinePiece } from './refine.mjs';
 import { checkGroupCoherence } from './group.mjs';
 import { enrichReference } from './keywords.mjs';
 import { ingestFile, ingestUrl, sourceKind } from './ingestion.mjs';
+import { PORT, HOST, APP_ORIGIN, ALLOWED_ORIGINS, clientAddress } from "./config.mjs";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+// In the cloud this service also delivers the built screens (npm run build → dist/), so pages and API share one address.
+const distDir = path.join(root, "dist");
+const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".ico": "image/x-icon", ".woff2": "font/woff2", ".mp4": "video/mp4", ".webm": "video/webm", ".txt": "text/plain; charset=utf-8" };
+function serveStatic(req, res, pathname) {
+  if (!fs.existsSync(distDir) || !["GET", "HEAD"].includes(req.method)) return false;
+  let target = path.join(distDir, decodeURIComponent(pathname));
+  if (!target.startsWith(distDir)) return false;
+  if (!fs.existsSync(target) || fs.statSync(target).isDirectory()) target = path.join(distDir, "index.html");
+  const ext = path.extname(target).toLowerCase();
+  res.writeHead(200, {
+    "Content-Type": MIME[ext] || "application/octet-stream",
+    // Hashed bundles never change; the page itself is always revalidated so a deploy reaches everyone.
+    "Cache-Control": pathname.startsWith("/assets/") ? "public, max-age=31536000, immutable" : ext === ".html" ? "no-cache" : "public, max-age=86400",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+  });
+  if (req.method === "HEAD") return res.end(), true;
+  fs.createReadStream(target).pipe(res);
+  return true;
+}
 const dataDir = path.join(root, ".runtime");
 fs.mkdirSync(dataDir, { recursive: true });
 // Installs created before the rename keep their existing database file.
@@ -128,20 +149,18 @@ async function run(workspace, sources,ownerId=null) {
 }
 const server = http.createServer(async (req, res) => {
   try {
-    const callbackUrl = new URL(req.url, 'http://127.0.0.1:5174');
+    const callbackUrl = new URL(req.url, 'http://service.local');
     if(req.method==='GET' && callbackUrl.pathname==='/api/integrations/higgsfield/callback') {
       await integrations.callback(callbackUrl.searchParams);
-      res.writeHead(302,{Location:'http://localhost:5173/#app/configuracoes','Cache-Control':'no-store','Referrer-Policy':'no-referrer'});return res.end();
+      res.writeHead(302,{Location:`${APP_ORIGIN}/#app/configuracoes/conexoes`,'Cache-Control':'no-store','Referrer-Policy':'no-referrer'});return res.end();
     }
+    if (!callbackUrl.pathname.startsWith('/api/') && serveStatic(req, res, callbackUrl.pathname)) return;
     const origin = req.headers.origin;
-    if (
-      origin &&
-      !["http://localhost:5173", "http://127.0.0.1:5173"].includes(origin)
-    )
+    if (origin && !ALLOWED_ORIGINS.includes(origin))
       return send(res, 403, {
-        error: "Origem não autorizada para o serviço local.",
+        error: "Origem não autorizada para o serviço.",
       });
-    const url = new URL(req.url, "http://127.0.0.1:5174");
+    const url = new URL(req.url, "http://service.local");
     if (req.headers['sec-fetch-site'] === 'cross-site') return send(res,403,{error:'Origem não autorizada.'});
     if (url.pathname.startsWith('/api/ingest/')) {
       if (req.method !== 'POST') return send(res,405,{error:'Método indisponível.'});
@@ -183,7 +202,7 @@ const server = http.createServer(async (req, res) => {
     // Contributors only reach these routes: their session never opens the organization's document.
     if (url.pathname.startsWith('/api/contributor/')) {
       if (req.method === 'POST' && url.pathname === '/api/contributor/login') {
-        const result = suggestions.login(await read(req), req.socket.remoteAddress);
+        const result = suggestions.login(await read(req), clientAddress(req));
         suggestions.revoke(req); res.setHeader('Set-Cookie', contributorCookie(result.token));
         return send(res, 200, { contributor: { name: result.contributor.name } });
       }
@@ -226,7 +245,7 @@ const server = http.createServer(async (req, res) => {
         if(req.method==='PUT') {const input=await read(req);if(input.userId!==user.id)return send(res,403,{error:'A conta ativa mudou. Recarregue a página antes de salvar.'});return send(res,200,accounts.save(user,input));}
       }
       if(req.method==='POST' && ['/api/auth/login','/api/auth/register'].includes(url.pathname)) {
-        const result=accounts.authenticate(await read(req),url.pathname.endsWith('/register'),req.socket.remoteAddress);
+        const result=accounts.authenticate(await read(req),url.pathname.endsWith("/register"),clientAddress(req));
         accounts.revoke(req);res.setHeader('Set-Cookie',sessionCookie(result.token));return send(res,200,{user:result.user});
       }
       if(req.method==='POST' && url.pathname==='/api/auth/logout') {accounts.revoke(req);res.setHeader('Set-Cookie',sessionCookie(''));return send(res,200,{ok:true});}
@@ -343,8 +362,8 @@ const server = http.createServer(async (req, res) => {
     send(res, e.status || 400, { error: e.message });
   }
 });
-server.listen(5174, "127.0.0.1", () =>
-  console.log("Memoravel local service: http://127.0.0.1:5174"),
+server.listen(PORT, HOST, () =>
+  console.log(`Memoravel service: http://${HOST}:${PORT} · app ${APP_ORIGIN}`),
 );
 setInterval(async () => {
   for (const [key, schedule] of Object.entries(db.schedules)) {

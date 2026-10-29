@@ -1,6 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual, createHash } from 'node:crypto';
 import { suggestionStatus } from '../src/suggestion-status.mjs';
+import { cookie } from './config.mjs';
 export { suggestionStatus };
 
 // Contributors suggest ideas to one organization without an account of their own: they never read
@@ -109,4 +110,4 @@ export function createSuggestions(filename) {
     close() { db.close(); },
   };
 }
-export const contributorCookie = token => `memorable_contributor=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${token ? 604800 : 0}`;
+export const contributorCookie = token => cookie('memorable_contributor', token);

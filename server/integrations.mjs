@@ -6,14 +6,16 @@ import { mcpTools, mcpCall } from './mcp-client.mjs';
 import { nativeGenerate, nativePoll } from './native-media.mjs';
 import Anthropic from '@anthropic-ai/sdk';
 import { textModel } from './text-model.mjs';
+import { SERVICE_ORIGIN, credentialsKey } from './config.mjs';
 
 const providers = ['higgsfield','higgsfield-api','blotato','anthropic','openai','gemini','meta'];
 const oauthOrigin = 'https://mcp.higgsfield.ai';
 export function createIntegrations(dir) {
   fs.mkdirSync(dir,{recursive:true});
+  // In the cloud the key comes from the environment (the disk is not permanent); locally, from a file.
   const keyFile=path.join(dir,'credentials.key');
-  if(!fs.existsSync(keyFile)) fs.writeFileSync(keyFile,randomBytes(32),{mode:0o600,flag:'wx'});
-  const master=fs.readFileSync(keyFile);
+  let master=credentialsKey();
+  if(!master){if(!fs.existsSync(keyFile)) fs.writeFileSync(keyFile,randomBytes(32),{mode:0o600,flag:'wx'});master=fs.readFileSync(keyFile);}
   const db=new DatabaseSync(path.join(dir,'integrations.sqlite'));
   db.exec('PRAGMA journal_mode=WAL; CREATE TABLE IF NOT EXISTS connections (owner TEXT, provider TEXT, secret TEXT, PRIMARY KEY(owner,provider)); CREATE TABLE IF NOT EXISTS jobs (owner TEXT, id TEXT, request_key TEXT, data TEXT, PRIMARY KEY(owner,id), UNIQUE(owner,request_key));');
   const encrypt=value=>{const iv=randomBytes(12),cipher=createCipheriv('aes-256-gcm',master,iv);const body=Buffer.concat([cipher.update(JSON.stringify(value)),cipher.final()]);return Buffer.concat([iv,cipher.getAuthTag(),body]).toString('base64');};
@@ -76,7 +78,7 @@ export function createIntegrations(dir) {
     },
     async poll(owner,id){const row=db.prepare('SELECT data FROM jobs WHERE owner=? AND id=?').get(owner,id);if(!row)throw new Error('Solicitação não encontrada.');const job=JSON.parse(row.data);if(job.status!=='pending')return job;return store(owner,{...job,...await nativePoll(job,await secret(owner,job.provider))});},
     async call(owner,provider,input){const key=await secret(owner,provider);const list=await mcpTools(provider,key);if(!list.some(tool=>tool.name===input.name))throw new Error('Ferramenta não disponível nesta conexão.');if(/(?:create_post|publish|delete|remove|schedule.*post)/i.test(input.name))throw new Error('Publicação e exclusão não são executadas pelo estúdio de mídia. Use o fluxo editorial de aprovação.');return once(owner,{...input,provider},async()=>({status:'completed',result:await mcpCall(provider,key,input.name,input.arguments||{})}));},
-    async authorize(owner){for(const [id,item] of pending)if(item.expires<Date.now())pending.delete(id);const redirect_uri='http://localhost:5174/api/integrations/higgsfield/callback';const client=await oauth('/oauth2/register',{client_name:'Memorable local',redirect_uris:[redirect_uri],grant_types:['authorization_code','refresh_token'],response_types:['code'],token_endpoint_auth_method:'none'},true);if(!client.client_id)throw new Error('Higgsfield não retornou o registro do cliente OAuth.');const state=randomBytes(32).toString('base64url'),verifier=randomBytes(48).toString('base64url');pending.set(state,{owner,verifier,client,redirect_uri,expires:Date.now()+600000});const url=new URL(oauthOrigin+'/oauth2/authorize');url.search=new URLSearchParams({response_type:'code',client_id:client.client_id,redirect_uri,scope:'openid email offline_access',state,code_challenge:createHash('sha256').update(verifier).digest('base64url'),code_challenge_method:'S256',resource:oauthOrigin+'/mcp'}).toString();return {url:url.href};},
+    async authorize(owner){for(const [id,item] of pending)if(item.expires<Date.now())pending.delete(id);const redirect_uri=`${SERVICE_ORIGIN}/api/integrations/higgsfield/callback`;const client=await oauth('/oauth2/register',{client_name:'Memoravel',redirect_uris:[redirect_uri],grant_types:['authorization_code','refresh_token'],response_types:['code'],token_endpoint_auth_method:'none'},true);if(!client.client_id)throw new Error('Higgsfield não retornou o registro do cliente OAuth.');const state=randomBytes(32).toString('base64url'),verifier=randomBytes(48).toString('base64url');pending.set(state,{owner,verifier,client,redirect_uri,expires:Date.now()+600000});const url=new URL(oauthOrigin+'/oauth2/authorize');url.search=new URLSearchParams({response_type:'code',client_id:client.client_id,redirect_uri,scope:'openid email offline_access',state,code_challenge:createHash('sha256').update(verifier).digest('base64url'),code_challenge_method:'S256',resource:oauthOrigin+'/mcp'}).toString();return {url:url.href};},
     async callback(query){const item=pending.get(query.get('state'));pending.delete(query.get('state'));if(!item||item.expires<Date.now()||!query.get('code'))throw new Error('Autorização expirada ou recusada. Volte às configurações e tente novamente.');const token=await oauth('/oauth2/token',{grant_type:'authorization_code',code:query.get('code'),redirect_uri:item.redirect_uri,client_id:item.client.client_id,code_verifier:item.verifier});if(!token.access_token)throw new Error('Autorização sem token de acesso.');save(item.owner,'higgsfield',{...token,client_id:item.client.client_id,expires_at:Date.now()+(token.expires_in||3600)*1000});return {connected:true};},
   };
 }

@@ -1,6 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual, createHash } from 'node:crypto';
 import { prepareAccountState, createAccountState, organizationSetup } from '../src/account-state.mjs';
+import { cookie } from './config.mjs';
 
 export function createAccounts(filename) {
  const db = new DatabaseSync(filename);
@@ -77,4 +78,4 @@ const cookieToken = req => { const cookies = req.headers.cookie?.split(';').map(
   close(){db.close();}
  };
 }
-export const sessionCookie = token => `memorable_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${token ? 604800 : 0}`;
+export const sessionCookie = token => cookie('memorable_session', token);

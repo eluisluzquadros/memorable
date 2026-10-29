@@ -1,0 +1,45 @@
+# Render Blueprint: um único serviço entrega as telas (dist/) e a API no mesmo endereço.
+# Render > New > Blueprint > escolha este repositório. Os valores marcados sync:false são
+# pedidos no painel na primeira vez e nunca ficam no Git.
+services:
+  - type: web
+    name: memoravel
+    runtime: node
+    # Virgínia é a região do Render mais próxima de São Paulo.
+    region: virginia
+    # O plano gratuito dorme quando ocioso e demora para acordar: ruim para quem testa sozinho.
+    plan: starter
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: MEMORAVEL_PUBLIC_URL
+        value: https://app.memoravel.org
+      # 32 bytes em hex: a mesma chave que criptografou as conexões salvas (.runtime/credentials.key).
+      - key: MEMORAVEL_CREDENTIALS_KEY
+        sync: false
+      - key: MEMORABLE_AI_URL
+        value: https://openrouter.ai/api/v1/chat/completions
+      - key: MEMORABLE_AI_KEY
+        sync: false
+      - key: MEMORABLE_AI_MODEL
+        value: anthropic/claude-opus-5.5
+      - key: MEMORABLE_MODEL_WRITER
+        value: anthropic/claude-opus-5.5
+      - key: MEMORABLE_MODEL_REVIEWER
+        value: google/gemini-4-argon
+      - key: MEMORABLE_MODEL_JUDGE
+        value: openai/gpt-6.1-sol
+      - key: HF_API_KEY_ID
+        sync: false
+      - key: HF_API_KEY_SECRET
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_DB_URL
+        sync: false
