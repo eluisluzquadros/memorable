@@ -233,37 +233,36 @@ export async function generateVideoScripts(
     )
       throw new Error("O lote contém pautas ou estratégias inconsistentes.");
     for (const s of group) {
-      if (
-        [
-          "title",
-          "strategy",
-          "hook",
-          "technique",
-          "trigger",
-          "cta",
-          "body",
-        ].some((k) => !text(s[k])) ||
-        !Array.isArray(s.sourceIds) ||
-        // The squad defers source checks to its editor loop, which cites the selected references.
-        (validate && !s.sourceIds.includes(topic.sourceId)) ||
-        !s.sourceIds.length ||
-        s.sourceIds.some((id) => !cited.has(id)) ||
-        !Array.isArray(s.scenes) ||
-        s.scenes.length < 1 ||
-        s.scenes.length > 24 ||
-        s.scenes.some(
-          (c) =>
-            !Number.isFinite(c.duration) ||
-            c.duration <= 0 ||
-            !text(c.speech) ||
-            !text(c.visual),
-        ) ||
-        !Array.isArray(s.warnings) ||
-        s.warnings.some((w) => typeof w !== "string")
-      )
-        throw new Error(
-          "O roteiro retornado está incompleto ou contém fontes não fornecidas.",
-        );
+      // What exactly is wrong, in words the person (and the model, on the retry) can act on.
+      const problemsOf = (x) => {
+        const p = [];
+        const missing = ["title", "strategy", "hook", "technique", "trigger", "cta", "body"].filter((k) => !text(x[k]));
+        if (missing.length) p.push(`faltam os campos ${missing.join(", ")}`);
+        if (!Array.isArray(x.sourceIds) || !x.sourceIds.length) p.push("sourceIds vazio: cite a fonte da pauta");
+        else {
+          if (validate && !x.sourceIds.includes(topic.sourceId)) p.push(`sourceIds precisa incluir a fonte da pauta (${topic.sourceId})`);
+          const unknown = x.sourceIds.filter((id) => !cited.has(id));
+          if (unknown.length) p.push(`sourceIds cita fontes que não estão no contexto: ${unknown.join(", ")}`);
+        }
+        if (!Array.isArray(x.scenes) || x.scenes.length < 1 || x.scenes.length > 24) p.push("scenes precisa ter de 1 a 24 cenas");
+        else if (x.scenes.some((c) => !Number.isFinite(c.duration) || c.duration <= 0 || !text(c.speech) || !text(c.visual))) p.push("toda cena precisa de duration (segundos), speech e visual");
+        if (!Array.isArray(x.warnings) || x.warnings.some((w) => typeof w !== "string")) p.push("warnings precisa ser uma lista de textos (pode ser vazia)");
+        return p;
+      };
+      let problems = problemsOf(s);
+      if (problems.length) {
+        // One chance to fix the format before the paid draft is given up.
+        const fixed = await model(
+          `Você é roteirista profissional. O roteiro abaixo voltou com problemas de formato. Corrija apenas o que está apontado, sem mudar o conteúdo que já está certo, usando só as fontes do pacote. Retorne o roteiro completo no mesmo formato: {topicId,title,strategy,hook,technique,trigger,cta,body,scenes:[{duration:number,speech,visual}],sourceIds:string[],warnings:string[]}.`,
+          { packet: { brand: packet.brand, brief: packet.brief, sources: packet.sources.map((x) => ({ id: x.id, title: x.title })), brandKnowledge: (packet.brandKnowledge || []).map((x) => ({ id: x.id, title: x.title })) }, roteiro: s, problemas: problems },
+        ).catch(() => null);
+        if (fixed && typeof fixed === "object") {
+          Object.assign(s, { ...fixed, topicId: s.topicId });
+          problems = problemsOf(s);
+        }
+      }
+      if (problems.length)
+        throw new Error(`O roteiro voltou incompleto mesmo após uma correção: ${problems.join("; ")}.`);
       // Timing that misses the target is a warning on a paid script, not a reason to throw it away.
       const total = s.scenes.reduce((n, c) => n + c.duration, 0);
       if (Math.abs(total - settings.durationSeconds) > Math.max(2, settings.durationSeconds * 0.1))

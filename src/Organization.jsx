@@ -1,7 +1,7 @@
 import React,{useContext,useState} from 'react';
 import {Building2,Layers,Plus,ArrowRight,Archive,RotateCcw} from 'lucide-react';
 import {AppContext} from './context';
-import {workspaceList,addBrand,renameBrand,archiveBrand,renameOrganization} from './account-state.mjs';
+import {workspaceList,addBrand,renameBrand,archiveBrand,renameOrganization,setBrandAliases} from './account-state.mjs';
 import './organization.css';
 import {Contributors} from './Contributors';
 import {GroupDNA} from './GroupDNA';
@@ -11,10 +11,12 @@ const reviewCount=pieces=>pieces.filter(p=>p.status==='Em revisão').length;
 function BrandRow({brand,state,setState,notify,onOpen}){
   const {changeWorkspace}=useContext(AppContext);
   const [name,setName]=useState(brand.name);
+  const [aliases,setAliases]=useState((brand.aliases||[]).join(', '));
   function change(action){try{const next=action(state);if(next.workspace!==state.workspace)changeWorkspace(next.workspace);setState(next);notify('Marca atualizada. O conteúdo foi preservado.');}catch(error){notify(error.message,true);}}
   return <article className={`brand-management-row ${brand.archived?'archived':''}`}>
     <span className="workspace-avatar" style={{background:brand.color}}>{brand.initials}</span>
     <form onSubmit={e=>{e.preventDefault();change(s=>renameBrand(s,brand.id,name));}}><label>Nome da marca<input aria-label={`Nome da marca ${brand.name}`} value={name} onChange={e=>setName(e.target.value)} required minLength={2} maxLength={80}/></label><button className="button secondary" disabled={state.role!=='Administrador'}>Salvar nome</button></form>
+    <form onSubmit={e=>{e.preventDefault();change(s=>setBrandAliases(s,brand.id,aliases));}}><label>Outros nomes<input aria-label={`Outros nomes da marca ${brand.name}`} value={aliases} onChange={e=>setAliases(e.target.value)} placeholder="Ex.: Esfera, @esfera.legal" maxLength={300}/></label><small className="field-help">Como a marca também é escrita ou falada, separado por vírgula. A revisão automática aceita qualquer um como menção à marca.</small><button className="button secondary" disabled={state.role!=='Administrador'}>Salvar nomes</button></form>
     <div><small>{state.pieces.filter(p=>p.workspace===brand.id).length} conteúdos · {brand.archived?'Arquivada':'Ativa'}</small>{!brand.archived&&<button className="text-button" onClick={onOpen}>Abrir marca →</button>}</div>
     <button className="button secondary" disabled={state.role!=='Administrador'||(!brand.archived&&workspaceList(state).length===1)} onClick={()=>change(s=>archiveBrand(s,brand.id,!brand.archived))}>{brand.archived?<RotateCcw size={15}/>:<Archive size={15}/>} {brand.archived?'Restaurar':'Arquivar'}</button>
   </article>;

@@ -60,3 +60,13 @@ test("with retryFailed off, a model's own failure stays recorded instead of bein
   assert.equal(paid, 0);
   assert.equal((await store.item("EXP-F-r1|b|redator|x")).status, "failed");
 });
+
+test("a model that breaks the format in more than 10% of attempts does not qualify", () => {
+  const runs = [{ id: "r", task: "redator" }];
+  const items = [];
+  for (let n = 0; n < 6; n++) items.push({ run_id: "r", role: "redator", model: "quebra", status: "done", mean: 4.8, cost_usd: 0.01, scores: { j: { evidencia: 5 } }, checks: { ok: true } });
+  items.push({ run_id: "r", role: "redator", model: "quebra", status: "failed", error: "roteiro incompleto" });
+  const row = labSummary(items, runs).models.find((m) => m.model === "quebra");
+  assert.equal(row.qualified, false);
+  assert.match(row.why, /Quebrou o formato em 1 de 7 tentativas/);
+});

@@ -138,7 +138,8 @@ export function editorialIssues({
       );
   }
   const name = brand?.name || brief.brandName;
-  if (name && brief.brandName && !normalize(copy).includes(normalize(name)))
+  const names = [name, ...(brand?.aliases || [])].filter(Boolean).map(normalize);
+  if (name && brief.brandName && !names.some((n) => normalize(copy).includes(n)))
     add(
       "brand",
       "A mensagem não conecta o tema à marca que está produzindo o conteúdo. A fonte é referência, não o anunciante.",

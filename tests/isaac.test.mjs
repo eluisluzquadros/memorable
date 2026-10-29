@@ -67,7 +67,7 @@ test('Roteiro: pode citar o conhecimento da marca (DNA aprovado), mas não fonte
     const result = await generateVideoScripts(packet, [{id:'t',title:'Tema',sourceId:'s'}]);
     assert.deepEqual(result.scripts[0].sourceIds, ['s', 'dna-x']);
     ids = ['s', 'inventada'];
-    await assert.rejects(()=>generateVideoScripts(packet, [{id:'t',title:'Tema',sourceId:'s'}]), /fontes não fornecidas/);
+    await assert.rejects(()=>generateVideoScripts(packet, [{id:'t',title:'Tema',sourceId:'s'}]), /fontes que não estão no contexto: inventada/);
   } finally { globalThis.fetch=oldFetch; keys.forEach((k,i)=>{if(previous[i]===undefined)delete process.env[k];else process.env[k]=previous[i];}); }
 });
 
@@ -79,4 +79,19 @@ test('Roteiro: o comitê de revisão roda no modelo de revisão, não no redator
   const result = await generateVideoScripts({ brief:{versionCount:1,durationSeconds:30}, sources:[{id:'s',text:'Fonte'}], calibration:[] }, [{id:'t',title:'Tema',sourceId:'s'}], writer, { critic });
   assert.equal(result.committee.length, 4);
   assert.deepEqual(used, { writer: 1, critic: 4 });
+});
+
+test('Roteiro: um formato quebrado ganha uma correção antes de ser descartado', async () => {
+  const full = { topicId:'t', title:'Tema', strategy:'a', hook:'Pergunta', technique:'Exemplo', trigger:'Curiosidade', cta:'Pergunte', body:'Contexto', scenes:speeches.map(speech=>({duration:10,speech,visual:'Câmera'})), sourceIds:['s'], warnings:[] };
+  const calls = [];
+  const writer = async (system) => {
+    calls.push(system);
+    if (/voltou com problemas de formato/.test(system)) return full;
+    const { technique, ...broken } = full;
+    return { scripts: [broken] };
+  };
+  const result = await generateVideoScripts({ brief:{versionCount:1,durationSeconds:30}, sources:[{id:'s',text:'Fonte'}], calibration:[] }, [{id:'t',title:'Tema',sourceId:'s'}], writer, { committee: false });
+  assert.equal(result.scripts[0].technique, 'Exemplo');
+  assert.equal(calls.length, 2);
+  assert.match(calls[1], /voltou com problemas de formato/);
 });

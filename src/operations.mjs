@@ -516,7 +516,7 @@ export function contextPacket(state, brief) {
   const inspiration = state.sources.find(s => s.id === brief.inspirationId && visibleTo(s, state.workspace) && sourceValid(s));
   return {
     workspace: state.workspace,
-    brand: {name: (state.workspaces||demoSpaces).find(w=>w.id===state.workspace)?.name || brief.brandName || "Sua marca", purpose:"Comunicar a marca do cliente. Fontes externas são evidências, nunca o anunciante."},
+    brand: {name: (state.workspaces||demoSpaces).find(w=>w.id===state.workspace)?.name || brief.brandName || "Sua marca", aliases: (state.workspaces||demoSpaces).find(w=>w.id===state.workspace)?.aliases || [], purpose:"Comunicar a marca do cliente. Fontes externas são evidências, nunca o anunciante."},
     voice: state.voices[state.workspace],
     ...brandMemory(state),
     group: groupContext(state),

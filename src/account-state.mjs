@@ -46,6 +46,13 @@ export function renameBrand(state,id,name){
   const value=validBrandName(state,name,id);
   return {...state,workspaces:state.workspaces.map(w=>w.id===id?{...w,name:value,initials:brandInitials(value)}:w)};
 }
+// Other names a brand is written or spoken by (a short form, a handle, the show name). The editorial
+// check accepts any of them as the brand being mentioned.
+export function setBrandAliases(state,id,value){
+  assertOrganizationAdmin(state);if(!state.workspaces?.some(w=>w.id===id))throw new Error('Marca indisponível.');
+  const aliases=[...new Set(String(value||'').split(',').map(s=>s.trim()).filter(s=>s.length>=2&&s.length<=60))].slice(0,8);
+  return {...state,workspaces:state.workspaces.map(w=>w.id===id?{...w,aliases}:w)};
+}
 export function archiveBrand(state,id,archived=true){
   assertOrganizationAdmin(state);const target=state.workspaces?.find(w=>w.id===id);if(!target)throw new Error('Marca indisponível.');
   if(archived&&!target.archived&&workspaceList(state).length===1)throw new Error('Mantenha pelo menos uma marca ativa.');

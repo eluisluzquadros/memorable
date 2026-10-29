@@ -303,3 +303,12 @@ test("marketing clichés are rejected with a concrete rewrite hint", () => {
   assert.ok(issues.some((i) => i.code === "cliche" && /divisor de águas/.test(i.message)));
   assert.ok(!editorialIssues({ body: carousel, format: "Carrossel", brief, brand: { name: "Skyvidya" } }).some((i) => i.code === "cliche"));
 });
+
+test("the brand can be mentioned by any of its other names", () => {
+  const body = "No Reels de hoje, a Esfera mostra por que crescer depende de gestão, capital e tecnologia. Qual dúvida você gostaria de esclarecer?";
+  const brief = { format: "LinkedIn", brandName: "Esfera Legal" };
+  const without = editorialIssues({ body, format: "LinkedIn", brief, brand: { name: "Esfera Legal" }, sources: [] });
+  assert.ok(without.some((i) => /não conecta o tema à marca/.test(i.message)));
+  const withAlias = editorialIssues({ body, format: "LinkedIn", brief, brand: { name: "Esfera Legal", aliases: ["Esfera"] }, sources: [] });
+  assert.ok(!withAlias.some((i) => /não conecta o tema à marca/.test(i.message)));
+});

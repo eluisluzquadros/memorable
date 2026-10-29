@@ -8,8 +8,9 @@ CREATE TABLE IF NOT EXISTS bench_items (key TEXT PRIMARY KEY, run_id TEXT NOT NU
 
 // Quality floor agreed for the platform (docs/BENCHMARK_STRATEGY.md): a model is qualified for a
 // task with a mean ≥ 4.0, no evidence score below 3, ≥ 90% of outputs passing the mechanical checks,
-// over at least 3 judged outputs.
-export const FLOOR = { mean: 4.0, evidence: 3, checks: 0.9, minItems: 3 };
+// over at least 3 judged outputs, and breaking the format in at most 10% of the attempts (approved
+// 2026-10-29, after round 3: a model that fails every Reels must not qualify on its carousels alone).
+export const FLOOR = { mean: 4.0, evidence: 3, checks: 0.9, minItems: 3, failures: 0.1 };
 // "Balanced" = the cheapest qualified model within this distance of the best mean.
 export const BALANCED_GAP = 0.25;
 
@@ -58,7 +59,8 @@ export async function startRound(store, run, { log = console.log, retryFailed = 
       const fullKey = `${run.id}|${key}`;
       const stored = await store.item(fullKey);
       if (stored?.status === "done") { log(`  ${role.padEnd(8)} ${model.padEnd(32)} (já salvo)`); return stored; }
-      if (stored?.status === "failed" && !retryFailed) { log(`  ${role.padEnd(8)} ${model.padEnd(32)} (falha registrada, mantida)`); return null; }
+      // A judge that timed out is a transient problem and is asked again; a writer failure is data.
+      if (stored?.status === "failed" && !retryFailed && role !== "juiz") { log(`  ${role.padEnd(8)} ${model.padEnd(32)} (falha registrada, mantida)`); return null; }
       if (state.budget_usd != null && state.spent_usd >= state.budget_usd) {
         state.status = "paused"; await save();
         throw Object.assign(new Error(`Teto de US$ ${state.budget_usd} da rodada atingido antes de ${role} (${model}). Nada foi perdido: a rodada retoma daqui.`), { budget: true });
@@ -117,12 +119,14 @@ export function labSummary(items, runs, floor = FLOOR) {
       cost: avg(done.map((i) => i.cost_usd).filter(Number.isFinite)), p50: seconds.length ? seconds[Math.floor(seconds.length / 2)] : null,
       checksPass, runs: [...new Set(list.map((i) => i.run_id))],
     };
-    row.qualified = row.judged >= floor.minItems && row.mean >= floor.mean && (row.minEvidence == null || row.minEvidence >= floor.evidence) && (row.checksPass == null || row.checksPass >= floor.checks);
+    row.failureRate = list.length ? (list.length - done.length) / list.length : 0;
+    row.qualified = row.failureRate <= floor.failures && row.judged >= floor.minItems && row.mean >= floor.mean && (row.minEvidence == null || row.minEvidence >= floor.evidence) && (row.checksPass == null || row.checksPass >= floor.checks);
     // The reason is written for the person deciding, not for the engineer: what failed, how often, what it means.
     const n = (v, d = 2) => v.toFixed(d).replace(".", ",");
     const weakEvidence = scored.filter((i) => Object.values(i.scores || {}).some((s) => (s?.scores?.evidencia ?? s?.evidencia) < floor.evidence)).length;
     const failedChecks = done.filter((i) => i.checks && !i.checks.ok).length;
     row.why = row.qualified ? ""
+      : row.failureRate > floor.failures ? `Quebrou o formato em ${list.length - done.length} de ${list.length} tentativas (roteiro incompleto ou fonte inexistente). O piso aceita no máximo ${Math.round(floor.failures * 100)}%.`
       : row.judged < floor.minItems ? `Ainda não dá para julgar: só ${row.judged} de ${floor.minItems} textos avaliados.`
       : row.mean < floor.mean ? `Nota média ${n(row.mean)}, abaixo do piso de ${n(floor.mean, 1)}.`
       : row.minEvidence < floor.evidence ? `Em ${weakEvidence} de ${row.judged} textos, um juiz deu ${row.minEvidence} de 5 em evidência: o texto afirma algo que a fonte não sustenta. O piso exige pelo menos ${floor.evidence} em todos.`
