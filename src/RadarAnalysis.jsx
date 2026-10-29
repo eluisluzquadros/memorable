@@ -3,6 +3,7 @@ import { visibleTo } from "./visibility.mjs";
 import { AppContext } from './context';
 import { sourceValid, sourceFingerprint, assertEditor } from './operations.mjs';
 import { defaultTextModel, textProviderLabel } from './text-providers.mjs';
+import { longFetch } from "./long-fetch.mjs";
 export function RadarAnalysis() {
   const {state,setState,notify} = useContext(AppContext);
   const [providers,setProviders]=useState([]), [provider,setProvider]=useState(''), [model,setModel]=useState(defaultTextModel('anthropic')), [busy,setBusy]=useState(false), [error,setError]=useState('');
@@ -16,7 +17,7 @@ export function RadarAnalysis() {
       assertEditor(state);setError('');setBusy(true);
       const requested=current.current;abort.current=new AbortController();
       const packet={voice:state.voices[state.workspace],brandDNA:state.brandDNA?.[state.workspace],sources:sources.map(s=>({id:s.id,title:s.title,text:s.text.slice(0,16000),summary:s.summary,editorialRole:s.editorialRole||'reference',publishedAt:s.publishedAt||null}))};
-      const response=await fetch('/api/radar/analyse',{method:'POST',headers:{'Content-Type':'application/json'},signal:abort.current.signal,body:JSON.stringify({packet,provider,model})});
+      const response=await longFetch('/api/radar/analyse',{method:'POST',headers:{'Content-Type':'application/json'},signal:abort.current.signal,body:JSON.stringify({packet,provider,model})});
       const data=await response.json();if(!response.ok)throw new Error(data.error||'Não foi possível analisar as fontes.');
       if(!alive.current)return;if(requested!==current.current)throw new Error('O contexto mudou durante a análise. Execute novamente com as fontes atuais.');
       const sourceIds=new Set(sources.map(s=>s.id));

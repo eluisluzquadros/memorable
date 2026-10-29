@@ -104,6 +104,7 @@ import { ThemeSwitch, ThemeSetting } from "./ThemeSwitch";
 import { StageRail } from "./StageRail";
 import { Subtabs, Subpanel, useSubtab } from "./Subtabs";
 import { RefinePanel } from "./RefinePanel";
+import { longFetch } from "./long-fetch.mjs";
 
 const navItems = [
   ["painel", "Visão geral", LayoutDashboard],
@@ -2069,7 +2070,7 @@ function SourceForm({ state, setState, notify, onClose }) {
     if (!form.url.trim()) return setError("Informe o link para extrair a fonte.");
     setIngesting("url"); setError("");
     try {
-      const response = await fetch('/api/ingest/url', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ url:form.url, title:form.title, origin:form.origin }) });
+      const response = await longFetch('/api/ingest/url', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ url:form.url, title:form.title, origin:form.origin }) });
       const source = await response.json();
       if (!response.ok) throw new Error(source.error || 'Não foi possível extrair esta fonte.');
       applyExtracted(source);
@@ -2081,7 +2082,7 @@ function SourceForm({ state, setState, notify, onClose }) {
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
       let binary = ""; for (let i=0; i<bytes.length; i+=0x8000) binary += String.fromCharCode(...bytes.subarray(i, i+0x8000));
-      const response = await fetch('/api/ingest/file', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name:file.name, mimeType:file.type || 'application/octet-stream', data:btoa(binary) }) });
+      const response = await longFetch('/api/ingest/file', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name:file.name, mimeType:file.type || 'application/octet-stream', data:btoa(binary) }) });
       const source = await response.json();
       if (!response.ok) throw new Error(source.error || 'Não foi possível ler este arquivo.');
       applyExtracted(source);

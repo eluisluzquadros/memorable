@@ -52,6 +52,7 @@ import {
 import { createPiece, transition, planKanbanMove, BOARD_COLUMNS, boardColumn, STATUS_DETAIL } from "./workflow.mjs";
 import { workspaceList } from './account-state.mjs';
 import { visibleTo } from './visibility.mjs';
+import { longFetch } from "./long-fetch.mjs";
 const useApp = () => useContext(AppContext);
 const fmt = (d) =>
   d
@@ -155,7 +156,7 @@ export function Radar() {
   const ingest = async () => {
     setBusy(true);
     try {
-      const response = await fetch("/api/monitor", {
+      const response = await longFetch("/api/monitor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

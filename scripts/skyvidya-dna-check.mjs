@@ -25,10 +25,12 @@ try {
   await page
     .getByLabel("Site da marca", { exact: true })
     .fill("https://www.skyvidya.org/");
+  // The reading runs as a background task: wait for the poll that brings the finished result.
   const responsePromise = page.waitForResponse(
-    (r) =>
-      r.url().endsWith("/api/brand-dna") && r.request().method() === "POST",
-    { timeout: 75000 },
+    async (r) =>
+      r.url().includes("/api/tasks/") &&
+      (await r.json().catch(() => ({}))).state === "done",
+    { timeout: 120000 },
   );
   await page
     .getByRole("button", { name: "Extrair proposta de DNA", exact: true })
@@ -36,9 +38,9 @@ try {
   await page
     .getByRole("button", { name: "Cancelar leitura", exact: true })
     .waitFor();
-  const response = await responsePromise;
-  assert.equal(response.status(), 200);
-  const result = await response.json();
+  const task = await (await responsePromise).json();
+  assert.equal(task.status, 200);
+  const result = task.data;
   assert.equal(result.quality.method, "rendered");
   assert.equal(result.quality.status, "ready");
   assert.ok(result.quality.textCharacters > 5000);

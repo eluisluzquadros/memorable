@@ -18,6 +18,7 @@ import { enrichReference } from './keywords.mjs';
 import { ingestFile, ingestUrl, sourceKind } from './ingestion.mjs';
 import { PORT, HOST, APP_ORIGIN, ALLOWED_ORIGINS, clientAddress } from "./config.mjs";
 import { openDb, usingPostgres } from './sql.mjs';
+import { createTasks, bufferedRequest, capturedResponse } from './tasks.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // In the cloud this service also delivers the built screens (npm run build → dist/), so pages and API share one address.
 const distDir = path.join(root, "dist");
@@ -156,7 +157,46 @@ async function run(workspace, sources,ownerId=null) {
     active.delete(key);
   }
 }
+// Routes that can take longer than a proxy waits. Asked with the X-Memoravel-Async header, they answer
+// 202 with a task id at once and run the same handler in the background.
+const ASYNC_ROUTES = new Set(['/api/squad', '/api/council', '/api/refine', '/api/brand-dna', '/api/group-coherence', '/api/video-scripts/generate', '/api/radar/analyse', '/api/ingest/url', '/api/ingest/file', '/api/ingest/channel', '/api/ingest/channel/import', '/api/monitor']);
+const tasks = createTasks();
+const originRefused = (req) => (req.headers.origin && !ALLOWED_ORIGINS.includes(req.headers.origin)) || req.headers['sec-fetch-site'] === 'cross-site';
+async function readRaw(req, limit) {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > limit) throw new Error("Requisição excede o limite de tamanho.");
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
+}
 const server = http.createServer(async (req, res) => {
+  const pathname = new URL(req.url, 'http://service.local').pathname;
+  try {
+    if (req.method === 'GET' && pathname.startsWith('/api/tasks/')) {
+      if (originRefused(req)) return send(res, 403, { error: 'Origem não autorizada.' });
+      const task = tasks.get(pathname.slice('/api/tasks/'.length), (await accounts.lookup(req))?.id || null);
+      return task ? send(res, 200, task) : send(res, 404, { error: 'Esta geração não está mais disponível. O serviço pode ter reiniciado: tente de novo.' });
+    }
+    if (req.method === 'POST' && ASYNC_ROUTES.has(pathname) && req.headers['x-memoravel-async'] === '1') {
+      if (originRefused(req)) return send(res, 403, { error: 'Origem não autorizada.' });
+      const owner = (await accounts.lookup(req))?.id || null;
+      const body = await readRaw(req, 37 * 1024 * 1024);
+      const id = tasks.start(owner, pathname, async () => {
+        const captured = capturedResponse();
+        await handle(bufferedRequest(req, body), captured.res);
+        return captured.done;
+      });
+      return send(res, 202, { task: id });
+    }
+  } catch (e) {
+    return send(res, e.status || 400, { error: e.message });
+  }
+  return handle(req, res);
+});
+async function handle(req, res) {
   try {
     const callbackUrl = new URL(req.url, 'http://service.local');
     if(req.method==='GET' && callbackUrl.pathname==='/api/integrations/higgsfield/callback') {
@@ -371,7 +411,7 @@ const server = http.createServer(async (req, res) => {
   } catch (e) {
     send(res, e.status || 400, { error: e.message });
   }
-});
+}
 server.listen(PORT, HOST, () =>
   console.log(`Memoravel service: http://${HOST}:${PORT} · app ${APP_ORIGIN} · banco ${usingPostgres() ? "Postgres (Supabase)" : "SQLite local"}`),
 );

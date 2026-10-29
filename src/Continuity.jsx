@@ -11,6 +11,7 @@ import { transition } from "./workflow.mjs";
 import { invalidateSourceDependents } from './strategy.mjs';
 import { workspaceList } from './account-state.mjs';
 import { Download, Check, ExternalLink, ArrowRight, Trash2, AlertTriangle } from "lucide-react";
+import { longFetch } from "./long-fetch.mjs";
 export function RequestForm() {
   const {state,setState,notify} = useContext(AppContext);
   const [form,setForm] = useState({title:'',owner:'Editor',deadline:'',body:''});
@@ -23,7 +24,7 @@ export function SourceRefresh({source}) {
     setError('');setBusy(true);
     try{
       assertEditor(state);if(source.workspace!==state.workspace)throw new Error('Abra a marca de origem para atualizar esta referência.');
-      const response=await fetch('/api/ingest/url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:source.url})});
+      const response=await longFetch('/api/ingest/url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:source.url})});
       const result=await response.json();if(!response.ok)throw new Error(result.error||'Não foi possível atualizar a leitura.');
       setState(s=>({...s,sources:s.sources.map(x=>x.id===source.id?{...x,...result,title:x.title,origin:x.origin||result.origin,citable:true,manualOverride:false}:x),pieces:invalidateSourceDependents(s.pieces,new Set([source.id]))}));
       notify('Texto e resumo atualizados. Conteúdos vinculados precisam de nova conferência.');

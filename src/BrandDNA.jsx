@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useContext } from "react";
 import { AppContext } from "./context";
 import { BrandSources } from "./BrandSources";
 import { strategicSource } from "./operations.mjs";
+import { longFetch } from "./long-fetch.mjs";
 
 // Verbal DNA fields map one to one onto the voice sheet (Configurações > Ficha de voz).
 const VERBAL = ["tone", "audience", "positioning", "pillars", "say", "avoid", "examples", "checklist"];
@@ -64,7 +65,7 @@ export function BrandDNA({ onVoice }) {
       active.abort();
     }, 75000);
     try {
-      const response = await fetch("/api/brand-dna", {
+      const response = await longFetch("/api/brand-dna", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: url.trim(), documentation, brandName: workspace?.name || "", roles: state.modelRoles || {}, materials: state.sources.filter((s) => selected.includes(s.id)).slice(0, 12).map((s) => ({ title: s.title, origin: s.origin || s.url || s.title, text: String(s.text || "").slice(0, 20000) })) }),

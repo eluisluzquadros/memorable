@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useContext } from "react";
 import { AppContext } from "./context";
 import { assertEditor } from "./operations.mjs";
 import { defaultTextModel, textProviderLabel } from "./text-providers.mjs";
+import { longFetch } from "./long-fetch.mjs";
 export function ProviderTools({
   packet,
   variant,
@@ -75,7 +76,7 @@ export function ProviderTools({
       onBusy?.(true);
       const requestedContext = currentContext.current;
       controller.current = new AbortController();
-      const r = await fetch("/api/" + kind, {
+      const r = await longFetch("/api/" + kind, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.current.signal,

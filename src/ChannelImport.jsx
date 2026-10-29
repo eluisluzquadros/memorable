@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { Radio, Check, ArrowRight } from "lucide-react";
 import { assertEditor, saveMonitor } from "./operations.mjs";
+import { longFetch } from "./long-fetch.mjs";
 
 const KIND_LABEL = { youtube: "Canal do YouTube", feed: "Feed do site", sitemap: "Mapa do site", instagram: "Perfil do Instagram" };
 const MONITOR_KIND = { youtube: "YouTube", feed: "RSS", sitemap: "Site", instagram: "Instagram" };
 
 async function post(path, body) {
-  const response = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const response = await longFetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || "Não foi possível concluir. Confira se o serviço local está ativo.");
   return data;

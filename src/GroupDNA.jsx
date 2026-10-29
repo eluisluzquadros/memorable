@@ -2,6 +2,7 @@ import React, { useContext, useState } from "react";
 import { ShieldCheck, Plus, ArrowRight } from "lucide-react";
 import { AppContext } from "./context";
 import { workspaceList } from "./account-state.mjs";
+import { longFetch } from "./long-fetch.mjs";
 
 const VOICE_FIELDS = ["tone", "audience", "positioning", "pillars", "say", "avoid", "examples", "checklist"];
 const RULES = [
@@ -29,7 +30,7 @@ export function GroupDNA() {
     setBusy(true);
     setError("");
     try {
-      const response = await fetch("/api/group-coherence", {
+      const response = await longFetch("/api/group-coherence", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

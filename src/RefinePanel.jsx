@@ -3,6 +3,7 @@ import { Sparkles, Check, X } from "lucide-react";
 import { AppContext } from "./context";
 import { contextPacket } from "./operations.mjs";
 import { transition } from "./workflow.mjs";
+import { longFetch } from "./long-fetch.mjs";
 
 const RUBRIC = [
   ["clareza", "Clareza"],
@@ -33,7 +34,7 @@ export function RefinePanel({ piece, canEdit, onApplied }) {
     setBusy(true);
     setError("");
     try {
-      const response = await fetch("/api/refine", {
+      const response = await longFetch("/api/refine", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ packet: refinePacket(state, piece), piece: { title: piece.title, format: piece.format, body: piece.body }, roles: state.modelRoles || {} }),

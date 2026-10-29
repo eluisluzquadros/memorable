@@ -2,6 +2,7 @@ import React, { useContext, useState } from "react";
 import { Upload, FileText, MessageSquareText, Check, ArrowRight } from "lucide-react";
 import { AppContext } from "./context";
 import { strategicSource } from "./operations.mjs";
+import { longFetch } from "./long-fetch.mjs";
 
 // The interview gives a brand without a website (or with a thin one) the same footing: what it
 // sells, to whom, how it talks, what it never says and which proof it can cite.
@@ -91,7 +92,7 @@ export function BrandSources({ selected = [], onToggle = () => {}, onAdded = () 
       const bytes = new Uint8Array(await file.arrayBuffer());
       let binary = "";
       for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-      const response = await fetch("/api/ingest/file", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: file.name, mimeType: file.type || "application/octet-stream", data: btoa(binary) }) });
+      const response = await longFetch("/api/ingest/file", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: file.name, mimeType: file.type || "application/octet-stream", data: btoa(binary) }) });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Não foi possível ler este arquivo.");
       const source = {
