@@ -74,6 +74,22 @@ Cada rodada é um experimento **EXP-NNN** pré-registrado no ledger (hipótese, 
 - **Tudo visível na plataforma:** os conteúdos gerados nas rodadas entram nas contas como peças com a tag **Validação** ou **Demonstração**, fora das métricas reais e do portfólio público.
 - **Juízes também têm custo e viés registrados:** juízes que "raciocinam" custam mais que redatores baratos, então o juiz também é escolhido por custo e qualidade.
 
+### Salvaguardas de método (lições do EXP-308)
+
+Na rodada 4 do EXP-308 descobrimos dois erros que vinham desde o início. Primeiro, o juiz via menos do que o redator: a fonte chegava cortada e o material oficial da marca não chegava. Segundo, a checagem de marca usava regras diferentes conforme a rodada. Nos dois casos os modelos eram punidos por erros da medição. Agora toda rodada passa por estas salvaguardas:
+
+- **Mesmo material para redator e juiz:** o pacote do juiz (`evidencePack`) é montado a partir do mesmo pacote do redator, com as fontes e o material da marca completos. Um teste garante essa igualdade.
+- **Conferência prévia gratuita (`--audit`):** antes de gastar, a conferência mostra:
+  - se o juiz vê o mesmo que o redator;
+  - os nomes da marca que a checagem vai aceitar;
+  - quais textos seriam pagos de novo;
+  - as versões a julgar e o custo estimado;
+  - as **checagens suspeitas**.
+- **Checagem suspeita:** se metade ou mais dos redatores de uma peça falham na mesma checagem, a régua ou a conta provavelmente está errada (por exemplo, uma marca sem outros nomes cadastrados). A pessoa confere antes de julgar.
+- **Peça em revisão:** se todos os redatores ficam abaixo de 2,5 em evidência na mesma peça, ou se os juízes discordam muito, a peça sai dos totais com o motivo. A rodada continua nas outras peças.
+- **Uma régua só:** a checagem do laboratório é a mesma função da plataforma (`editorialIssues`). Os outros nomes da marca vêm da conta; correções feitas fora dela ficam registradas e valem para todas as rodadas.
+- **Reexecução segura:** rodar de novo preserva as decisões já tomadas (peças excluídas ou em revisão), não reescreve textos e só repete chamadas que falharam.
+
 ## 7. Base de testes: os 6 cases da landing
 
 | Case | Conta e contexto | Funções exercitadas |

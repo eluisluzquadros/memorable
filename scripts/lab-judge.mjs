@@ -33,6 +33,17 @@ export function briefAnomaly(scoresByVersion, { evidenceFloor = 2.5, disagreemen
   return null;
 }
 
+// The same automatic check failing for most writers on one piece points at the rule or the account (e.g. a
+// brand with no other names registered), not at the models. Lesson of EXP-308 round 4: five of six writers
+// "did not mention the brand" while saying "Esfera" aloud. Returns the suspect checks with how many failed.
+export function sharedCheckFailures(writerItems, { share = 0.5, minWriters = 3 } = {}) {
+  const done = writerItems.filter((i) => i.status === "done" && i.checks);
+  if (done.length < minWriters) return [];
+  const counts = new Map();
+  for (const i of done) for (const issue of new Set(i.checks.issues || [])) counts.set(issue, (counts.get(issue) || 0) + 1);
+  return [...counts].filter(([, n]) => n / done.length >= share).map(([issue, n]) => ({ issue, failed: n, of: done.length }));
+}
+
 // Free pre-flight of a judging pass: what each writer saw, what the judge will see, whether any text
 // would be written again (a paid call), how many versions go to the judges and a rough cost.
 // Prices per million tokens (input/output); judges answer with long reasoning, estimated per call.
@@ -52,6 +63,8 @@ export async function auditBrief({ store, runId, brief, packet, writers, judges 
   const cost = judges.reduce((s, j) => { const [i, o, out] = JUDGE_PRICE[j] || [2, 8, 6000]; return s + (tokens * i + out * o) / 1e6; }, 0);
   return {
     brief: brief.id, format: brief.format, sources: pack.sources.length, brandKnowledge: pack.brandKnowledge.length,
+    brandNames: [packet.brand?.name, ...(packet.brand?.aliases || [])].filter(Boolean),
     parity, toWrite, failed, versions: versions.length, tokens, cost,
+    suspectChecks: sharedCheckFailures(state.map((x) => x.item).filter(Boolean)),
   };
 }

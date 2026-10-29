@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { evidencePack, briefAnomaly } from "../scripts/lab-judge.mjs";
+import { evidencePack, briefAnomaly, sharedCheckFailures } from "../scripts/lab-judge.mjs";
 import { contextPacket } from "../src/operations.mjs";
 import { createAccountState } from "../src/account-state.mjs";
 
@@ -23,4 +23,13 @@ test("a piece where every writer scores low on evidence, or where judges split, 
   assert.equal(briefAnomaly(split).kind, "judges");
   const fine = { a: { j1: { evidencia: 4, mean: 4.5 }, j2: { evidencia: 5, mean: 4.25 } }, b: { j1: { evidencia: 2, mean: 3.5 }, j2: { evidencia: 4, mean: 4 } } };
   assert.equal(briefAnomaly(fine), null);
+});
+
+test("the same check failing for most writers on one piece is reported as a suspect rule, not as model failures", () => {
+  const brand = "A mensagem não conecta o tema à marca";
+  const item = (ok, issues = []) => ({ status: "done", checks: { ok, issues } });
+  const suspect = sharedCheckFailures([item(false, [brand]), item(false, [brand]), item(false, [brand]), item(true), item(false, ["Repetição"])]);
+  assert.deepEqual(suspect, [{ issue: brand, failed: 3, of: 5 }]);
+  assert.deepEqual(sharedCheckFailures([item(false, [brand]), item(true), item(true), item(true)]), []);
+  assert.deepEqual(sharedCheckFailures([item(false, [brand]), item(false, [brand])]), [], "too few writers to tell");
 });

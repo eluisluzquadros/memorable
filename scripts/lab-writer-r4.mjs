@@ -148,8 +148,9 @@ try {
 
   }
   if (AUDIT) {
-    console.table(audit.map((a) => ({ peça: a.brief, formato: a.format, fontes: a.sources, "material da marca": a.brandKnowledge, "juiz vê o mesmo que o redator": a.parity ? "sim" : "NÃO", "textos novos (pagos)": a.toWrite.join(", ") || "nenhum", "falhas mantidas": a.failed.join(", ") || "—", "versões a julgar": a.versions, "tokens por juiz": a.tokens, "custo estimado (US$)": a.cost.toFixed(3) })));
-    console.log(`Custo estimado do julgamento: US$ ${audit.reduce((s, a) => s + a.cost, 0).toFixed(2)} · peças com paridade quebrada: ${audit.filter((a) => !a.parity).length} · textos que seriam escritos de novo: ${audit.reduce((s, a) => s + a.toWrite.length, 0)}`);
+    console.table(audit.map((a) => ({ peça: a.brief, formato: a.format, fontes: a.sources, "material da marca": a.brandKnowledge, "nomes da marca": a.brandNames.join(" / "), "juiz vê o mesmo que o redator": a.parity ? "sim" : "NÃO", "textos novos (pagos)": a.toWrite.join(", ") || "nenhum", "falhas mantidas": a.failed.join(", ") || "—", "versões a julgar": a.versions, "tokens por juiz": a.tokens, "custo estimado (US$)": a.cost.toFixed(3) })));
+    for (const a of audit) for (const x of a.suspectChecks) console.log(`ATENÇÃO ${a.brief}: ${x.failed} de ${x.of} redatores falham na mesma checagem ("${x.issue.slice(0, 70)}…"). Provável régua errada ou conta incompleta (ex.: marca sem outros nomes); conferir antes de julgar.`);
+    console.log(`Custo estimado do julgamento: US$ ${audit.reduce((s, a) => s + a.cost, 0).toFixed(2)} · peças com paridade quebrada: ${audit.filter((a) => !a.parity).length} · textos que seriam escritos de novo: ${audit.reduce((s, a) => s + a.toWrite.length, 0)} · checagens suspeitas: ${audit.reduce((s, a) => s + a.suspectChecks.length, 0)}`);
   } else await round.finish("done");
   if (round) console.log(`\nRodada concluída · gasto US$ ${round.spent.toFixed(3)}`);
 } catch (error) {
