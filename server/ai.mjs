@@ -36,6 +36,15 @@ export function allowedServerModel(requested) {
   if (requested !== env("MODEL") && !catalogModel(requested)) throw new Error("Modelo fora do catálogo da plataforma.");
   return requested;
 }
+// Privacy routing for OpenRouter: only providers that neither train on nor retain the data, and none
+// of the listed ones. Clients include law firms (LGPD), so "strict" is the default; MEMORAVEL_PRIVACY=standard
+// lifts it, and MEMORAVEL_PROVIDER_IGNORE (comma-separated) replaces the excluded list.
+const DEFAULT_IGNORE = ["Baidu", "Alibaba", "SiliconFlow", "StreamLake"];
+export function routingPolicy() {
+  if (process.env.MEMORAVEL_PRIVACY === "standard") return null;
+  const ignore = process.env.MEMORAVEL_PROVIDER_IGNORE != null ? process.env.MEMORAVEL_PROVIDER_IGNORE.split(",").map((s) => s.trim()).filter(Boolean) : DEFAULT_IGNORE;
+  return { data_collection: "deny", zdr: true, ...(ignore.length ? { ignore } : {}) };
+}
 function chatCompletionsModel(modelName) {
   const generate = async (system, data, observe) => {
     const endpoint = new URL(env("URL"));
@@ -65,10 +74,15 @@ function chatCompletionsModel(modelName) {
         ],
         response_format: { type: "json_object" },
         max_tokens: 32000,
-        ...(openRouter ? { usage: { include: true } } : {}),
+        ...(openRouter ? { usage: { include: true }, ...(routingPolicy() ? { provider: routingPolicy() } : {}) } : {}),
       }),
     });
     if (!response.ok) {
+      if (response.status === 404 && openRouter) {
+        const detail = await response.text().catch(() => "");
+        if (/data policy|Zero data retention/i.test(detail))
+          throw new Error(`O modelo ${modelName} não tem provedor que atenda à política de privacidade (sem treino e sem retenção de dados). Escolha outro modelo para esta função.`);
+      }
       if (response.status === 402)
         throw new Error(
           "Os créditos do provedor de IA acabaram ou o limite da chave foi atingido. Recarregue o saldo no OpenRouter e gere de novo. Nenhum resultado local será apresentado como IA.",
