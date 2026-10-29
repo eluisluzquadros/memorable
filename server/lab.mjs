@@ -45,7 +45,9 @@ export function createLabStore(filename) {
 
 // A round: call() returns the stored answer when it exists and only pays for what is missing.
 // The budget counts what this round already spent, including earlier attempts.
-export async function startRound(store, run, { log = console.log } = {}) {
+// retryFailed=false keeps a model's own failure as data instead of giving it another try (fairness:
+// a retry would hide how often that model breaks the format).
+export async function startRound(store, run, { log = console.log, retryFailed = true } = {}) {
   const existing = await store.run(run.id);
   const state = { ...existing, ...run, spent_usd: existing?.spent_usd || 0, status: "running" };
   await store.saveRun(state);
@@ -56,6 +58,7 @@ export async function startRound(store, run, { log = console.log } = {}) {
       const fullKey = `${run.id}|${key}`;
       const stored = await store.item(fullKey);
       if (stored?.status === "done") { log(`  ${role.padEnd(8)} ${model.padEnd(32)} (já salvo)`); return stored; }
+      if (stored?.status === "failed" && !retryFailed) { log(`  ${role.padEnd(8)} ${model.padEnd(32)} (falha registrada, mantida)`); return null; }
       if (state.budget_usd != null && state.spent_usd >= state.budget_usd) {
         state.status = "paused"; await save();
         throw Object.assign(new Error(`Teto de US$ ${state.budget_usd} da rodada atingido antes de ${role} (${model}). Nada foi perdido: a rodada retoma daqui.`), { budget: true });

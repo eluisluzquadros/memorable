@@ -49,3 +49,14 @@ test("profiles: the cheapest qualified, the cheapest near the best, and the best
   const few = labSummary(items.filter((i) => i.model !== "caro").concat([{ run_id: "r", role: "redator", model: "novo", status: "done", mean: 5, cost_usd: 0.001, scores: {}, checks: { ok: true } }]), runs);
   assert.match(few.models.find((m) => m.model === "novo").why, /só 1 de 3 textos avaliados/);
 });
+
+test("with retryFailed off, a model's own failure stays recorded instead of being retried", async () => {
+  const store = createLabStore(":memory:");
+  const round = await startRound(store, { id: "EXP-F-r1", experiment: "EXP-F", title: "t", task: "redator", budget_usd: 1 }, { log: quiet });
+  await round.call({ key: "b|redator|x", role: "redator", model: "x", invoke: async () => { throw new Error("formato inválido"); } });
+  let paid = 0;
+  const strict = await startRound(store, { id: "EXP-F-r1", experiment: "EXP-F", title: "t", task: "redator", budget_usd: 1 }, { log: quiet, retryFailed: false });
+  assert.equal(await strict.call({ key: "b|redator|x", role: "redator", model: "x", invoke: async () => { paid++; return {}; } }), null);
+  assert.equal(paid, 0);
+  assert.equal((await store.item("EXP-F-r1|b|redator|x")).status, "failed");
+});
