@@ -85,3 +85,15 @@ test("overall and per-format views; excluded briefs leave every total", () => {
   assert.equal(s.models.find((m) => m.model === "texto").judged, 6, "the excluded brief is not counted");
   assert.equal(s.excluded[0].reason, "fonte de outra marca");
 });
+
+test("a rerun keeps the decisions recorded on the round (excluded and flagged briefs)", async () => {
+  const store = createLabStore(":memory:");
+  await startRound(store, { id: "EXP-K-r1", experiment: "EXP-K", title: "t", task: "redator", config: { briefs: [{ id: "a", format: "LinkedIn" }] } }, { log: quiet });
+  const run = await store.run("EXP-K-r1");
+  await store.saveRun({ ...run, config: { ...run.config, excludedBriefs: [{ id: "a", reason: "fonte de outra marca" }], flaggedBriefs: [{ id: "b", reason: "anomalia" }] } });
+  await startRound(store, { id: "EXP-K-r1", experiment: "EXP-K", title: "t", task: "redator", config: { briefs: [{ id: "a", format: "LinkedIn" }], writers: ["x"] } }, { log: quiet });
+  const after = await store.run("EXP-K-r1");
+  assert.equal(after.config.excludedBriefs[0].reason, "fonte de outra marca");
+  assert.equal(after.config.flaggedBriefs[0].id, "b");
+  assert.deepEqual(after.config.writers, ["x"]);
+});

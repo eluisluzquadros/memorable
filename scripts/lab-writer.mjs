@@ -15,6 +15,10 @@ const { contextPacket } = await import("../src/operations.mjs");
 const { editorialIssues } = await import("../src/editorial-quality.mjs");
 const { COPY_METHOD, PLANNER_METHOD, formatGuide } = await import("../src/playbooks.mjs");
 const { BRAND_WRITING } = await import("../server/editorial.mjs");
+const { evidencePack, judgeInstruction, briefAnomaly, auditBrief } = await import("./lab-judge.mjs");
+// --audit: free pre-flight, no model call and no change to the round.
+const AUDIT = process.argv.includes("--audit");
+const audit = [];
 const { benchmarkModel } = await import("../server/ai.mjs");
 
 const RUN = { id: "EXP-308-r2", experiment: "EXP-308", title: "Redator · 10 modelos × 3 posts de LinkedIn", task: "redator" };
@@ -55,16 +59,20 @@ const model = (name, role) => obs.instrument(benchmarkModel(name), { route: "lab
 const doc = JSON.parse(new DatabaseSync(".runtime/skyvidya.sqlite", { readOnly: true }).prepare("SELECT document FROM account_state WHERE user_id=?").get(ACCOUNT).document);
 // --no-retry keeps earlier model failures as they were (only transient errors deserve another try).
 const retryFailed = !process.argv.includes("--no-retry");
-const round = await startRound(store, { ...RUN, budget_usd: budget, config: { writers: WRITERS, judges: JUDGES, planner: PLANNER, briefs: BRIEFS.map(({ id, title, workspace, format }) => ({ id, title, workspace, format })), criterion: "nota ≥ Opus − 0,3 a ≤ 50% do custo; piso 4,0", floor: 4.0 } }, { retryFailed });
+const round = AUDIT ? null : await startRound(store, { ...RUN, budget_usd: budget, config: { writers: WRITERS, judges: JUDGES, planner: PLANNER, briefs: BRIEFS.map(({ id, title, workspace, format }) => ({ id, title, workspace, format })), criterion: "nota ≥ Opus − 0,3 a ≤ 50% do custo; piso 4,0", floor: 4.0 } }, { retryFailed });
 const shuffle = (list) => list.map((v) => [Math.random(), v]).sort((a, b) => a[0] - b[0]).map(([, v]) => v);
 const writerSystem = (format) => `Atue como Copywriter/Ghostwriter. ${COPY_METHOD} ${BRAND_WRITING} ${formatGuide(format)} Retorne {title,body,hook,strategy,sourceIds:string[],facts:[{sourceId,excerpt,verified:false}]}. Use packet.sources e packet.brandKnowledge para sustentar afirmações factuais.`;
 
 try {
+  const skip = new Set(((await store.run(RUN.id))?.config?.excludedBriefs || []).map((e) => e.id));
   for (const b of BRIEFS) {
+    if (skip.has(b.id)) { console.log(`
+== ${b.id}: fora dos totais, não é julgada`); continue; }
     console.log(`\n== ${b.id}: ${b.title}`);
     const packet = contextPacket({ ...doc, workspace: b.workspace }, { ...b, sourceIds: [b.source], deadline: "2026-11-10" });
     if (!packet.sources.length) throw new Error(`${b.id}: referência indisponível.`);
     const known = [...packet.sources, ...(packet.brandKnowledge || [])];
+    if (AUDIT) { audit.push(await auditBrief({ store, runId: RUN.id, brief: b, packet, writers: WRITERS, judges: JUDGES })); continue; }
     let plan = savedPlan[b.id];
     if (!plan) {
       const item = await round.call({ key: `${b.id}|plano|${PLANNER}`, role: "plano", model: PLANNER, briefId: b.id, invoke: (observe) => model(PLANNER)(`Atue como Trend Hunter e Content Planner. ${PLANNER_METHOD} ${BRAND_WRITING} ${formatGuide(b.format)} Retorne {thesis,evidence,outline,risks,patternUsed}. Não diga que pesquisou na internet.`, packet, observe) });
@@ -100,9 +108,8 @@ try {
       const order = saved?.output?.order || shuffle(versions.map((v) => v.key));
       const label = (k) => String.fromCharCode(65 + order.indexOf(k));
       const item = await round.call({ key: jkey, role: "juiz", model: judge, briefId: b.id, invoke: async (observe) => {
-        const verdict = await model(judge)("Você é editor-chefe e avalia versões anônimas de um mesmo post para a marca do pacote. Julgue só o texto, comparando com as fontes e com o material oficial da marca (brandKnowledge), que o redator também pode usar como evidência sobre a própria marca. Para cada versão dê notas inteiras de 1 a 5: clareza, evidencia (fiel às fontes, sem inventar), voz (soa como a marca descrita), utilidade (vale o tempo do leitor). Depois ordene todas da melhor para a pior e diga em uma frase o motivo do primeiro lugar. Retorne {scores:{A:{clareza,evidencia,voz,utilidade},B:{...}},ranking:string[],reason:string}.", {
-          brand: packet.brand, voice: packet.voice, brief: packet.brief, sources: packet.sources.map((s) => ({ title: s.title, text: s.text })),
-          brandKnowledge: (packet.brandKnowledge || []).map((k) => ({ title: k.title, text: k.text })),
+        const verdict = await model(judge)(judgeInstruction("um mesmo post"), {
+          ...evidencePack(packet),
           versions: order.map((k) => { const v = versions.find((x) => x.key === k); return { id: label(k), title: v.title, body: v.body }; }),
         }, observe);
         return { ...verdict, order };
@@ -117,12 +124,23 @@ try {
       const means = Object.values(scores[v.key]).map((s) => s.mean);
       await round.update(v.key, { scores: scores[v.key], mean: means.length ? Math.round((means.reduce((a, c) => a + c, 0) / means.length) * 100) / 100 : null });
     }
+    const anomaly = briefAnomaly(scores);
+    if (anomaly) {
+      const run = await store.run(RUN.id);
+      const flagged = (run.config.flaggedBriefs || []).filter((f) => f.id !== b.id);
+      await store.saveRun({ ...run, config: { ...run.config, flaggedBriefs: [...flagged, { id: b.id, kind: anomaly.kind, reason: anomaly.message }] } });
+      console.log(`  ⚠ ${b.id} em revisão: ${anomaly.message}`);
+    }
+
   }
-  await round.finish("done");
-  console.log(`\nRodada concluída · gasto US$ ${round.spent.toFixed(3)}`);
+  if (AUDIT) {
+    console.table(audit.map((a) => ({ peça: a.brief, formato: a.format, fontes: a.sources, "material da marca": a.brandKnowledge, "juiz vê o mesmo que o redator": a.parity ? "sim" : "NÃO", "textos novos (pagos)": a.toWrite.join(", ") || "nenhum", "falhas mantidas": a.failed.join(", ") || "—", "versões a julgar": a.versions, "tokens por juiz": a.tokens, "custo estimado (US$)": a.cost.toFixed(3) })));
+    console.log(`Custo estimado do julgamento: US$ ${audit.reduce((s, a) => s + a.cost, 0).toFixed(2)} · peças com paridade quebrada: ${audit.filter((a) => !a.parity).length} · textos que seriam escritos de novo: ${audit.reduce((s, a) => s + a.toWrite.length, 0)}`);
+  } else await round.finish("done");
+  if (round) console.log(`\nRodada concluída · gasto US$ ${round.spent.toFixed(3)}`);
 } catch (error) {
   console.log(`\n${error.message}`);
-  if (!error.budget) await round.finish("paused", error.message);
+  if (!error.budget && round) await round.finish("paused", error.message);
 } finally {
   await closePool();
 }

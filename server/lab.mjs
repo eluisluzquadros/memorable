@@ -50,7 +50,9 @@ export function createLabStore(filename) {
 // a retry would hide how often that model breaks the format).
 export async function startRound(store, run, { log = console.log, retryFailed = true } = {}) {
   const existing = await store.run(run.id);
-  const state = { ...existing, ...run, spent_usd: existing?.spent_usd || 0, status: "running" };
+  // The stored configuration is kept and the new one merged over it: decisions recorded on the round
+  // (briefs out of the totals, briefs under review) must survive every rerun.
+  const state = { ...existing, ...run, config: { ...(existing?.config || {}), ...(run.config || {}) }, spent_usd: existing?.spent_usd || 0, status: "running" };
   await store.saveRun(state);
   const save = () => store.saveRun(state);
   return {
@@ -156,6 +158,7 @@ export function labSummary(items, runs, floor = FLOOR) {
   for (const r of runs) {
     for (const b of r.config?.briefs || []) formatOf.set(`${r.id}|${b.id}`, b.format);
     for (const e of r.config?.excludedBriefs || []) excluded.push({ run: r.id, ...e });
+    for (const e of r.config?.flaggedBriefs || []) excluded.push({ run: r.id, ...e, reason: `Em revisão: ${e.reason}` });
   }
   const out = new Set(excluded.map((e) => `${e.run}|${e.id}`));
   const kept = items.filter((i) => !out.has(`${i.run_id}|${i.brief_id}`));
