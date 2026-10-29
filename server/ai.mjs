@@ -105,6 +105,9 @@ export function serverModel(requested) {
     serverModels.set(name, claudeReady() ? claudeModel(process.env.ANTHROPIC_API_KEY, name) : chatCompletionsModel(name));
   return serverModels.get(name);
 }
+// Server-side scripts (model benchmarks) may try any OpenRouter model; the catalog only limits what a
+// browser request can pick.
+export const benchmarkModel = (name) => chatCompletionsModel(name);
 const defaultModel = (system, data, observe) => serverModel()(system, data, observe);
 const lenses = [
   "Contraponto",
