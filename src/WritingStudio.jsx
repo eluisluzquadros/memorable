@@ -670,9 +670,11 @@ export function WritingStudio() {
             (draft.editorialReview.passed === false ? (
               <div className="ws-review-note ws-review-pending" role="status">
                 <p>
-                  O editor ainda aponta {draft.editorialReview.pending.length}{" "}
-                  {draft.editorialReview.pending.length === 1 ? "ajuste" : "ajustes"} depois de{" "}
-                  {draft.editorialReview.rounds - 1} {draft.editorialReview.rounds - 1 === 1 ? "reescrita" : "reescritas"} automáticas. Corrija antes de enviar para revisão:
+                  {draft.editorialReview.reviewFailed
+                    ? "A revisão automática não concluiu. O texto foi guardado; revise antes de enviar:"
+                    : <>O editor ainda aponta {draft.editorialReview.pending.length}{" "}
+                      {draft.editorialReview.pending.length === 1 ? "ajuste" : "ajustes"} depois de{" "}
+                      {draft.editorialReview.rounds - 1} {draft.editorialReview.rounds - 1 === 1 ? "reescrita" : "reescritas"} automáticas. Corrija antes de enviar para revisão:</>}
                 </p>
                 <ul>
                   {draft.editorialReview.pending.map((issue) => (
@@ -688,6 +690,16 @@ export function WritingStudio() {
                 A conferência dos fatos e a aprovação humana continuam pendentes.
               </p>
             ))}
+          {draft.warnings?.length > 0 && (
+            <div className="ws-review-note ws-review-pending" role="status">
+              <p>Avisos do roteiro:</p>
+              <ul>
+                {draft.warnings.map((warning) => (
+                  <li key={warning}>{warning}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           {generated.length > 1 && (
             <div className="ws-tabs" role="group" aria-label="Versões">
               {generated.map((v, i) => (

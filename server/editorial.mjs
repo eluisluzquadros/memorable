@@ -86,18 +86,25 @@ async function revise(packet, variant, issues, model) {
   return typeof result.body === "string" && result.body.trim() ? { ...next, body: result.body } : variant;
 }
 
+// Paid work is never thrown away: what still fails after the rewrites comes back flagged, with the
+// reasons, and cannot be approved until a person fixes it (the human review stays mandatory).
 export async function reviewGenerated(packet, versions, model, { rounds = 2, critic = model } = {}) {
   let current = versions;
   for (let round = 0; ; round++) {
-    const reviews = await critique(packet, current, critic);
+    let reviews;
+    try {
+      reviews = await critique(packet, current, critic).catch(() => critique(packet, current, critic));
+    } catch (error) {
+      return current.map((variant) => {
+        const mechanical = mechanicalIssues(packet, variant);
+        return { ...variant, editorialReview: { mode: "provider", rounds: round + 1, passed: false, reviewFailed: true, blocked: mechanical.length > 0, pending: [...mechanical, `A revisão automática não respondeu (${error.message}). Revise o texto antes de enviar.`], humanReviewPending: true } };
+      });
+    }
     const pending = current.map((v, i) => [...mechanicalIssues(packet, v), ...reviewIssues(reviews[i])]);
     if (pending.every((p) => !p.length) || round === rounds) {
-      // Mechanical failures that survive every rewrite are never handed over as AI work.
-      const broken = current.map((v) => mechanicalIssues(packet, v)).find((m) => m.length);
-      if (broken) throw new Error("Conteúdo rejeitado na checagem: " + broken.join(" "));
       return current.map((variant, i) => ({
         ...variant,
-        editorialReview: { ...reviews[i], mode: "provider", rounds: round + 1, passed: !pending[i].length, pending: pending[i], humanReviewPending: true },
+        editorialReview: { ...reviews[i], mode: "provider", rounds: round + 1, passed: !pending[i].length, blocked: mechanicalIssues(packet, variant).length > 0, pending: pending[i], humanReviewPending: true },
       }));
     }
     current = await Promise.all(current.map((v, i) => (pending[i].length ? revise(packet, v, pending[i], model) : v)));

@@ -174,15 +174,25 @@ test("brand-free, repetitive, placeholder and boilerplate content cannot be retu
   assert.equal(fixed[0].body, revised);
   assert.equal(fixed[0].editorialReview.passed, true);
   assert.equal(fixed[0].editorialReview.rounds, 2);
-  await assert.rejects(
-    () =>
-      reviewGenerated(
-        packet,
-        [{ body: carousel, sourceIds: [source.id] }],
-        async () => ({ reviews: [] }),
-      ),
-    /todas as versões/,
+  // An editor that never answers properly does not cost the draft: it comes back flagged, not approved.
+  const unreviewed = await reviewGenerated(
+    packet,
+    [{ body: carousel, sourceIds: [source.id] }],
+    async () => ({ reviews: [] }),
   );
+  assert.equal(unreviewed[0].body, carousel);
+  assert.equal(unreviewed[0].editorialReview.passed, false);
+  assert.equal(unreviewed[0].editorialReview.reviewFailed, true);
+  assert.match(unreviewed[0].editorialReview.pending.at(-1), /todas as versões/);
+  // A draft whose citation is not in the source survives, blocked, with the reason.
+  const misquoted = await reviewGenerated(
+    packet,
+    [{ body: carousel, sourceIds: [source.id], facts: [{ sourceId: source.id, excerpt: "Frase que não existe na fonte." }] }],
+    async (system, data) => (/revisando a própria peça/.test(system) ? { body: carousel } : acceptedReviews(data.versions)),
+  );
+  assert.equal(misquoted[0].editorialReview.blocked, true);
+  assert.equal(misquoted[0].editorialReview.passed, false);
+  assert.match(misquoted[0].editorialReview.pending.join(" "), /evidência citada/);
   const good = await reviewGenerated(
     packet,
     [{ body: carousel, sourceIds: [source.id] }],

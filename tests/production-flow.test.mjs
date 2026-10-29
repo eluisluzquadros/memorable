@@ -49,7 +49,7 @@ test('10s, 30s and 1h have real timelines; long local scaffolds cannot pass as c
   assert.equal(scriptTiming(productionVariants(packet)[0].body,packet.brief).passed,true);
 });
 
-test('provider honors selected count and duration; rejects a nominal 1h script with only a few spoken words', async () => {
+test('provider honors selected count and duration; a nominal 1h script with only a few spoken words comes back flagged, not passed', async () => {
   for (const versionCount of [1,2,3]) {
     const packet={brand:{name:'Skyvidya'},voice:{positioning:'Inteligência geoespacial para gestão de riscos.'},brief:{title:'Tema',format:'Roteiro de vídeo',durationSeconds:30,versionCount},sources:[{id:'s',text:'Fonte completa'}]};
     const writer=async (_system,data) => data.versions ? acceptedReviews(data.versions) : data.selectedTopics
@@ -59,7 +59,9 @@ test('provider honors selected count and duration; rejects a nominal 1h script w
     assert.equal(result.versions.length,versionCount);
     assert.equal(result.versions[0].durationSeconds,30);
     assert.equal(scriptTiming(result.versions[0].body,packet.brief).passed,true);
-    await assert.rejects(()=>generateSquad({...packet,brief:{...packet.brief,durationSeconds:3600}},writer),/3600s/);
+    const long=await generateSquad({...packet,brief:{...packet.brief,durationSeconds:3600}},writer);
+    assert.match(long.versions[0].warnings.join(' '),/3600s/);
+    assert.equal(scriptTiming(long.versions[0].body,{...packet.brief,durationSeconds:3600}).passed,false);
   }
 });
 

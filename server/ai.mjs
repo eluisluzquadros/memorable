@@ -249,22 +249,16 @@ export async function generateVideoScripts(
         throw new Error(
           "O roteiro retornado está incompleto ou contém fontes não fornecidas.",
         );
+      // Timing that misses the target is a warning on a paid script, not a reason to throw it away.
       const total = s.scenes.reduce((n, c) => n + c.duration, 0);
-      if (
-        Math.abs(total - settings.durationSeconds) >
-        Math.max(2, settings.durationSeconds * 0.1)
-      )
-        throw new Error(
-          `O roteiro retornou ${total}s para uma meta de ${settings.durationSeconds}s. Ajuste o briefing ou gere novamente.`,
-        );
+      if (Math.abs(total - settings.durationSeconds) > Math.max(2, settings.durationSeconds * 0.1))
+        s.warnings.push(`As cenas somam ${total}s para uma meta de ${settings.durationSeconds}s. Ajuste os tempos antes de enviar.`);
       if (
         settings.scriptMode === "spoken" &&
         (spokenWords(s) < settings.durationSeconds * 1.3 ||
           spokenWords(s) > settings.durationSeconds * 3)
       )
-        throw new Error(
-          "As falas retornadas não cabem na duração solicitada. Amplie as fontes ou escolha pauta por blocos para episódios longos.",
-        );
+        s.warnings.push(`As falas têm ${spokenWords(s)} palavras para ${settings.durationSeconds}s; o ritmo pede entre ${Math.round(settings.durationSeconds * 1.3)} e ${settings.durationSeconds * 3}.`);
       Object.assign(s, settings);
       if (validate) validateGenerated(
         { ...packet, brief: { format: "Roteiro de vídeo", ...packet.brief } },
