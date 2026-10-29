@@ -41,5 +41,7 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
+      - key: MEMORAVEL_DB
+        value: postgres
       - key: SUPABASE_DB_URL
         sync: false

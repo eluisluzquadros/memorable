@@ -24,17 +24,17 @@ test('migration clears only untouched fixtures and preserves customized legacy c
  const active=structuredClone(seed);active.events.push({id:'change'});assert.equal(isUntouchedDemo(active),false);
  const extended={...seed,customNotes:'Trabalho próprio fora dos campos conhecidos.'};assert.equal(isUntouchedDemo(extended),false);
 });
-test('server migration archives exact previous state and isolates backups',()=>{
+test('server migration archives exact previous state and isolates backups',async()=>{
  const store=createAccounts(':memory:');
  try{
-  const a=store.authenticate({name:'Skyvidya',email:'legacy@example.test',password:'test-only-long-pass'},true,'a').user;
-  const b=store.authenticate({name:'Outra marca',email:'new@example.test',password:'test-only-long-pass'},true,'b').user;
-  const seed=initialState();const previous=store.read(a).revision;store.save(a,{state:seed,revision:previous});
-  const migrated=store.read(a);assert.equal(migrated.state.sources.length,0);assert.equal(migrated.state.workspaces[0].name,'Skyvidya');
-  assert.deepEqual(store.backup(a).state,seed);assert.equal(store.backup(b),null);
-  assert.equal(store.read(a).revision,migrated.revision);
-  assert.throws(()=>store.save(a,{state:seed,revision:previous+1}),/outra aba/);
- }finally{store.close();}
+  const a=(await store.authenticate({name:'Skyvidya',email:'legacy@example.test',password:'test-only-long-pass'},true,'a')).user;
+  const b=(await store.authenticate({name:'Outra marca',email:'new@example.test',password:'test-only-long-pass'},true,'b')).user;
+  const seed=initialState();const previous=(await store.read(a)).revision;await store.save(a,{state:seed,revision:previous});
+  const migrated=await store.read(a);assert.equal(migrated.state.sources.length,0);assert.equal(migrated.state.workspaces[0].name,'Skyvidya');
+  assert.deepEqual((await store.backup(a)).state,seed);assert.equal(await store.backup(b),null);
+  assert.equal((await store.read(a)).revision,migrated.revision);
+  await assert.rejects(store.save(a,{state:seed,revision:previous+1}),/outra aba/);
+ }finally{await store.close();}
 });
 test('saving retries after failure and retains a recovery snapshot; stopped writers never save again',async()=>{
  let fail=true,calls=0;const requests=[];

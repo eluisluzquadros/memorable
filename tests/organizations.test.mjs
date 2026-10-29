@@ -39,12 +39,12 @@ test('archive is reversible, preserves content and identity, pauses radar, and n
  assert.equal(restored.voices[id].audience,'Público preservado');assert.equal(restored.brandDNA[id].primary,'#123456');assert.equal(restored.pieces[0].body,'Preservado');assert.equal(workspaceList(restored).length,2);
  assert.throws(()=>archiveBrand(archived,archived.workspace),/pelo menos uma/);
 });
-test('registration atomically initializes the group and rejects invalid organization before creating an account',()=>{
+test('registration atomically initializes the group and rejects invalid organization before creating an account',async()=>{
  const store=createAccounts(':memory:');const input={name:user.name,email:'group@example.test',password:'valid-test-password-123'};
  try{
-  assert.throws(()=>store.authenticate({...input,organization:{...setup,brands:[]}},true,'local'),/2 a 20/);
-  const result=store.authenticate({...input,organization:setup},true,'local');const data=store.read(result.user);
+  await assert.rejects(store.authenticate({...input,organization:{...setup,brands:[]}},true,'local'),/2 a 20/);
+  const result=await store.authenticate({...input,organization:setup},true,'local');const data=await store.read(result.user);
   assert.equal(data.revision,1);assert.equal(data.state.workspaces.length,2);assert.equal(data.state.organizationName,setup.name);
-  assert.ok(store.workspaceActive(result.user.id,data.state.workspace));
- }finally{store.close();}
+  assert.ok(await store.workspaceActive(result.user.id,data.state.workspace));
+ }finally{await store.close();}
 });

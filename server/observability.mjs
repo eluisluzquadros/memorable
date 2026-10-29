@@ -1,6 +1,6 @@
 // Every LLM call is recorded: agent role, model, latency, tokens, cost and outcome.
 // Benchmarks reuse the same table through a run tag.
-import { DatabaseSync } from "node:sqlite";
+import { openDb } from "./sql.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -35,12 +35,10 @@ const percentile = (values, p) => {
 
 export function createObservability(dir) {
   fs.mkdirSync(dir, { recursive: true });
-  const db = new DatabaseSync(path.join(dir, "observability.sqlite"));
-  db.exec(`PRAGMA journal_mode=WAL;
+  const db = openDb(path.join(dir, "observability.sqlite"), `PRAGMA journal_mode=WAL;
     CREATE TABLE IF NOT EXISTS llm_calls (id TEXT PRIMARY KEY, at TEXT, owner TEXT, route TEXT, role TEXT, provider TEXT, model TEXT,
       ms INTEGER, input_tokens INTEGER, output_tokens INTEGER, cost REAL, cost_source TEXT, ok INTEGER, error TEXT, run_tag TEXT);
     CREATE INDEX IF NOT EXISTS llm_calls_at ON llm_calls(at);`);
-  const insert = db.prepare("INSERT INTO llm_calls VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
 
   // Wraps a model function (system, data, observe) => object; the third argument receives usage.
   function instrument(model, { owner = null, route = "", provider = "server", runTag = null } = {}) {
@@ -50,9 +48,10 @@ export function createObservability(dir) {
       let usage = {};
       const record = (ok, error) => {
         const priced = usage.cost ?? estimateCost(catalogModel(name), usage.inputTokens, usage.outputTokens);
-        insert.run(randomUUID(), new Date().toISOString(), owner, route, roleOf(system), provider, name, Math.round(performance.now() - started),
+        // Recording never blocks or breaks the call it measures.
+        db.run("INSERT INTO llm_calls VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", randomUUID(), new Date().toISOString(), owner, route, roleOf(system), provider, name, Math.round(performance.now() - started),
           usage.inputTokens ?? null, usage.outputTokens ?? null, priced ?? null, usage.cost != null ? "provider" : priced != null ? "estimate" : null,
-          ok ? 1 : 0, error ? String(error).slice(0, 300) : null, runTag);
+          ok ? 1 : 0, error ? String(error).slice(0, 300) : null, runTag).catch((e) => console.error("Registro de custo falhou:", e.message));
       };
       try {
         const result = await model(system, data, (u) => { usage = { ...usage, ...u }; });
@@ -67,16 +66,16 @@ export function createObservability(dir) {
     return wrapped;
   }
 
-  function summary({ owner = null, days = 30, runTag } = {}) {
+  async function summary({ owner = null, days = 30, runTag } = {}) {
     const since = new Date(Date.now() - days * 86400000).toISOString();
     const where = ["at >= ?"], params = [since];
     if (owner !== "*") { where.push("owner IS ?"); params.push(owner); }
     if (runTag) { where.push("run_tag = ?"); params.push(runTag); }
-    const rows = db.prepare(`SELECT * FROM llm_calls WHERE ${where.join(" AND ")} ORDER BY at DESC`).all(...params);
+    const rows = await db.all(`SELECT * FROM llm_calls WHERE ${where.join(" AND ")} ORDER BY at DESC`, ...params);
     const group = (key) => Object.values(rows.reduce((acc, r) => {
       const k = r[key];
       const g = (acc[k] ||= { [key]: k, calls: 0, ok: 0, ms: [], inputTokens: 0, outputTokens: 0, cost: 0, estimated: false });
-      g.calls++; g.ok += r.ok; g.ms.push(r.ms);
+      g.calls++; g.ok += r.ok ? 1 : 0; g.ms.push(r.ms);
       g.inputTokens += r.input_tokens || 0; g.outputTokens += r.output_tokens || 0; g.cost += r.cost || 0;
       if (r.cost_source === "estimate") g.estimated = true;
       return acc;

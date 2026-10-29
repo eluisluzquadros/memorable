@@ -17,6 +17,7 @@ import { checkGroupCoherence } from './group.mjs';
 import { enrichReference } from './keywords.mjs';
 import { ingestFile, ingestUrl, sourceKind } from './ingestion.mjs';
 import { PORT, HOST, APP_ORIGIN, ALLOWED_ORIGINS, clientAddress } from "./config.mjs";
+import { openDb, usingPostgres } from './sql.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // In the cloud this service also delivers the built screens (npm run build → dist/), so pages and API share one address.
 const distDir = path.join(root, "dist");
@@ -84,21 +85,29 @@ async function catalogWithPrices() {
       : { ...m, available: livePrices.byId.size ? false : null, live: false };
   });
 }
-const file = path.join(dataDir, "monitoring.json");
+// Collected references and radar schedules: one JSON value in service_state (Postgres in the cloud,
+// .runtime/service.sqlite locally). The old monitoring.json is imported once.
+const serviceState = openDb(path.join(dataDir, "service.sqlite"), "PRAGMA journal_mode=WAL; CREATE TABLE IF NOT EXISTS service_state (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL);");
+const legacyMonitoring = path.join(dataDir, "monitoring.json");
 let db = { schedules: {}, sources: [], runs: [] };
-try {
-  db = JSON.parse(fs.readFileSync(file, "utf8"));
-} catch {}
+const savedMonitoring = await serviceState.get("SELECT value FROM service_state WHERE key=?", "monitoring");
+if (savedMonitoring) db = JSON.parse(savedMonitoring.value);
+else { try { db = JSON.parse(fs.readFileSync(legacyMonitoring, "utf8")); } catch {} }
+let saving = Promise.resolve();
+// Writes are queued so they land in order; a failed write is logged and the next one carries the full state.
 const persist = () => {
-  fs.writeFileSync(file + ".tmp", JSON.stringify(db));
-  fs.renameSync(file + ".tmp", file);
+  const value = JSON.stringify(db), at = new Date().toISOString();
+  saving = saving
+    .then(() => serviceState.run("INSERT INTO service_state VALUES(?,?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at", "monitoring", value, at))
+    .catch((e) => console.error("Falha ao salvar a coleta:", e.message));
 };
+if (!savedMonitoring) persist();
 const active = new Set();
 const spaces = ["bbmd", "ativos", "juris", "esfera", "podcast", "pessoal"];
 const scopeKey = (workspace,ownerId) => ownerId ? `${ownerId}:${workspace}` : workspace;
-function workspaceOwner(req,workspace) {
-  const user=accounts.lookup(req);
-  const allowed=user ? accounts.read(user).state.workspaces.filter(w=>!w.archived).map(w=>w.id) : spaces;
+async function workspaceOwner(req,workspace) {
+  const user=await accounts.lookup(req);
+  const allowed=user ? (await accounts.read(user)).state.workspaces.filter(w=>!w.archived).map(w=>w.id) : spaces;
   if(!allowed.includes(workspace)){const error=new Error('Este espaço não pertence à conta ativa.');error.status=403;throw error;}
   return user?.id || null;
 }
@@ -166,31 +175,31 @@ const server = http.createServer(async (req, res) => {
       if (req.method !== 'POST') return send(res,405,{error:'Método indisponível.'});
       const input = await read(req);
       if (url.pathname === '/api/ingest/url') {
-        const user = accounts.lookup(req);
+        const user = await accounts.lookup(req);
         const isInstagram = (() => { try { return sourceKind(input.url) === 'social'; } catch { return false; } })();
         return send(res,200,await enrich(await ingestUrl(input, isInstagram ? { instagram: user ? value => integrations.ingestInstagram(user.id, value) : undefined } : {}), user, url.pathname, input.roles));
       }
       if (url.pathname === '/api/ingest/channel') {
-        const user = accounts.lookup(req);
+        const user = await accounts.lookup(req);
         return send(res,200,await discoverChannel(input, { instagram: user ? value => integrations.ingestInstagram(user.id, value) : undefined }));
       }
       if (url.pathname === '/api/ingest/channel/import') return send(res,200,await importChannelItems(input));
       if (url.pathname === '/api/ingest/file') {
-        const user = accounts.lookup(req);
+        const user = await accounts.lookup(req);
         const isMedia = /^(audio|video)\//i.test(String(input.mimeType || '')) || /\.(mp3|mp4|mpeg|mpga|m4a|ogg|wav|webm|flac)$/i.test(String(input.name || ''));
         return send(res,200,await enrich(await ingestFile(input, isMedia ? { transcribe: user ? media => integrations.transcribe(user.id, media) : undefined } : {}), user, url.pathname, input.roles));
       }
       return send(res,404,{error:'Rota de ingestão não encontrada.'});
     }
     if(url.pathname.startsWith('/api/integrations')||url.pathname.startsWith('/api/media/')) {
-      const user=accounts.lookup(req);
+      const user=await accounts.lookup(req);
       if(!user)return send(res,401,{error:'Entre na sua conta para configurar conexões e gerar mídia.'});
-      if(req.method==='GET'&&url.pathname==='/api/integrations')return send(res,200,integrations.status(user.id));
+      if(req.method==='GET'&&url.pathname==='/api/integrations')return send(res,200,await integrations.status(user.id));
       const match=url.pathname.match(/^\/api\/integrations\/(higgsfield-api|higgsfield|blotato|anthropic|openai|gemini|meta)(?:\/(test|tools|call|authorize))?$/);
       if(match){const [,provider,action]=match;
         if(req.method==='GET'&&action==='tools')return send(res,200,await integrations.tools(user.id,provider));
-        if(req.method==='DELETE'&&!action)return send(res,200,integrations.remove(user.id,provider));
-        if(req.method==='PUT'&&!action)return send(res,200,integrations.configure(user.id,provider,(await read(req)).key));
+        if(req.method==='DELETE'&&!action)return send(res,200,await integrations.remove(user.id,provider));
+        if(req.method==='PUT'&&!action)return send(res,200,await integrations.configure(user.id,provider,(await read(req)).key));
         if(req.method==='POST'&&action==='test')return send(res,200,await integrations.test(user.id,provider));
         if(req.method==='POST'&&action==='authorize'&&provider==='higgsfield')return send(res,200,await integrations.authorize(user.id));
         if(req.method==='POST'&&action==='call')return send(res,200,await integrations.call(user.id,provider,await read(req)));
@@ -202,53 +211,53 @@ const server = http.createServer(async (req, res) => {
     // Contributors only reach these routes: their session never opens the organization's document.
     if (url.pathname.startsWith('/api/contributor/')) {
       if (req.method === 'POST' && url.pathname === '/api/contributor/login') {
-        const result = suggestions.login(await read(req), clientAddress(req));
-        suggestions.revoke(req); res.setHeader('Set-Cookie', contributorCookie(result.token));
+        const result = await suggestions.login(await read(req), clientAddress(req));
+        await suggestions.revoke(req); res.setHeader('Set-Cookie', contributorCookie(result.token));
         return send(res, 200, { contributor: { name: result.contributor.name } });
       }
-      if (req.method === 'POST' && url.pathname === '/api/contributor/logout') { suggestions.revoke(req); res.setHeader('Set-Cookie', contributorCookie('')); return send(res, 200, { ok: true }); }
-      const person = suggestions.lookup(req);
+      if (req.method === 'POST' && url.pathname === '/api/contributor/logout') { await suggestions.revoke(req); res.setHeader('Set-Cookie', contributorCookie('')); return send(res, 200, { ok: true }); }
+      const person = await suggestions.lookup(req);
       if (!person) return send(res, 401, { error: 'Entre com o acesso de colaborador.' });
-      const doc = accounts.peek(person.ownerId), brands = activeBrands(doc).filter(w => person.workspaces.includes(w.id));
+      const doc = await accounts.peek(person.ownerId), brands = activeBrands(doc).filter(w => person.workspaces.includes(w.id));
       if (req.method === 'GET' && url.pathname === '/api/contributor/me') {
         const names = new Map(activeBrands(doc).map(w => [w.id, w.name]));
         return send(res, 200, {
           contributor: { name: person.name, area: person.area }, organization: doc?.organizationName || '',
           brands: brands.map(w => ({ id: w.id, name: w.name })),
-          suggestions: suggestions.mine(person).map(s => ({ id: s.id, title: s.title, brand: names.get(s.workspace) || 'Marca arquivada', createdAt: s.createdAt, reason: s.status === 'declined' ? s.reason : '', ...suggestionStatus(s, doc?.pieces) })),
+          suggestions: (await suggestions.mine(person)).map(s => ({ id: s.id, title: s.title, brand: names.get(s.workspace) || 'Marca arquivada', createdAt: s.createdAt, reason: s.status === 'declined' ? s.reason : '', ...suggestionStatus(s, doc?.pieces) })),
         });
       }
-      if (req.method === 'POST' && url.pathname === '/api/contributor/suggestions') return send(res, 200, { suggestion: suggestions.submit(person, await read(req), brands.map(w => w.id)) });
+      if (req.method === 'POST' && url.pathname === '/api/contributor/suggestions') return send(res, 200, { suggestion: await suggestions.submit(person, await read(req), brands.map(w => w.id)) });
       return send(res, 404, { error: 'Rota não encontrada.' });
     }
     if (url.pathname.startsWith('/api/team/')) {
-      const user = accounts.lookup(req);
+      const user = await accounts.lookup(req);
       if (!user) return send(res, 401, { error: 'Sugestões de colaboradores exigem uma conta.' });
-      const brandIds = () => activeBrands(accounts.peek(user.id)).map(w => w.id);
-      if (req.method === 'GET' && url.pathname === '/api/team/contributors') return send(res, 200, { contributors: suggestions.list(user.id) });
-      if (req.method === 'POST' && url.pathname === '/api/team/contributors') return send(res, 200, suggestions.invite(user.id, await read(req), brandIds()));
-      if (req.method === 'POST' && url.pathname === '/api/team/contributors/remove') return send(res, 200, suggestions.remove(user.id, (await read(req)).id));
-      if (req.method === 'GET' && url.pathname === '/api/team/suggestions') return send(res, 200, { suggestions: suggestions.forOwner(user.id) });
-      if (req.method === 'POST' && url.pathname === '/api/team/suggestions/decide') return send(res, 200, { suggestion: suggestions.decide(user.id, await read(req), user.name) });
+      const brandIds = async () => activeBrands(await accounts.peek(user.id)).map(w => w.id);
+      if (req.method === 'GET' && url.pathname === '/api/team/contributors') return send(res, 200, { contributors: await suggestions.list(user.id) });
+      if (req.method === 'POST' && url.pathname === '/api/team/contributors') return send(res, 200, await suggestions.invite(user.id, await read(req), await brandIds()));
+      if (req.method === 'POST' && url.pathname === '/api/team/contributors/remove') return send(res, 200, await suggestions.remove(user.id, (await read(req)).id));
+      if (req.method === 'GET' && url.pathname === '/api/team/suggestions') return send(res, 200, { suggestions: await suggestions.forOwner(user.id) });
+      if (req.method === 'POST' && url.pathname === '/api/team/suggestions/decide') return send(res, 200, { suggestion: await suggestions.decide(user.id, await read(req), user.name) });
       return send(res, 404, { error: 'Rota não encontrada.' });
     }
     if (url.pathname.startsWith('/api/auth/') || url.pathname.startsWith('/api/account/')) {
-      const user=accounts.lookup(req);
+      const user=await accounts.lookup(req);
       if(req.method==='GET' && url.pathname==='/api/auth/session') return send(res,200,{user});
       if(url.pathname==='/api/account/backup') {
         if(!user)return send(res,401,{error:'Entre na sua conta para acessar a cópia.'});
-        return send(res,200,{backup:accounts.backup(user)});
+        return send(res,200,{backup:await accounts.backup(user)});
       }
       if(url.pathname==='/api/account/state') {
         if(!user) return send(res,401,{error:'Entre na sua conta para acessar os dados.'});
-        if(req.method==='GET') return send(res,200,accounts.read(user));
-        if(req.method==='PUT') {const input=await read(req);if(input.userId!==user.id)return send(res,403,{error:'A conta ativa mudou. Recarregue a página antes de salvar.'});return send(res,200,accounts.save(user,input));}
+        if(req.method==='GET') return send(res,200,await accounts.read(user));
+        if(req.method==='PUT') {const input=await read(req);if(input.userId!==user.id)return send(res,403,{error:'A conta ativa mudou. Recarregue a página antes de salvar.'});return send(res,200,await accounts.save(user,input));}
       }
       if(req.method==='POST' && ['/api/auth/login','/api/auth/register'].includes(url.pathname)) {
-        const result=accounts.authenticate(await read(req),url.pathname.endsWith("/register"),clientAddress(req));
-        accounts.revoke(req);res.setHeader('Set-Cookie',sessionCookie(result.token));return send(res,200,{user:result.user});
+        const result=await accounts.authenticate(await read(req),url.pathname.endsWith("/register"),clientAddress(req));
+        await accounts.revoke(req);res.setHeader('Set-Cookie',sessionCookie(result.token));return send(res,200,{user:result.user});
       }
-      if(req.method==='POST' && url.pathname==='/api/auth/logout') {accounts.revoke(req);res.setHeader('Set-Cookie',sessionCookie(''));return send(res,200,{ok:true});}
+      if(req.method==='POST' && url.pathname==='/api/auth/logout') {await accounts.revoke(req);res.setHeader('Set-Cookie',sessionCookie(''));return send(res,200,{ok:true});}
       return send(res,405,{error:'Método indisponível.'});
     }
     if (req.method === "GET" && url.pathname === "/api/health")
@@ -256,20 +265,21 @@ const server = http.createServer(async (req, res) => {
         ok: true,
         provider: providerReady(),
         mode: "local-service",
+        database: usingPostgres() ? "postgres" : "sqlite",
       });
     if (req.method === 'GET' && url.pathname === '/api/text/status') {
-      const user = accounts.lookup(req);
-      const configured = user ? integrations.status(user.id).connections.filter(c => ['anthropic','openai','gemini'].includes(c.provider) && c.configured).map(c => c.provider) : [];
+      const user = await accounts.lookup(req);
+      const configured = user ? (await integrations.status(user.id)).connections.filter(c => ['anthropic','openai','gemini'].includes(c.provider) && c.configured).map(c => c.provider) : [];
       return send(res,200,{authenticated:!!user, serverModel:providerReady()?serverModelName():null, modelChoice:modelChoice(), providers:[...(providerReady() ? ['server'] : []),...configured]});
     }
     if (req.method === 'GET' && url.pathname === '/api/models') return send(res,200,{ modelChoice:modelChoice(), defaultModel:providerReady()?serverModelName():null, roleDefaults:roleDefaults(), models:await catalogWithPrices() });
     if (req.method === 'GET' && url.pathname === '/api/observability') {
-      const user = accounts.lookup(req);
-      return send(res,200,observability.summary({ owner:user?.id || null, days:Math.min(365, Math.max(1, Number(url.searchParams.get('days')) || 30)) }));
+      const user = await accounts.lookup(req);
+      return send(res,200,await observability.summary({ owner:user?.id || null, days:Math.min(365, Math.max(1, Number(url.searchParams.get('days')) || 30)) }));
     }
     if (req.method === "GET" && url.pathname === "/api/collected") {
       const workspace = url.searchParams.get("workspace");
-      const ownerId=workspaceOwner(req,workspace);
+      const ownerId=await workspaceOwner(req,workspace);
       return send(res, 200, {
         sources: db.sources.filter((s) => s.workspace === workspace && (s.ownerId||null)===ownerId),
         runs: db.runs.filter((s) => s.workspace === workspace && (s.ownerId||null)===ownerId),
@@ -281,7 +291,7 @@ const server = http.createServer(async (req, res) => {
     const input = await read(req);
     let writer;
     if (['/api/squad','/api/council','/api/video-scripts/generate','/api/radar/analyse'].includes(url.pathname)) {
-      const user = accounts.lookup(req);
+      const user = await accounts.lookup(req);
       if (input.provider && input.provider !== 'server') {
         if (!user) return send(res,401,{error:'Entre na sua conta e conecte Claude, OpenAI ou Gemini em Configurações.'});
         writer = await integrations.writer(user.id,input.provider,input.model);
@@ -290,7 +300,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (url.pathname === '/api/radar/analyse') return send(res,200,await analyseRadar(input.packet,writer));
     if (url.pathname === "/api/collected/remove") {
-      const ownerId=workspaceOwner(req,input.workspace);
+      const ownerId=await workspaceOwner(req,input.workspace);
       if (typeof input.id !== "string" || !/^web-[a-f0-9]{20}$/.test(input.id))
         throw new Error("Referência coletada inválida.");
       const before = db.sources.length;
@@ -300,22 +310,22 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, { ok: true });
     }
     if (url.pathname === "/api/brand-dna") {
-      const voiceModel = providerReady() ? roleModel('reviewer', input.roles?.reviewer, accounts.lookup(req)?.id || null, url.pathname) : null;
+      const voiceModel = providerReady() ? roleModel('reviewer', input.roles?.reviewer, (await accounts.lookup(req))?.id || null, url.pathname) : null;
       return send(res, 200, await extractBrand(input, { voiceModel }));
     }
     if (url.pathname === "/api/video-scripts/generate")
       return send(res, 200, await generateVideoScripts(input.packet, input.selectedTopics, writer));
     if (url.pathname === "/api/squad") {
-      const critic = (!input.provider || input.provider === 'server') && providerReady() ? roleModel('reviewer', input.roles?.reviewer, accounts.lookup(req)?.id || null, url.pathname).model : writer;
+      const critic = (!input.provider || input.provider === 'server') && providerReady() ? roleModel('reviewer', input.roles?.reviewer, (await accounts.lookup(req))?.id || null, url.pathname).model : writer;
       return send(res, 200, await generateSquad(input.packet, writer, critic));
     }
     if (url.pathname === "/api/group-coherence") {
       if (!providerReady()) throw new Error("Configure um provedor de IA no serviço para checar a coerência do grupo.");
-      return send(res, 200, await checkGroupCoherence(input, roleModel('reviewer', input.roles?.reviewer, accounts.lookup(req)?.id || null, url.pathname).model));
+      return send(res, 200, await checkGroupCoherence(input, roleModel('reviewer', input.roles?.reviewer, (await accounts.lookup(req))?.id || null, url.pathname).model));
     }
     if (url.pathname === "/api/refine") {
       if (!providerReady()) throw new Error("Configure um provedor de IA no serviço para refinar.");
-      const owner = accounts.lookup(req)?.id || null, roles = input.roles || {};
+      const owner = (await accounts.lookup(req))?.id || null, roles = input.roles || {};
       return send(res, 200, await refinePiece(input.packet, input.piece, {
         reviewer: roleModel('reviewer', roles.reviewer, owner, url.pathname),
         writer: roleModel('writer', roles.writer, owner, url.pathname),
@@ -334,7 +344,7 @@ const server = http.createServer(async (req, res) => {
           writer,
         ),
       );
-    const ownerId=workspaceOwner(req,input.workspace);
+    const ownerId=await workspaceOwner(req,input.workspace);
     if (!Array.isArray(input.sources) || input.sources.length > 20)
       throw new Error("Envie no máximo 20 fontes por espaço.");
     if (input.sources.some((s) => s.workspace !== input.workspace))
@@ -363,12 +373,12 @@ const server = http.createServer(async (req, res) => {
   }
 });
 server.listen(PORT, HOST, () =>
-  console.log(`Memoravel service: http://${HOST}:${PORT} · app ${APP_ORIGIN}`),
+  console.log(`Memoravel service: http://${HOST}:${PORT} · app ${APP_ORIGIN} · banco ${usingPostgres() ? "Postgres (Supabase)" : "SQLite local"}`),
 );
 setInterval(async () => {
   for (const [key, schedule] of Object.entries(db.schedules)) {
     const workspace=schedule.workspace || key,ownerId=schedule.ownerId || null;
-    if(ownerId&&!accounts.workspaceActive(ownerId,workspace)){if(schedule.config.enabled){schedule.config.enabled=false;schedule.nextRun=null;persist();}continue;}
+    if(ownerId&&!await accounts.workspaceActive(ownerId,workspace)){if(schedule.config.enabled){schedule.config.enabled=false;schedule.nextRun=null;persist();}continue;}
     if (
       schedule.config.enabled &&
       schedule.nextRun &&
