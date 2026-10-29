@@ -19,6 +19,7 @@ import { ingestFile, ingestUrl, sourceKind } from './ingestion.mjs';
 import { PORT, HOST, APP_ORIGIN, ALLOWED_ORIGINS, clientAddress, canonicalRedirect } from "./config.mjs";
 import { openDb, usingPostgres } from './sql.mjs';
 import { createTasks, bufferedRequest, capturedResponse } from './tasks.mjs';
+import { createLabStore, labSummary } from './lab.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // In the cloud this service also delivers the built screens (npm run build → dist/), so pages and API share one address.
 const distDir = path.join(root, "dist");
@@ -49,6 +50,7 @@ const integrations = createIntegrations(dataDir);
 const suggestions = createSuggestions(path.join(dataDir, 'suggestions.sqlite'));
 const activeBrands = doc => (doc?.workspaces || []).filter(w => !w.archived);
 const observability = createObservability(dataDir);
+const lab = createLabStore(path.join(dataDir, 'lab.sqlite'));
 // Each role can run on its own model: the account's choice first, then MEMORABLE_MODEL_<ROLE>, then the default.
 const ROLE_ENV = { writer: 'MEMORABLE_MODEL_WRITER', reviewer: 'MEMORABLE_MODEL_REVIEWER', judge: 'MEMORABLE_MODEL_JUDGE' };
 function roleModelName(role, requested) {
@@ -324,6 +326,18 @@ async function handle(req, res) {
       const user = await accounts.lookup(req);
       const configured = user ? (await integrations.status(user.id)).connections.filter(c => ['anthropic','openai','gemini'].includes(c.provider) && c.configured).map(c => c.provider) : [];
       return send(res,200,{authenticated:!!user, serverModel:providerReady()?serverModelName():null, modelChoice:modelChoice(), providers:[...(providerReady() ? ['server'] : []),...configured]});
+    }
+    // Model lab: platform-wide benchmark results, read by signed-in accounts.
+    if (req.method === 'GET' && (url.pathname === '/api/lab' || url.pathname === '/api/lab/run')) {
+      if (!(await accounts.lookup(req))) return send(res, 401, { error: 'Entre na sua conta para ver o laboratório.' });
+      if (url.pathname === '/api/lab/run') {
+        const run = await lab.run(url.searchParams.get('id') || '');
+        return run ? send(res, 200, { run, items: await lab.items(run.id) }) : send(res, 404, { error: 'Rodada não encontrada.' });
+      }
+      const runs = await lab.runs();
+      const items = await lab.allItems();
+      const counts = Object.fromEntries(runs.map((r) => [r.id, items.filter((i) => i.run_id === r.id).length]));
+      return send(res, 200, { runs: runs.map((r) => ({ ...r, outputs: counts[r.id] })), summary: labSummary(items, runs), prices: await catalogWithPrices() });
     }
     if (req.method === 'GET' && url.pathname === '/api/models') return send(res,200,{ modelChoice:modelChoice(), defaultModel:providerReady()?serverModelName():null, roleDefaults:roleDefaults(), models:await catalogWithPrices() });
     if (req.method === 'GET' && url.pathname === '/api/observability') {

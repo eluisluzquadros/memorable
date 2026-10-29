@@ -5,7 +5,7 @@ import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import pg from "pg";
 
-const TABLES = "users|sessions|account_state|account_state_backups|contributors|contributor_sessions|suggestions|connections|jobs|llm_calls|service_state";
+const TABLES = "users|sessions|account_state|account_state_backups|contributors|contributor_sessions|suggestions|connections|jobs|llm_calls|service_state|bench_runs|bench_items";
 // Rows come back as the stores already expect them: JSON and timestamps as text, counts as numbers.
 pg.types.setTypeParser(114, (v) => v); // json
 pg.types.setTypeParser(3802, (v) => v); // jsonb

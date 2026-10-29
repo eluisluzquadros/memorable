@@ -43,7 +43,8 @@ export function createObservability(dir) {
   // Wraps a model function (system, data, observe) => object; the third argument receives usage.
   function instrument(model, { owner = null, route = "", provider = "server", runTag = null } = {}) {
     const name = model.modelName || "desconhecido";
-    const wrapped = async (system, data) => {
+    // A caller may also want the usage (the model lab stores it per output); it is passed through.
+    const wrapped = async (system, data, observe) => {
       const started = performance.now();
       let usage = {};
       const record = (ok, error) => {
@@ -54,7 +55,7 @@ export function createObservability(dir) {
           ok ? 1 : 0, error ? String(error).slice(0, 300) : null, runTag).catch((e) => console.error("Registro de custo falhou:", e.message));
       };
       try {
-        const result = await model(system, data, (u) => { usage = { ...usage, ...u }; });
+        const result = await model(system, data, (u) => { usage = { ...usage, ...u }; observe?.(u); });
         record(true);
         return result;
       } catch (e) {

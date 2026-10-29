@@ -8,6 +8,8 @@ import { BrandDNA } from "./BrandDNA";
 import { CampaignBrief } from "./Campaigns";
 import { SuggestionInbox } from "./SuggestionInbox";
 import { ModelRoles } from "./ModelRoles";
+import { ModelLab } from "./ModelLab";
+import { Subtabs, Subpanel, useSubtab } from "./Subtabs";
 import React, { useContext, useEffect, useState } from "react";
 import {
   ArrowRight,
@@ -1348,12 +1350,15 @@ function Delivery({ data }) {
 export function Squad() {
   const { state, setState, notify } = useApp();
   const [config, setConfig] = useState(state.agentConfig);
+  const [tab, setTab] = useSubtab("agentes", ["time", "laboratorio"]);
   return (
     <>
       <Heading
         title="Um time de especialistas para a sua marca."
         text="Pesquisa, estratégia, redação, roteiro e revisão trabalham juntos, com as fontes, a voz e as decisões da sua marca."
       />
+      <Subtabs label="Time de agentes" items={[["time", "Time"], ["laboratorio", "Laboratório"]]} value={tab} onChange={setTab} />
+      {tab === "laboratorio" ? <Subpanel id="laboratorio"><ModelLab /></Subpanel> : <Subpanel id="time">
       <Note>
         Em Escrever, escolha o modo local ou os agentes com Claude, OpenAI ou Gemini conectados. O time compartilha fontes, contexto da marca e critérios validados. Imagens e vídeos são gerados separadamente no estúdio de mídia.
       </Note>
@@ -1479,6 +1484,7 @@ export function Squad() {
           )}
         </section>
       </div>
+      </Subpanel>}
     </>
   );
 }
