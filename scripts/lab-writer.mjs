@@ -95,13 +95,14 @@ try {
     // Blind judging: anonymous letters in a random order that is saved, so a rerun maps letters the same way.
     const scores = Object.fromEntries(versions.map((v) => [v.key, {}]));
     for (const judge of JUDGES) {
-      const jkey = `${b.id}|juiz|${judge}|${createHash("sha1").update(versions.map((v) => v.writer).sort().join(",")).digest("hex").slice(0, 8)}`;
+      const jkey = `${b.id}|juiz-v2|${judge}|${createHash("sha1").update(versions.map((v) => v.writer).sort().join(",")).digest("hex").slice(0, 8)}`;
       const saved = await store.item(`${RUN.id}|${jkey}`);
       const order = saved?.output?.order || shuffle(versions.map((v) => v.key));
       const label = (k) => String.fromCharCode(65 + order.indexOf(k));
       const item = await round.call({ key: jkey, role: "juiz", model: judge, briefId: b.id, invoke: async (observe) => {
-        const verdict = await model(judge)("Você é editor-chefe e avalia versões anônimas de um mesmo post para a marca do pacote. Julgue só o texto, comparando com as fontes. Para cada versão dê notas inteiras de 1 a 5: clareza, evidencia (fiel às fontes, sem inventar), voz (soa como a marca descrita), utilidade (vale o tempo do leitor). Depois ordene todas da melhor para a pior e diga em uma frase o motivo do primeiro lugar. Retorne {scores:{A:{clareza,evidencia,voz,utilidade},B:{...}},ranking:string[],reason:string}.", {
+        const verdict = await model(judge)("Você é editor-chefe e avalia versões anônimas de um mesmo post para a marca do pacote. Julgue só o texto, comparando com as fontes e com o material oficial da marca (brandKnowledge), que o redator também pode usar como evidência sobre a própria marca. Para cada versão dê notas inteiras de 1 a 5: clareza, evidencia (fiel às fontes, sem inventar), voz (soa como a marca descrita), utilidade (vale o tempo do leitor). Depois ordene todas da melhor para a pior e diga em uma frase o motivo do primeiro lugar. Retorne {scores:{A:{clareza,evidencia,voz,utilidade},B:{...}},ranking:string[],reason:string}.", {
           brand: packet.brand, voice: packet.voice, brief: packet.brief, sources: packet.sources.map((s) => ({ title: s.title, text: s.text })),
+          brandKnowledge: (packet.brandKnowledge || []).map((k) => ({ title: k.title, text: k.text })),
           versions: order.map((k) => { const v = versions.find((x) => x.key === k); return { id: label(k), title: v.title, body: v.body }; }),
         }, observe);
         return { ...verdict, order };
