@@ -16,8 +16,12 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "24"
+      # Endereço oficial (memoravel.org redireciona para o www no próprio Render).
       - key: MEMORAVEL_PUBLIC_URL
-        value: https://app.memoravel.org
+        value: https://www.memoravel.org
+      # Outros endereços do mesmo serviço: redirecionam para o oficial, para todos entrarem no mesmo lugar.
+      - key: MEMORAVEL_EXTRA_ORIGINS
+        value: https://app.memoravel.org,https://memoravel.org
       # 32 bytes em hex: a mesma chave que criptografou as conexões salvas (.runtime/credentials.key).
       - key: MEMORAVEL_CREDENTIALS_KEY
         sync: false

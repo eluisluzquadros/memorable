@@ -16,7 +16,7 @@ import { refinePiece } from './refine.mjs';
 import { checkGroupCoherence } from './group.mjs';
 import { enrichReference } from './keywords.mjs';
 import { ingestFile, ingestUrl, sourceKind } from './ingestion.mjs';
-import { PORT, HOST, APP_ORIGIN, ALLOWED_ORIGINS, clientAddress } from "./config.mjs";
+import { PORT, HOST, APP_ORIGIN, ALLOWED_ORIGINS, clientAddress, canonicalRedirect } from "./config.mjs";
 import { openDb, usingPostgres } from './sql.mjs';
 import { createTasks, bufferedRequest, capturedResponse } from './tasks.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -184,6 +184,9 @@ async function readRaw(req, limit) {
 }
 const server = http.createServer(async (req, res) => {
   const pathname = new URL(req.url, 'http://service.local').pathname;
+  // The health check keeps answering on any address; page visits move to the official one.
+  const canonical = pathname !== '/api/health' && ['GET', 'HEAD'].includes(req.method) && canonicalRedirect(req);
+  if (canonical) { res.writeHead(301, { Location: canonical, 'Cache-Control': 'no-store' }); return res.end(); }
   try {
     if (req.method === 'GET' && pathname.startsWith('/api/tasks/')) {
       if (originRefused(req)) return send(res, 403, { error: 'Origem não autorizada.' });

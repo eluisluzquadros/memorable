@@ -14,6 +14,14 @@ export const SERVICE_ORIGIN = publicUrl || `http://localhost:${PORT}`;
 const extraOrigins = [process.env.RENDER_EXTERNAL_URL, ...(process.env.MEMORAVEL_EXTRA_ORIGINS || "").split(",")]
   .map((o) => (o || "").trim().replace(/\/+$/, ""))
   .filter((o) => /^https:\/\/[^/]+$/.test(o));
+// Other addresses of this same service send people to the public one, so everyone signs in at one
+// address (the session cookie belongs to the host it was set on).
+const publicHost = publicUrl ? new URL(publicUrl).host : "";
+const aliasHosts = new Set(extraOrigins.map((o) => new URL(o).host).filter((h) => h !== publicHost));
+export const canonicalRedirect = (req) => {
+  const host = String(req.headers.host || "").toLowerCase();
+  return aliasHosts.has(host) ? `${publicUrl}${req.url}` : null;
+};
 export const ALLOWED_ORIGINS = publicUrl
   ? [...new Set([publicUrl, ...extraOrigins])]
   : ["http://localhost:5173", "http://127.0.0.1:5173", `http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`];
