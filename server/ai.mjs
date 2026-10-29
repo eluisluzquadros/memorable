@@ -48,7 +48,7 @@ function chatCompletionsModel(modelName) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${env("KEY")}`,
         // OpenRouter attributes requests to the app with these optional headers.
-        ...(openRouter ? { "HTTP-Referer": "https://github.com/eluisluzquadros/memorable", "X-Title": "Memorable" } : {}),
+        ...(openRouter ? { "HTTP-Referer": "https://github.com/eluisluzquadros/memorable", "X-Title": "Memoravel" } : {}),
       },
       signal: AbortSignal.timeout(300000),
       body: JSON.stringify({

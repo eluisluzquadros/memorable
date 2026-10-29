@@ -344,7 +344,7 @@ const server = http.createServer(async (req, res) => {
   }
 });
 server.listen(5174, "127.0.0.1", () =>
-  console.log("Memorable local service: http://127.0.0.1:5174"),
+  console.log("Memoravel local service: http://127.0.0.1:5174"),
 );
 setInterval(async () => {
   for (const [key, schedule] of Object.entries(db.schedules)) {

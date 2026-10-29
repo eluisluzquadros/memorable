@@ -26,14 +26,14 @@ export function Brand({ small = false }) {
     <a
       className={`brand ${small ? "brand-small" : ""}`}
       href="#"
-      aria-label="Memorable, início"
+      aria-label="Memorável, início"
     >
       <span className="brand-mark" aria-hidden="true">
         <i />
         <i />
         <i />
       </span>
-      Memorable<span className="brand-period">.</span>
+      Memorável<span className="brand-period">.</span>
     </a>
   );
 }
@@ -260,7 +260,7 @@ export default function Landing() {
               fluxo.
             </p>
             <p className="hero-signature">
-              Memorable! O jeito certo de deixar sua marca no mundo.
+              Memorável! O jeito certo de deixar sua marca no mundo.
             </p>
             <ul className="hero-outcomes"><li><Check size={17}/> Vigie canais e sites e receba pautas priorizadas.</li><li><Check size={17}/> Agentes escrevem cada formato com a voz da sua marca.</li><li><Check size={17}/> Você aprova; o trabalho vira portfólio de cases.</li></ul>
             <a href="#app/painel" className="button primary hero-cta">
@@ -305,7 +305,7 @@ export default function Landing() {
               <div
                 className="flow-steps"
                 role="tablist"
-                aria-label="Etapas da memorable"
+                aria-label="Etapas da Memorável"
               >
                 {stages.map(([name, title, desc, Icon], i) => (
                   <button
@@ -592,7 +592,7 @@ export default function Landing() {
             <ArrowUpRight aria-hidden="true" />
           </a>
           <div className="closing-foot">
-            <span>MEMORABLE · AI-POWERED MARKETING</span>
+            <span>MEMORÁVEL · AI-POWERED MARKETING</span>
             <span>Demonstração disponível com o contexto Grupo BBMD.</span>
           </div>
         </section>

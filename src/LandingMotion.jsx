@@ -21,7 +21,7 @@ import "./landing-motion.css";
 // Synthetic demonstration material: every name, score and text below illustrates the
 // product flow and is labelled as demonstration on the page. No client results are claimed.
 const ACTS = [
-  { id: "inicio", word: "MEMORABLE", step: "Início" },
+  { id: "inicio", word: "MEMORÁVEL", step: "Início" },
   {
     id: "pauta",
     word: "PAUTA",
@@ -94,14 +94,14 @@ const usePrefersReducedMotion = () => {
 
 function Brand() {
   return (
-    <a className="mx-brand" href="#" aria-label="Memorable, início">
+    <a className="mx-brand" href="#" aria-label="Memorável, início">
       <span className="mx-brand-mark" aria-hidden="true">
         <i />
         <i />
         <i />
       </span>
       <span className="mx-brand-name">
-        Memorable<span>.</span>
+        Memorável<span>.</span>
       </span>
     </a>
   );
@@ -309,7 +309,7 @@ function CityScreens({ t, still = false }) {
         <figure className="mx-scene mx-avenue" style={{ opacity: avenue ? 1 : 0 }}>
           <img className="mx-avenue-bg" src="/motion/billboard.webp" alt="" />
           <div className="mx-frame-avenue">
-            <img src="/motion/billboard.webp" alt="Outdoor 3D numa esquina de São Paulo à noite: a persona da Memorable, sentada numa cadeira cromada, parece sair da tela sobre a rua." />
+            <img src="/motion/billboard.webp" alt="Outdoor 3D numa esquina de São Paulo à noite: a persona da Memorável, sentada numa cadeira cromada, parece sair da tela sobre a rua." />
           </div>
         </figure>
       )}
@@ -335,7 +335,7 @@ function HeroCopy({ account }) {
         </h1>
       </div>
       <p className="mx-lede">da pesquisa à publicação, em um só fluxo.</p>
-      <p className="mx-signature">Memorable! O jeito certo de deixar sua marca no mundo.</p>
+      <p className="mx-signature">Memorável! O jeito certo de deixar sua marca no mundo.</p>
       <div className="mx-actions">
         <a className="mx-cta" href="#app/painel">
           Ver o fluxo funcionando <ArrowUpRight size={18} aria-hidden="true" />
@@ -411,7 +411,7 @@ function Stage({ reduced, account }) {
       <section className="mx-static" id="fluxo" aria-label="Como o fluxo funciona">
         <div className="mx-static-hero">
           <div className="mx-word is-on" aria-hidden="true" style={{ "--len": 9 }}>
-            MEMORABLE
+            MEMORÁVEL
           </div>
           <img className="mx-figure" src="/motion/hero.webp" alt={figureAlt} width="1000" height="1500" />
           <HeroCopy account={account} />
@@ -534,9 +534,9 @@ function Stack() {
         <br />
         no lugar de várias ferramentas.
       </h2>
-      <div className="mx-stack-table" role="table" aria-label="O que a Memorable reúne">
+      <div className="mx-stack-table" role="table" aria-label="O que a Memorável reúne">
         <div role="row" className="mx-stack-head">
-          <span role="columnheader">Na Memorable</span>
+          <span role="columnheader">Na Memorável</span>
           <span role="columnheader">Hoje, costuma exigir</span>
         </div>
         {STACK.map(([ours, theirs]) => (
@@ -573,7 +573,7 @@ export default function LandingMotion({ account, onLogout }) {
   const scrollToId = (id) => document.getElementById(id)?.scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
   useEffect(() => {
     const previous = document.title;
-    document.title = "Memorable — Viralize sua Marca com IA";
+    document.title = "Memorável — Viralize sua Marca com IA";
     const onScroll = () => {
       const stage = document.getElementById("fluxo");
       setSolidNav(!!stage && scrollY > stage.offsetTop + stage.offsetHeight - innerHeight * (reduced ? 0.9 : 1.02));
@@ -621,7 +621,7 @@ export default function LandingMotion({ account, onLogout }) {
           <h2 id="close-title">
             Seja
             <br />
-            Memorable.
+            Memorável.
           </h2>
           <div>
             <p>Sua próxima pauta pode estar no ar esta semana — revisada, aprovada e com a sua voz.</p>

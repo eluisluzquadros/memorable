@@ -1,5 +1,5 @@
 ---
-name: Memorable
+name: Memorável
 description: Plataforma de produção de conteúdo com agentes; o estúdio da landing #motion, aceso para trabalhar, em papel quente (claro) e tinta de estúdio (escuro).
 colors:
   paper-bg: "#f4efe6"
@@ -155,7 +155,7 @@ components:
     rounded: "{rounded.pill}"
 ---
 
-# Design System: Memorable (app)
+# Design System: Memorável (app)
 
 Escopo: o interior do app (rotas `#app/*`, `#auth`, `#sugerir`). Tokens em `src/theme.css`; camada de identidade em `src/app-skin.css`, importada por último; tons de avatar de marca em `src/brand-tones.mjs`; tema em `src/ThemeSwitch.jsx` e no script pré-pintura de `index.html`. A rota `#motion` tem mundo próprio, registrado na segunda parte deste arquivo.
 
@@ -182,7 +182,7 @@ Dois temas com o mesmo desenho: claro em papel quente (`#f4efe6`, cartões `#fbf
 Duas paletas espelhadas sobre os mesmos papéis: papel quente com tinta no claro, tinta com papel no escuro. Os nomes de token CSS são os mesmos nos dois temas; o frontmatter separa os valores por prefixo (`paper-*` claro, `ink-*` escuro).
 
 ### Primary
-- **Brasa** (`ember`, hover `ember-hover`): o botão principal da tela ("Criar conteúdo", "Novo conteúdo"), com texto tinta `on-ember` nos dois temas e brilho `--action-glow`. Também o ponto final da marca "Memorable." e o ícone dos toasts.
+- **Brasa** (`ember`, hover `ember-hover`): o botão principal da tela ("Criar conteúdo", "Novo conteúdo"), com texto tinta `on-ember` nos dois temas e brilho `--action-glow`. Também o ponto final da marca "Memorável." e o ícone dos toasts.
 
 ### Secondary
 - **Pedra** (`stone` no escuro; `stone-deep` no claro, mais escura para passar AA sobre papel): item ativo da barra lateral (como lavagem `stone-wash`/`stone-deep-wash`, ícone na cor cheia), aba selecionada (filete inferior + lavagem), contadores de navegação e do quadro, etapa atual da trilha, links de texto, `accent-color` de checkbox e rádio, `em` do título da tela de entrada. Como preenchimento de gráfico no claro, é misturada a 72% com o fundo para não ficar barrenta.

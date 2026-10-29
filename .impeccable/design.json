@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-10-22T00:00:00Z",
-  "title": "Design System: Memorable (app)",
+  "title": "Design System: Memorável (app)",
   "scope": "Interior do app (#app/*, #auth, #sugerir); a landing clássica (#classica) herda estes tokens pelos nomes legados. A rota #motion tem sidecar próprio em .impeccable/design-motion.json. Valores claros sob paper-*, escuros sob ink-*; tokens CSS de mesmo nome em src/theme.css.",
   "extensions": {
     "colorMeta": {

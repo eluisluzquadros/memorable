@@ -15,7 +15,7 @@ THESIS: the page is the product's own pipeline performed as a film (pauta → es
 
 OWN-WORLD: night studio ink #08090c, wood-scale stone type (Anton) behind a seated marketer cut-out, frosted production panels, magenta→ember LED screens, one ember CTA.
 
-STORY: visitor sees Memorable find a topic, write every format, reject weak copy, wait for human approval, then light up city screens; believes it is a governed content operation; clicks "Ver o fluxo funcionando".
+STORY: visitor sees Memorável find a topic, write every format, reject weak copy, wait for human approval, then light up city screens; believes it is a governed content operation; clicks "Ver o fluxo funcionando".
 
 FIRST VIEWPORT: MEMORABLE across the top, figure right of centre in front of it, selection-handle headline "Viralize sua Marca com IA" bottom-left with the primary CTA, step rail bottom-centre.
 

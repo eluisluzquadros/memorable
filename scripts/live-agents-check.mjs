@@ -46,7 +46,7 @@ for (const [format, extra] of [["Carrossel", {}], ["Reels", { durationSeconds: 1
 async function judge(run) {
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.MEMORABLE_AI_KEY}`, "X-Title": "Memorable benchmark" },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.MEMORABLE_AI_KEY}`, "X-Title": "Memoravel benchmark" },
     body: JSON.stringify({
       model: judgeModel,
       response_format: { type: "json_object" },

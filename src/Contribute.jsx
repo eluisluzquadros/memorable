@@ -69,7 +69,7 @@ export default function ContributePage() {
       })
       .finally(() => setChecking(false));
   useEffect(() => {
-    document.title = "Sugerir ideia · Memorable";
+    document.title = "Sugerir ideia · Memorável";
     load();
   }, []);
   if (checking) return <main className="cb-page"><Brand /><p role="status">Carregando…</p></main>;

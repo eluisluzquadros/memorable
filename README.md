@@ -1,4 +1,4 @@
-# Memorable AI-Powered Marketing
+# Memorável AI-Powered Marketing
 
 MVP para demonstrar ao Grupo BBMD uma operação editorial por marca: fontes, DNA, radar, campanhas, criação, revisão, distribuição e aprendizado.
 

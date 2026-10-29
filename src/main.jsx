@@ -815,7 +815,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
             {tourOpen && route !== contentRoute && <main className="app-main" key={`tour-preview-${route}`}>{renderPage(route)}</main>}
             <footer className="app-footer">
               <span>
-                Memorable.{" "}
+                Memorável.{" "}
                 <span>O jeito certo de deixar sua marca no mundo.</span>
               </span>
               <span>Versão de validação</span>

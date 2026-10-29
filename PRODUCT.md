@@ -1,6 +1,6 @@
-# Memorable
+# Memorável
 
-Plataforma de automação do fluxo de produção de conteúdo (AI content marketing) para empreendedores, criadores e times de marketing, inclusive grupos com várias marcas. Memorable é uma empresa e um produto independentes (não pertence à Skyvidya). Grupo BBMD é a organização de demonstração e o piloto-alvo; caminhos comerciais: assinatura com licenças por equipe ou parceria estratégica/investimento, sem valores inventados. Público do pitch: gerente de marketing do Grupo BBMD e investidores (ex.: Y Combinator).
+Plataforma de automação do fluxo de produção de conteúdo (AI content marketing) para empreendedores, criadores e times de marketing, inclusive grupos com várias marcas. Memorável é uma empresa e um produto independentes (não pertence à Skyvidya). Grupo BBMD é a organização de demonstração e o piloto-alvo; caminhos comerciais: assinatura com licenças por equipe ou parceria estratégica/investimento, sem valores inventados. Público do pitch: gerente de marketing do Grupo BBMD e investidores (ex.: Y Combinator).
 
 Fluxo: Pesquisar (acervo, canais inteiros) > Vigiar (radar e canais monitorados) > Escrever (time de agentes) > Conselho editorial > Aprovar (humano, por versão) > Publicar (agenda e exportação) > Portfólio de cases. Painel de custos e caderno de decisões.
 
@@ -14,9 +14,9 @@ Verdade do produto, hoje:
 
 Documentos de origem: ../mvp/README.md e PRD.md; o pedido atual prevalece sobre o antigo modelo comercial.
 
-## Voz da Memorable
+## Voz da Memorável
 
-- Assinatura: "Memorable! O jeito certo de deixar sua marca no mundo." Promessa: "Viralize sua Marca com IA — da pesquisa à publicação, em um só fluxo."
+- Assinatura: "Memorável! O jeito certo de deixar sua marca no mundo." Promessa: "Viralize sua Marca com IA — da pesquisa à publicação, em um só fluxo."
 - O título diz o ganho para quem usa ("A última palavra é sua.", "Refinado até soar como você."), nunca a técnica por trás ("conselho", "pipeline", "agentes" como mecanismo). A linha de apoio diz o que dá para fazer ali.
 - Não vender ausência de defeito ("sem frase cortada", "reprova o que está fraco"): qualquer ferramenta séria já entrega isso.
 - Vocabulário do fluxo, sempre igual: Pesquisar, Vigiar, Escrever, Refinar, Aprovar, Publicar; ideia, conteúdo, marca.

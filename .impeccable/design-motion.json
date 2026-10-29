@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-10-20T00:00:00Z",
-  "title": "Design System: Memorable #motion (cinematic landing only)",
+  "title": "Design System: Memorável #motion (cinematic landing only)",
   "scope": "Route #motion only: src/LandingMotion.jsx, src/landing-motion.css, src/motion-fonts.css, all under .mx-root. The product app carries this world's type, palette, pill controls, step rail and dialog glass in light (warm paper) and dark (studio ink) themes, documented in the root DESIGN.md; the cinematic devices (LED screens, figure, scenery word, scroll stage, tilted glass panels) stay here. src/Landing.jsx (#classica) inherits the app tokens.",
   "extensions": {
     "colorMeta": {

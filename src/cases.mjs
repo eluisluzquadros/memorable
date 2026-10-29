@@ -68,7 +68,7 @@ export function caseDocument(state, item, brandName) {
   const totals = story.totals
     ? `<ul class="t">${[["Visualizações", story.totals.views], ["Cliques", story.totals.clicks], ["Conversas", story.totals.conversations], ["Minutos de revisão", story.totals.reviewMinutes]].filter(([, v]) => v).map(([k, v]) => `<li><b>${v.toLocaleString("pt-BR")}</b>${k}</li>`).join("")}</ul><p class="n">Resultados registrados manualmente pela equipe, com evidência anexada na plataforma.</p>`
     : `<p class="n">Resultados ainda não registrados com evidência.</p>`;
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(item.title)} · Case Memorable</title><style>
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(item.title)} · Case Memorável</title><style>
 body{margin:0;background:#08090c;color:#f4efe6;font:16px/1.55 system-ui,sans-serif}main{max-width:860px;margin:auto;padding:56px 24px}
 h1{font-size:44px;line-height:1.05;margin:8px 0 16px}h2{font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:#d9c6a3;margin:40px 0 12px}
 .b{color:#ff7a1a;font-weight:700}.p{border:1px solid #2a2b30;border-radius:14px;padding:18px 20px;margin:12px 0;background:#111318}.p small{color:#b3aca2}
@@ -78,5 +78,5 @@ ${item.approach ? `<h2>Como fizemos</h2><p>${escape(item.approach)}</p>` : ""}
 <h2>Fontes de origem</h2>${story.sources.map((s) => `<div class="p"><b>${escape(s.title)}</b><br><small>${escape(s.origin)}</small></div>`).join("") || "<p class='n'>Sem fontes registradas.</p>"}
 <h2>Conteúdos produzidos · ${escape(story.formats.join(", "))}</h2>${story.pieces.map((p) => `<div class="p"><small>${escape(p.format)} · ${escape(p.status)}${p.approver ? ` · aprovada por ${escape(p.approver)} (v${escape(p.approvedRevision)})` : ""}</small><h3>${escape(p.title)}</h3><p>${excerpt(p.body)}</p></div>`).join("")}
 <h2>Resultados</h2>${totals}${story.learnings.length ? `<h2>Aprendizados</h2><ul>${story.learnings.map((l) => `<li>${escape(l)}</li>`).join("")}</ul>` : ""}
-<footer>Produzido com Memorable · fluxo com revisão humana e fontes rastreáveis.</footer></main></body></html>`;
+<footer>Produzido com a Memorável · fluxo com revisão humana e fontes rastreáveis.</footer></main></body></html>`;
 }

@@ -31,7 +31,7 @@ export function GuidedTour({ preference, onClose, goto }) {
     nextButton.current?.focus();
   }, [index]);
   return <dialog ref={dialog} className={`guided-tour ${index === 0 ? 'tour-welcome' : ''}`} aria-labelledby="tour-title" aria-describedby="tour-description">
-    <div className="tour-top"><span><Compass size={17}/> MEMORABLE · TOUR GUIADO</span><button className="icon-button" aria-label="Fechar tour" onClick={()=>onClose('dismissed',dontShowAgain)}><X size={20}/></button></div>
+    <div className="tour-top"><span><Compass size={17}/> MEMORÁVEL · TOUR GUIADO</span><button className="icon-button" aria-label="Fechar tour" onClick={()=>onClose('dismissed',dontShowAgain)}><X size={20}/></button></div>
     <div className="tour-progress" role="progressbar" aria-label="Progresso do tour" aria-valuemin={1} aria-valuemax={TOUR_STEPS.length} aria-valuenow={index+1}>{TOUR_STEPS.map((s,i)=><span key={s.label} className={i<=index?'visited':''}/>)}</div>
     <p className="tour-position" aria-live="polite">{index+1} de {TOUR_STEPS.length} · {step.label}</p>
     <h2 id="tour-title">{step.title}</h2><p id="tour-description">{step.text}</p>

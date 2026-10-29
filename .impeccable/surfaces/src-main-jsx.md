@@ -19,7 +19,7 @@ OWN-WORLD: Escuro: tinta #08090c, superfícies #111319/#0d0f13, texto papel #f4e
 
 STORY: A pessoa reconhece a landing ao entrar, encontra cada tarefa onde espera e lê em que etapa cada conteúdo está sem abrir nada.
 
-FIRST VIEWPORT: Painel: lateral escura/papel com marca Memorable., escopo da marca e navegação; topo com trilha, alternância de tema e papel; título Anton grande à esquerda e um único botão âmbar "Criar conteúdo" à direita; números da operação em Archivo tabular; abaixo, próximo passo e gráfico da produção.
+FIRST VIEWPORT: Painel: lateral escura/papel com marca Memorável., escopo da marca e navegação; topo com trilha, alternância de tema e papel; título Anton grande à esquerda e um único botão âmbar "Criar conteúdo" à direita; números da operação em Archivo tabular; abaixo, próximo passo e gráfico da produção.
 
 FORM: Assinatura: a trilha de etapas da landing (Ideia → Escrevendo → Em aprovação → Aprovado → Agendado → Publicado) como indicador de andamento no detalhe do conteúdo e como mapa do quadro sobre as colunas do Kanban (contagem por etapa, leva à coluna). Direção fixada pelo usuário (landing aprovada), que sobrepõe o sorteio; seed:00588c4e152ea4b6. Caminho code-led (Operate).
 

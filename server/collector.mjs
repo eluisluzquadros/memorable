@@ -54,7 +54,7 @@ export async function fetchPublic(raw, redirects = 0, {asset=false,maxBytes=2*10
       url,
       {
         headers: {
-          "User-Agent": "Memorable-MVP/0.2 (public page reader)",
+          "User-Agent": "Memoravel-MVP/0.2 (public page reader)",
           Accept:
             "text/html,application/rss+xml,application/atom+xml,text/plain",
         },
