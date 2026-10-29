@@ -91,7 +91,17 @@ async function catalogWithPrices() {
 const serviceState = openDb(path.join(dataDir, "service.sqlite"), "PRAGMA journal_mode=WAL; CREATE TABLE IF NOT EXISTS service_state (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL);");
 const legacyMonitoring = path.join(dataDir, "monitoring.json");
 let db = { schedules: {}, sources: [], runs: [] };
-const savedMonitoring = await serviceState.get("SELECT value FROM service_state WHERE key=?", "monitoring");
+let savedMonitoring;
+try {
+  savedMonitoring = await serviceState.get("SELECT value FROM service_state WHERE key=?", "monitoring");
+} catch (error) {
+  // The first query is also the connection test: say plainly why the service cannot start.
+  let host = "";
+  try { host = new URL(process.env.SUPABASE_DB_URL).hostname; } catch {}
+  console.error(`Banco indisponível (${error.code || "erro"}: ${error.message})${host ? ` · host ${host}` : ""}.`);
+  if (/^db\..+\.supabase\.co$/.test(host)) console.error("Esse é o endereço direto do Supabase, que só responde por IPv6. Em servidores só-IPv4 (como o Render) use a string do Session pooler (…pooler.supabase.com).");
+  process.exit(1);
+}
 if (savedMonitoring) db = JSON.parse(savedMonitoring.value);
 else { try { db = JSON.parse(fs.readFileSync(legacyMonitoring, "utf8")); } catch {} }
 let saving = Promise.resolve();
