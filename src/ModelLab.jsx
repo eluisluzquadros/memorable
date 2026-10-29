@@ -162,6 +162,16 @@ export function ModelLab() {
           </div>
           <section className="r-panel">
             <h3>Nota × custo</h3>
+            <details className="lab-howto">
+              <summary>Como ler as notas</summary>
+              <dl>
+                <div><dt>Clareza</dt><dd>Dá para entender na primeira leitura, sem frase confusa nem jargão.</dd></div>
+                <div><dt>Evidência</dt><dd>Tudo o que o texto afirma está na fonte. Nota baixa quer dizer que ele inventou ou exagerou um fato. É a nota que mais pesa para clientes jurídicos: uma única nota abaixo de {floor.evidence} desqualifica o modelo.</dd></div>
+                <div><dt>Voz</dt><dd>Soa como a marca descrita no DNA, e não como um texto genérico.</dd></div>
+                <div><dt>Utilidade</dt><dd>Vale o tempo de quem lê: traz algo concreto para fazer ou entender.</dd></div>
+              </dl>
+              <p className="field-help">Cada texto recebe notas de 1 a 5 de dois juízes, que não sabem qual modelo escreveu. A nota do modelo é a média de todos os textos. A checagem automática confere se as fontes citadas existem, se as citações estão literalmente na fonte e se o texto liga o tema à marca.</p>
+            </details>
             <QualityCostChart rows={rows} picks={picks} floor={floor.mean} />
             <div className="lab-table-wrap" tabIndex={0} role="region" aria-label="Tabela dos modelos avaliados">
               <table className="lab-table">
@@ -176,7 +186,7 @@ export function ModelLab() {
                       <td>{maxCost && r.cost ? `${Math.round((r.cost / maxCost) * 100)}%` : "—"}</td>
                       <td>{r.p50 ?? "—"} s</td>
                       <td>{r.judged}{r.failures ? ` · ${r.failures} falha${r.failures > 1 ? "s" : ""}` : ""}</td>
-                      <td>{r.qualified ? "✓ Qualificado" : r.why}</td>
+                      <td className="lab-why">{r.qualified ? "✓ Qualificado" : r.why}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -8,7 +8,19 @@ const wait = (ms, signal) =>
     signal?.addEventListener("abort", () => { clearTimeout(timer); reject(new DOMException("Solicitação cancelada.", "AbortError")); }, { once: true });
   });
 
-export async function longFetch(url, init = {}, { onProgress, maxMinutes = 15 } = {}) {
+// Over the account AI budget the service answers 402 with code "budget": the person decides whether
+// this one generation goes ahead anyway.
+export async function longFetch(url, init = {}, options = {}) {
+  const response = await runLong(url, init, options);
+  if (response.status !== 402 || typeof init.body !== "string") return response;
+  const data = await response.clone().json().catch(() => ({}));
+  if (data.code !== "budget" || typeof window === "undefined" || !window.confirm(`${data.error}
+
+Gerar mesmo assim?`)) return response;
+  return runLong(url, { ...init, body: JSON.stringify({ ...JSON.parse(init.body), confirmOverBudget: true }) }, options);
+}
+
+async function runLong(url, init = {}, { onProgress, maxMinutes = 15 } = {}) {
   const headers = { ...(init.headers || {}), "X-Memoravel-Async": "1" };
   const first = await fetch(url, { ...init, headers });
   if (first.status !== 202) return first;

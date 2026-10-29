@@ -33,26 +33,30 @@ const percentile = (values, p) => {
   return sorted[Math.min(sorted.length - 1, Math.floor((p / 100) * sorted.length))];
 };
 
-export function createObservability(dir) {
+// context() may return { workspace } for the request being served, so spend can be read per brand.
+export function createObservability(dir, { context = () => null } = {}) {
   fs.mkdirSync(dir, { recursive: true });
   const db = openDb(path.join(dir, "observability.sqlite"), `PRAGMA journal_mode=WAL;
     CREATE TABLE IF NOT EXISTS llm_calls (id TEXT PRIMARY KEY, at TEXT, owner TEXT, route TEXT, role TEXT, provider TEXT, model TEXT,
       ms INTEGER, input_tokens INTEGER, output_tokens INTEGER, cost REAL, cost_source TEXT, ok INTEGER, error TEXT, run_tag TEXT);
     CREATE INDEX IF NOT EXISTS llm_calls_at ON llm_calls(at);`);
+  // Installs created before the brand column get it on first start (Postgres has it from a migration).
+  if (db.dialect === "sqlite") db.run("ALTER TABLE llm_calls ADD COLUMN workspace TEXT").catch(() => {});
 
   // Wraps a model function (system, data, observe) => object; the third argument receives usage.
-  function instrument(model, { owner = null, route = "", provider = "server", runTag = null } = {}) {
+  function instrument(model, { owner = null, route = "", provider = "server", runTag = null, workspace = undefined } = {}) {
     const name = model.modelName || "desconhecido";
     // A caller may also want the usage (the model lab stores it per output); it is passed through.
     const wrapped = async (system, data, observe) => {
       const started = performance.now();
       let usage = {};
+      const brand = workspace !== undefined ? workspace : context()?.workspace ?? null;
       const record = (ok, error) => {
         const priced = usage.cost ?? estimateCost(catalogModel(name), usage.inputTokens, usage.outputTokens);
         // Recording never blocks or breaks the call it measures.
-        db.run("INSERT INTO llm_calls VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", randomUUID(), new Date().toISOString(), owner, route, roleOf(system), provider, name, Math.round(performance.now() - started),
+        db.run("INSERT INTO llm_calls (id, at, owner, route, role, provider, model, ms, input_tokens, output_tokens, cost, cost_source, ok, error, run_tag, workspace) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", randomUUID(), new Date().toISOString(), owner, route, roleOf(system), provider, name, Math.round(performance.now() - started),
           usage.inputTokens ?? null, usage.outputTokens ?? null, priced ?? null, usage.cost != null ? "provider" : priced != null ? "estimate" : null,
-          ok ? 1 : 0, error ? String(error).slice(0, 300) : null, runTag).catch((e) => console.error("Registro de custo falhou:", e.message));
+          ok ? 1 : 0, error ? String(error).slice(0, 300) : null, runTag, brand).catch((e) => console.error("Registro de custo falhou:", e.message));
       };
       try {
         const result = await model(system, data, (u) => { usage = { ...usage, ...u }; observe?.(u); });
@@ -67,6 +71,13 @@ export function createObservability(dir) {
     return wrapped;
   }
 
+  // Real spend of one account since a moment, in total and per brand.
+  async function spend(owner, since) {
+    const rows = await db.all("SELECT workspace, cost FROM llm_calls WHERE owner IS ? AND at >= ?", owner, since);
+    const byWorkspace = {};
+    for (const r of rows) byWorkspace[r.workspace || ""] = (byWorkspace[r.workspace || ""] || 0) + (r.cost || 0);
+    return { total: rows.reduce((s, r) => s + (r.cost || 0), 0), calls: rows.length, byWorkspace };
+  }
   async function summary({ owner = null, days = 30, runTag } = {}) {
     const since = new Date(Date.now() - days * 86400000).toISOString();
     const where = ["at >= ?"], params = [since];
@@ -90,5 +101,5 @@ export function createObservability(dir) {
       recent: rows.slice(0, 40).map((r) => ({ at: r.at, role: r.role, model: r.model, ms: r.ms, inputTokens: r.input_tokens, outputTokens: r.output_tokens, cost: r.cost, ok: !!r.ok, error: r.error, route: r.route, runTag: r.run_tag })),
     };
   }
-  return { instrument, summary, close: () => db.close() };
+  return { instrument, summary, spend, close: () => db.close() };
 }

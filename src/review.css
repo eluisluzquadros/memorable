@@ -1130,3 +1130,6 @@ html:has(.app-shell) { scrollbar-width: thin; scrollbar-color: var(--scroll-thum
 .ct-list li div { display: grid; gap: 2px; min-width: 0; }
 .ct-list li span, .ct-list li small { color: var(--fg-muted); font-size: 13px; overflow-wrap: anywhere; }
 .ct-panel > p b { overflow-wrap: anywhere; }
+.budget-brands { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 6px; }
+.budget-brands li { display: flex; justify-content: space-between; gap: 12px; padding-top: 6px; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.budget-brands li span { color: var(--fg-muted); }

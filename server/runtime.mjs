@@ -1,4 +1,5 @@
 import http from "node:http";
+import { AsyncLocalStorage } from "node:async_hooks";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -49,7 +50,23 @@ const accounts = createAccounts(fs.existsSync(accountsDb) || !fs.existsSync(lega
 const integrations = createIntegrations(dataDir);
 const suggestions = createSuggestions(path.join(dataDir, 'suggestions.sqlite'));
 const activeBrands = doc => (doc?.workspaces || []).filter(w => !w.archived);
-const observability = createObservability(dataDir);
+// The brand of the request being served travels with it, so every AI call is recorded under that brand.
+const requestContext = new AsyncLocalStorage();
+const observability = createObservability(dataDir, { context: () => requestContext.getStore() });
+// The account AI budget (state.aiBudget = { amount in US$, period "semana" or "mês" }) against real spend.
+const periodStart = (period) => {
+  const now = new Date();
+  if (period === "semana") { const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())); d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7)); return d.toISOString(); }
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+};
+async function budgetStatus(user) {
+  const doc = (await accounts.read(user)).state;
+  const budget = doc.aiBudget && Number(doc.aiBudget.amount) > 0 ? { amount: Number(doc.aiBudget.amount), period: doc.aiBudget.period === "semana" ? "semana" : "mês" } : null;
+  const since = periodStart(budget?.period || "mês");
+  const spend = await observability.spend(user.id, since);
+  return { budget, since, ...spend, share: budget ? spend.total / budget.amount : null };
+}
+const BUDGET_ROUTES = new Set(["/api/squad", "/api/production", "/api/council", "/api/refine", "/api/video-scripts/generate", "/api/brand-dna", "/api/group-coherence", "/api/radar/analyse"]);
 const lab = createLabStore(path.join(dataDir, 'lab.sqlite'));
 // Each role can run on its own model: the account's choice first, then MEMORABLE_MODEL_<ROLE>, then the default.
 const ROLE_ENV = { writer: 'MEMORABLE_MODEL_WRITER', reviewer: 'MEMORABLE_MODEL_REVIEWER', judge: 'MEMORABLE_MODEL_JUDGE' };
@@ -327,6 +344,11 @@ async function handle(req, res) {
       const configured = user ? (await integrations.status(user.id)).connections.filter(c => ['anthropic','openai','gemini'].includes(c.provider) && c.configured).map(c => c.provider) : [];
       return send(res,200,{authenticated:!!user, serverModel:providerReady()?serverModelName():null, modelChoice:modelChoice(), providers:[...(providerReady() ? ['server'] : []),...configured]});
     }
+    if (req.method === 'GET' && url.pathname === '/api/budget') {
+      const user = await accounts.lookup(req);
+      if (!user) return send(res, 401, { error: 'Entre na sua conta para ver o orçamento.' });
+      return send(res, 200, await budgetStatus(user));
+    }
     // Model lab: platform-wide benchmark results, read by signed-in accounts.
     if (req.method === 'GET' && (url.pathname === '/api/lab' || url.pathname === '/api/lab/run')) {
       if (!(await accounts.lookup(req))) return send(res, 401, { error: 'Entre na sua conta para ver o laboratório.' });
@@ -356,6 +378,18 @@ async function handle(req, res) {
     if (req.method !== "POST")
       return send(res, 404, { error: "Rota não encontrada." });
     const input = await read(req);
+    requestContext.enterWith({ workspace: input.packet?.workspace || input.workspace || null });
+    // Over the account AI budget, a new generation needs an explicit yes from the person.
+    if (BUDGET_ROUTES.has(url.pathname) && !input.confirmOverBudget) {
+      const user = await accounts.lookup(req);
+      if (user) {
+        const status = await budgetStatus(user);
+        if (status.budget && status.total >= status.budget.amount) {
+          const error = new Error(`O orçamento de IA da conta (US$ ${status.budget.amount.toFixed(2)} por ${status.budget.period}) já foi usado: US$ ${status.total.toFixed(2)}. Confirme para gerar mesmo assim ou ajuste o orçamento em Configurações.`);
+          throw Object.assign(error, { status: 402, code: "budget" });
+        }
+      }
+    }
     let writer;
     if (['/api/squad','/api/production','/api/council','/api/video-scripts/generate','/api/radar/analyse'].includes(url.pathname)) {
       const user = await accounts.lookup(req);
@@ -440,7 +474,7 @@ async function handle(req, res) {
     }
     send(res, 404, { error: "Rota não encontrada." });
   } catch (e) {
-    send(res, e.status || 400, { error: e.message });
+    send(res, e.status || 400, { error: e.message, ...(e.code ? { code: e.code } : {}) });
   }
 }
 server.listen(PORT, HOST, () =>

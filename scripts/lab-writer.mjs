@@ -5,6 +5,7 @@
 import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
+import { createHash } from "node:crypto";
 
 process.env.MEMORAVEL_DB = "postgres";
 const { createLabStore, startRound } = await import("../server/lab.mjs");
@@ -21,6 +22,8 @@ const WRITERS = [
   "anthropic/claude-opus-5.5", "openai/gpt-6.1-sol", "openai/gpt-6.1-terra", "anthropic/claude-sonnet-5.5",
   "google/gemini-3.8-flash", "google/gemini-3.5-flash-lite", "openai/gpt-5.4-mini", "openai/gpt-4.1-mini",
   "deepseek/deepseek-v4-pro-0813", "deepseek/deepseek-v4.1-flash",
+  // Added after the first pass: it planned the texts, but as a writer it must be measured like the others.
+  "google/gemini-4-argon",
 ];
 const JUDGES = ["x-ai/grok-4.7", "mistralai/mistral-large-4-0"]; // no writer comes from these families
 const PLANNER = "google/gemini-4-argon"; // one shared plan per brief, so only the writer varies
@@ -90,7 +93,7 @@ try {
     // Blind judging: anonymous letters in a random order that is saved, so a rerun maps letters the same way.
     const scores = Object.fromEntries(versions.map((v) => [v.key, {}]));
     for (const judge of JUDGES) {
-      const jkey = `${b.id}|juiz|${judge}`;
+      const jkey = `${b.id}|juiz|${judge}|${createHash("sha1").update(versions.map((v) => v.writer).sort().join(",")).digest("hex").slice(0, 8)}`;
       const saved = await store.item(`${RUN.id}|${jkey}`);
       const order = saved?.output?.order || shuffle(versions.map((v) => v.key));
       const label = (k) => String.fromCharCode(65 + order.indexOf(k));

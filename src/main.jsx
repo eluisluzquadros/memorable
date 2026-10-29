@@ -105,6 +105,7 @@ import { StageRail } from "./StageRail";
 import { Subtabs, Subpanel, useSubtab } from "./Subtabs";
 import { RefinePanel } from "./RefinePanel";
 import { longFetch } from "./long-fetch.mjs";
+import { SpendTile, AiBudgetSettings } from "./AiBudget";
 
 const navItems = [
   ["painel", "Visão geral", LayoutDashboard],
@@ -1162,11 +1163,11 @@ function Dashboard() {
           <b>{approved.length.toString().padStart(2, "0")}</b>
           <small>prontas para o próximo passo</small>
         </div>
-        <div>
+        <SpendTile fallback={<div>
           <span>Custo estimado</span>
           <b className="money-metric">{money(spent)}</b>
           <small>valores demonstrativos</small>
-        </div>
+        </div>} />
       </div>
       <div className="dashboard-middle">
         <div className="attention-panel">
@@ -1942,6 +1943,7 @@ function Configuracoes() {
       </section></Subpanel>}
       {tab === "conexoes" && <Subpanel id="conexoes"><Connections /></Subpanel>}
       {tab === "orcamento" && <Subpanel id="orcamento"><div className="settings-layout settings-single">
+        <AiBudgetSettings />
         <section className="settings-section">
           <h2>Orçamento de {workspace.name}</h2>
           <p>

@@ -14,6 +14,11 @@ export function ModelRoles() {
   const { state, setState, notify } = useContext(AppContext);
   const [catalog, setCatalog] = useState(null);
   const [error, setError] = useState("");
+  const [lab, setLab] = useState(null);
+  useEffect(() => {
+    // Profiles measured by the model lab (Time de agentes > Laboratório); absent without an account.
+    fetch("/api/lab").then((r) => (r.ok ? r.json() : null)).then((d) => setLab(d?.summary || null)).catch(() => {});
+  }, []);
   useEffect(() => {
     fetch("/api/models")
       .then((r) => r.json())
@@ -52,6 +57,25 @@ export function ModelRoles() {
               <small className="field-help">{help}</small>
             </label>
           ))}
+        </div>
+      )}
+      {lab?.profiles?.redator && catalog?.modelChoice && (
+        <div className="mr-profiles">
+          <h3>Perfis medidos para o Redator</h3>
+          <p className="field-help">Do Laboratório: notas de juízes cegos e custo real por texto. Só entram modelos acima do piso de qualidade.</p>
+          <ul>
+            {[["essencial", "Essencial"], ["equilibrado", "Equilibrado"], ["excelencia", "Excelência"]].map(([id, name]) => {
+              const model = lab.profiles.redator[id];
+              const row = lab.models.find((m) => m.task === "redator" && m.model === model);
+              const inUse = chosen("writer") === model;
+              return (
+                <li key={id}>
+                  <span><b>{name}</b> · {model.split("/").pop()}{row ? ` · nota ${row.mean.toFixed(2).replace(".", ",")} · US$ ${row.cost.toFixed(4).replace(".", ",")} por texto` : ""}</span>
+                  <button type="button" className="text-button" disabled={!admin || inUse || !catalog.models.some((m) => m.id === model)} onClick={() => change("writer", model)}>{inUse ? "Em uso" : "Usar como redator"}</button>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
       {catalog?.roleDefaults && !catalog.modelChoice && <p className="field-help">O serviço usa Claude direto na Anthropic; a escolha por função exige o OpenRouter.</p>}

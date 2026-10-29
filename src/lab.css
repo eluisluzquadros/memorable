@@ -44,3 +44,11 @@
    carries the same numbers without scrolling. */
 .lab-chart-scroll { overflow-x: auto; }
 @media (max-width: 760px) { .lab-chart-scroll svg { min-width: 640px; } }
+.lab-table td.lab-why { white-space: normal; min-width: 280px; max-width: 420px; color: var(--fg-muted); }
+.lab-howto { margin: 4px 0 8px; }
+.lab-howto summary { cursor: pointer; font-weight: 600; }
+.lab-howto dl { display: grid; gap: 8px; margin: 10px 0; }
+.lab-howto dl div { display: grid; grid-template-columns: 110px 1fr; gap: 8px; }
+.lab-howto dt { font-weight: 600; }
+.lab-howto dd { margin: 0; color: var(--fg-muted); }
+@media (max-width: 760px) { .lab-howto dl div { grid-template-columns: 1fr; gap: 2px; } }

@@ -115,7 +115,15 @@ export function labSummary(items, runs, floor = FLOOR) {
       checksPass, runs: [...new Set(list.map((i) => i.run_id))],
     };
     row.qualified = row.judged >= floor.minItems && row.mean >= floor.mean && (row.minEvidence == null || row.minEvidence >= floor.evidence) && (row.checksPass == null || row.checksPass >= floor.checks);
-    row.why = row.qualified ? "" : row.judged < floor.minItems ? `poucas peças avaliadas (${row.judged} de ${floor.minItems})` : row.mean < floor.mean ? `nota ${row.mean?.toFixed(2).replace(".", ",")} abaixo de ${floor.mean.toFixed(1).replace(".", ",")}` : row.minEvidence < floor.evidence ? `evidência ${row.minEvidence} em alguma peça` : `checagem ${Math.round(row.checksPass * 100)}%`;
+    // The reason is written for the person deciding, not for the engineer: what failed, how often, what it means.
+    const n = (v, d = 2) => v.toFixed(d).replace(".", ",");
+    const weakEvidence = scored.filter((i) => Object.values(i.scores || {}).some((s) => (s?.scores?.evidencia ?? s?.evidencia) < floor.evidence)).length;
+    const failedChecks = done.filter((i) => i.checks && !i.checks.ok).length;
+    row.why = row.qualified ? ""
+      : row.judged < floor.minItems ? `Ainda não dá para julgar: só ${row.judged} de ${floor.minItems} textos avaliados.`
+      : row.mean < floor.mean ? `Nota média ${n(row.mean)}, abaixo do piso de ${n(floor.mean, 1)}.`
+      : row.minEvidence < floor.evidence ? `Em ${weakEvidence} de ${row.judged} textos, um juiz deu ${row.minEvidence} de 5 em evidência: o texto afirma algo que a fonte não sustenta. O piso exige pelo menos ${floor.evidence} em todos.`
+      : `A checagem automática reprovou ${failedChecks} de ${done.length} textos (fonte, citação literal ou ligação com a marca). O piso exige ${Math.round(floor.checks * 100)}% aprovados.`;
     return row;
   });
   const tasks = [...new Set(models.map((m) => m.task))];

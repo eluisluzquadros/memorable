@@ -178,7 +178,8 @@ export async function generateVideoScripts(
   model = defaultModel,
   // The squad runs its own editor/rewrite loop, so it defers the mechanical gate to that loop.
   // The committee reviews, so it runs on the reviewer model when one is given (cheaper than the writer).
-  { validate = true, critic = null } = {},
+  // committee=false returns the drafted scripts only (the model lab measures the writer alone).
+  { validate = true, critic = null, committee: withCommittee = true } = {},
 ) {
   const settings = productionSettings({
     format: "Roteiro de vídeo",
@@ -280,6 +281,7 @@ export async function generateVideoScripts(
       );
     }
   }
+  if (!withCommittee) return { scripts, committee: [], model: model.modelName || serverModelName(), mode: "provider" };
   const perspectives = [
     ["clarity", "Clareza e naturalidade"],
     ["partner2", "Precisão e evidência"],

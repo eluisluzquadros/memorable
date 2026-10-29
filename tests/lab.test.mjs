@@ -43,9 +43,9 @@ test("profiles: the cheapest qualified, the cheapest near the best, and the best
   const s = labSummary(items, runs);
   assert.deepEqual(s.profiles.redator, { essencial: "barato", equilibrado: "medio", excelencia: "caro" });
   const why = Object.fromEntries(s.models.map((m) => [m.model, m.qualified ? "ok" : m.why]));
-  assert.match(why.ruim, /abaixo de 4/);
-  assert.match(why.inventa, /evidência 2/);
+  assert.match(why.ruim, /abaixo do piso de 4,0/);
+  assert.match(why.inventa, /um juiz deu 2 de 5 em evidência: o texto afirma algo que a fonte não sustenta/);
   // Fewer than three judged outputs never qualify, however good.
   const few = labSummary(items.filter((i) => i.model !== "caro").concat([{ run_id: "r", role: "redator", model: "novo", status: "done", mean: 5, cost_usd: 0.001, scores: {}, checks: { ok: true } }]), runs);
-  assert.match(few.models.find((m) => m.model === "novo").why, /poucas peças/);
+  assert.match(few.models.find((m) => m.model === "novo").why, /só 1 de 3 textos avaliados/);
 });
