@@ -98,7 +98,8 @@ export function ProviderTools({
         throw new Error(
           "O briefing ou a versão mudou durante a execução. O retorno não foi aplicado; execute novamente com o contexto atual.",
         );
-      if (kind === "squad") onGenerated(data.versions);
+      // The Media step later asks the same provider for the production plan of the chosen version.
+      if (kind === "squad") onGenerated(data.versions.map((v) => ({ ...v, writer: { provider, model: provider === "server" ? undefined : model } })));
       else onCouncil(data);
       notify(
         kind === "squad"

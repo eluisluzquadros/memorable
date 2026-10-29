@@ -160,7 +160,8 @@ export async function generateVideoScripts(
   selectedTopics,
   model = defaultModel,
   // The squad runs its own editor/rewrite loop, so it defers the mechanical gate to that loop.
-  { validate = true } = {},
+  // The committee reviews, so it runs on the reviewer model when one is given (cheaper than the writer).
+  { validate = true, critic = null } = {},
 ) {
   const settings = productionSettings({
     format: "Roteiro de vídeo",
@@ -280,7 +281,7 @@ export async function generateVideoScripts(
         (packet.calibration || [])
           .find((c) => c.id === id)
           ?.sourceIds?.filter((id) => allowed.has(id)) || [];
-      const review = await model(
+      const review = await (critic || model)(
         `Revise o lote pela perspectiva ${name}. Não represente uma pessoa real nem preveja o que ela diria. Use críticas históricas apenas quando fornecidas. Dê parecer consultivo, nunca aprovação. Retorne {reason:string,score:number de 1 a 5,blockers:string[]}. Cite topicId e estratégia ao apontar um problema específico.`,
         { packet, scripts, historicalSourceIds: sourceIds },
       );
@@ -434,7 +435,7 @@ export async function generateSquad(packet, model = defaultModel, critic = model
       title: packet.brief.title,
       sourceId: packet.sources?.[0]?.id,
     };
-    const result = await generateVideoScripts(packet, [topic], model, { validate: false });
+    const result = await generateVideoScripts(packet, [topic], model, { validate: false, critic });
     const versions = result.scripts.map((script) => ({
       ...script,
       ...videoProductionPlan(script, packet),
@@ -477,25 +478,29 @@ export async function generateSquad(packet, model = defaultModel, critic = model
         ).then((v) => ({ ...v, strategy })),
       ),
   );
-  const production = await model(
-    `Atue como Visual Creator, AV Producer e SEO/GEO Analyst. ${PRODUCTION_METHOD} Retorne {visual:string,av:string,assetPlan:[{id,kind,description,reference}],shotList:[{id,duration,prompt,assetIds:string[],continuity,audio}],testPlan:string,seo:{title,description,tags:string[],alt,entities:string[]}}. Prepare orientações executáveis e inclua tempo quando adequado.`,
-    { packet, plan, versions },
-  );
-  if (
-    !production.visual ||
-    !production.av ||
-    !production.seo ||
-    versions.some((v) => !v.body?.trim())
-  )
+  if (versions.some((v) => !v.body?.trim()))
     throw new Error("Pacote incompleto retornado pelo time.");
+  // Visual direction, shot list and SEO are the longest answer of the run (~10k tokens). They are made
+  // when the piece reaches the Media step (generateProduction), not for every draft written.
   return {
     versions: await reviewGenerated(
       packet,
-      versions.map((v) => ({ ...production, ...v, mode: "provider" })),
+      versions.map((v) => ({ ...v, mode: "provider" })),
       model,
       { critic },
     ),
     plan,
     mode: "provider",
   };
+}
+export async function generateProduction(packet, version, model = defaultModel, plan = null) {
+  if (!packet?.brief?.title || !version?.body?.trim())
+    throw new Error("Escolha a versão do texto antes de preparar a produção.");
+  const production = await model(
+    `Atue como Visual Creator, AV Producer e SEO/GEO Analyst. ${PRODUCTION_METHOD} Retorne {visual:string,av:string,assetPlan:[{id,kind,description,reference}],shotList:[{id,duration,prompt,assetIds:string[],continuity,audio}],testPlan:string,seo:{title,description,tags:string[],alt,entities:string[]}}. Prepare orientações executáveis e inclua tempo quando adequado.`,
+    { packet, plan, versions: [{ title: version.title, body: version.body, hook: version.hook, strategy: version.strategy }] },
+  );
+  if (!production.visual || !production.av || !production.seo)
+    throw new Error("A produção voltou incompleta. Tente de novo.");
+  return { visual: production.visual, av: production.av, assetPlan: production.assetPlan || [], shotList: production.shotList || [], testPlan: production.testPlan || "", seo: production.seo };
 }

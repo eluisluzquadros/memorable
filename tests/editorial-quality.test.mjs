@@ -9,7 +9,7 @@ import {
   productionVariants,
 } from "../src/operations.mjs";
 import { productionSettings, scriptBody } from "../src/production.mjs";
-import { councilAI, generateSquad } from "../server/ai.mjs";
+import { councilAI, generateSquad, generateProduction } from "../server/ai.mjs";
 import { validateGenerated, reviewGenerated } from "../server/editorial.mjs";
 import { queueIdea } from "../src/writing-queue.mjs";
 import {
@@ -272,8 +272,13 @@ test("nonvideo AI orchestration sends brand context to every writer and requires
   };
   const result = await generateSquad(packet, model);
   assert.equal(result.versions.length, 1);
-  assert.equal(calls.length, 4);
+  // Planner, writer and editor: the production plan waits for the Media step.
+  assert.equal(calls.length, 3);
+  assert.ok(!calls.some((c) => c.includes("Visual Creator")));
   assert.equal(result.versions[0].editorialReview.complete, true);
+  const production = await generateProduction(packet, result.versions[0], model);
+  assert.equal(production.visual, "Mapa territorial com identidade da Skyvidya.");
+  assert.equal(calls.length, 4);
   assert.match(calls[1], /anunciante é packet.brand.name/);
   await assert.rejects(
     () => generateSquad({ ...packet, brand: null }, model),

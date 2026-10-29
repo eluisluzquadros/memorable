@@ -70,3 +70,13 @@ test('Roteiro: pode citar o conhecimento da marca (DNA aprovado), mas não fonte
     await assert.rejects(()=>generateVideoScripts(packet, [{id:'t',title:'Tema',sourceId:'s'}]), /fontes não fornecidas/);
   } finally { globalThis.fetch=oldFetch; keys.forEach((k,i)=>{if(previous[i]===undefined)delete process.env[k];else process.env[k]=previous[i];}); }
 });
+
+test('Roteiro: o comitê de revisão roda no modelo de revisão, não no redator', async () => {
+  const script = { topicId:'t', title:'Tema', strategy:'a', hook:'Pergunta', technique:'Exemplo', trigger:'Curiosidade', cta:'Pergunte', body:'Contexto', scenes:speeches.map(speech=>({duration:10,speech,visual:'Câmera'})), sourceIds:['s'], warnings:[] };
+  const used = { writer: 0, critic: 0 };
+  const writer = async () => { used.writer++; return { scripts: [script] }; };
+  const critic = async () => { used.critic++; return { reason: 'Conferir', score: 4, blockers: [] }; };
+  const result = await generateVideoScripts({ brief:{versionCount:1,durationSeconds:30}, sources:[{id:'s',text:'Fonte'}], calibration:[] }, [{id:'t',title:'Tema',sourceId:'s'}], writer, { critic });
+  assert.equal(result.committee.length, 4);
+  assert.deepEqual(used, { writer: 1, critic: 4 });
+});

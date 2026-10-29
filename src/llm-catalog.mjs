@@ -11,6 +11,7 @@ export const LLM_CATALOG = [
   { id: "anthropic/claude-opus-5.5", label: "Claude Opus 5.5", vendor: "Anthropic", tier: "frontier", input: 4, output: 20 },
   { id: "anthropic/claude-sonnet-5.5", label: "Claude Sonnet 5.5", vendor: "Anthropic", tier: "frontier", input: 2, output: 10 },
   { id: "openai/gpt-6.1-sol", label: "GPT-6.1 Sol", vendor: "OpenAI", tier: "frontier", input: 2, output: 10 },
+  { id: "openai/gpt-6.1-terra", label: "GPT-6.1 Terra", vendor: "OpenAI", tier: "challenger", input: 1, output: 5 },
   { id: "google/gemini-4-argon", label: "Gemini 4 Argon", vendor: "Google", tier: "frontier", input: 2, output: 10 },
   { id: "x-ai/grok-4.7", label: "Grok 4.7", vendor: "xAI", tier: "frontier", input: 2, output: 6 },
   { id: "deepseek/deepseek-v4-pro-0813", label: "DeepSeek V4 Pro", vendor: "DeepSeek", tier: "challenger", input: 0.66, output: 1.98, open: true },

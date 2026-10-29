@@ -31,6 +31,7 @@ import { editorialIssues } from "./editorial-quality.mjs";
 import { ProviderTools } from "./ProviderTools";
 import { MediaStudio } from "./Connections";
 import { CouncilReport } from "./Advanced";
+import { longFetch } from "./long-fetch.mjs";
 import "./writing.css";
 
 export function WritingStudio() {
@@ -55,7 +56,9 @@ export function WritingStudio() {
     [selected, setSelected] = useState(0),
     [audit, setAudit] = useState(null),
     [busy, setBusy] = useState(false),
-    [savedId, setSavedId] = useState(null);
+    [savedId, setSavedId] = useState(null),
+    [preparing, setPreparing] = useState(false),
+    [prepError, setPrepError] = useState("");
   useEffect(() => {
     setStage("idea");
     setAudit(null);
@@ -126,6 +129,17 @@ export function WritingStudio() {
     } catch (e) {
       notify(e.message, true);
     }
+  }
+  // Visual direction, shot list and SEO are prepared only when an AI draft reaches the Media step.
+  async function prepareProduction() {
+    if (!draft || draft.mode !== "provider" || draft.visual || settings.video) return;
+    setPreparing(true); setPrepError("");
+    try {
+      const response = await longFetch("/api/production", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ packet, version: draft, provider: draft.writer?.provider || "server", model: draft.writer?.model, roles: state.modelRoles || {} }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Não foi possível preparar a produção.");
+      setGenerated((items) => items.map((v, i) => (i === selected ? { ...v, ...data } : v)));
+    } catch (e) { setPrepError(e.message); } finally { setPreparing(false); }
   }
   // The model may also cite brand knowledge that is not a reference in the library (e.g. the approved DNA);
   // the piece keeps the library references it used, or the ones chosen for it.
@@ -768,7 +782,7 @@ export function WritingStudio() {
             </div>
             <button
               className="button secondary"
-              onClick={() => setStage("media")}
+              onClick={() => { setStage("media"); prepareProduction(); }}
             >
               Ir para Mídia <Image size={16} />
             </button>
@@ -806,6 +820,8 @@ export function WritingStudio() {
               voz ainda não está integrada.
             </p>
           </div>
+          {preparing && <p className="field-help" role="status">Preparando a direção visual e o SEO deste texto…</p>}
+          {prepError && <p className="form-error" role="alert">{prepError} <button className="text-button" onClick={prepareProduction}>Tentar de novo</button></p>}
           {issues.length ? (
             <div className="ws-empty">
               <h3>Conclua o texto primeiro.</h3>
@@ -819,7 +835,7 @@ export function WritingStudio() {
             </div>
           ) : (
             <MediaStudio
-              key={brief.handoffKey || brief.title}
+              key={`${brief.handoffKey || brief.title}-${draft.visual ? "visual" : "texto"}`}
               initialPrompt={draft.visual || draft.body}
             />
           )}

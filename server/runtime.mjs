@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { collectSources } from "./collector.mjs";
 import { extractBrand } from "./brand.mjs";
-import { generateSquad, generateVideoScripts, councilAI, providerReady, serverModelName, serverModel, allowedServerModel, analyseRadar } from "./ai.mjs";
+import { generateSquad, generateProduction, generateVideoScripts, councilAI, providerReady, serverModelName, serverModel, allowedServerModel, analyseRadar } from "./ai.mjs";
 import { nextRadarRun, validateRadar } from "../src/operations.mjs";
 import { createAccounts, sessionCookie } from './accounts.mjs';
 import { createSuggestions, contributorCookie, suggestionStatus } from './suggestions.mjs';
@@ -169,7 +169,7 @@ async function run(workspace, sources,ownerId=null) {
 }
 // Routes that can take longer than a proxy waits. Asked with the X-Memoravel-Async header, they answer
 // 202 with a task id at once and run the same handler in the background.
-const ASYNC_ROUTES = new Set(['/api/squad', '/api/council', '/api/refine', '/api/brand-dna', '/api/group-coherence', '/api/video-scripts/generate', '/api/radar/analyse', '/api/ingest/url', '/api/ingest/file', '/api/ingest/channel', '/api/ingest/channel/import', '/api/monitor']);
+const ASYNC_ROUTES = new Set(['/api/squad', '/api/production', '/api/council', '/api/refine', '/api/brand-dna', '/api/group-coherence', '/api/video-scripts/generate', '/api/radar/analyse', '/api/ingest/url', '/api/ingest/file', '/api/ingest/channel', '/api/ingest/channel/import', '/api/monitor']);
 const tasks = createTasks();
 const originRefused = (req) => (req.headers.origin && !ALLOWED_ORIGINS.includes(req.headers.origin)) || req.headers['sec-fetch-site'] === 'cross-site';
 async function readRaw(req, limit) {
@@ -343,7 +343,7 @@ async function handle(req, res) {
       return send(res, 404, { error: "Rota não encontrada." });
     const input = await read(req);
     let writer;
-    if (['/api/squad','/api/council','/api/video-scripts/generate','/api/radar/analyse'].includes(url.pathname)) {
+    if (['/api/squad','/api/production','/api/council','/api/video-scripts/generate','/api/radar/analyse'].includes(url.pathname)) {
       const user = await accounts.lookup(req);
       if (input.provider && input.provider !== 'server') {
         if (!user) return send(res,401,{error:'Entre na sua conta e conecte Claude, OpenAI ou Gemini em Configurações.'});
@@ -368,6 +368,10 @@ async function handle(req, res) {
     }
     if (url.pathname === "/api/video-scripts/generate")
       return send(res, 200, await generateVideoScripts(input.packet, input.selectedTopics, writer));
+    if (url.pathname === "/api/production") {
+      if (!writer) throw new Error("Conecte um provedor de escrita para preparar a produção.");
+      return send(res, 200, await generateProduction(input.packet, input.version, writer, input.plan || null));
+    }
     if (url.pathname === "/api/squad") {
       const critic = (!input.provider || input.provider === 'server') && providerReady() ? roleModel('reviewer', input.roles?.reviewer, (await accounts.lookup(req))?.id || null, url.pathname).model : writer;
       return send(res, 200, await generateSquad(input.packet, writer, critic));
