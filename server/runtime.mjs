@@ -21,6 +21,7 @@ import { PORT, HOST, APP_ORIGIN, ALLOWED_ORIGINS, clientAddress, canonicalRedire
 import { openDb, usingPostgres } from './sql.mjs';
 import { createTasks, bufferedRequest, capturedResponse } from './tasks.mjs';
 import { createLabStore, labSummary } from './lab.mjs';
+import { writerFor } from '../src/model-roles.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // In the cloud this service also delivers the built screens (npm run build → dist/), so pages and API share one address.
 const distDir = path.join(root, "dist");
@@ -396,7 +397,7 @@ async function handle(req, res) {
       if (input.provider && input.provider !== 'server') {
         if (!user) return send(res,401,{error:'Entre na sua conta e conecte Claude, OpenAI ou Gemini em Configurações.'});
         writer = await integrations.writer(user.id,input.provider,input.model);
-      } else if (providerReady()) writer = serverModel(roleModelName('writer', input.model || input.roles?.writer));
+      } else if (providerReady()) writer = serverModel(roleModelName('writer', input.model || writerFor(input.roles, input.packet?.brief?.format)));
       if (writer) writer = observability.instrument(writer, { owner:user?.id || null, route:url.pathname, provider:input.provider || 'server' });
     }
     if (url.pathname === '/api/radar/analyse') return send(res,200,await analyseRadar(input.packet,writer));
@@ -433,7 +434,7 @@ async function handle(req, res) {
       const owner = (await accounts.lookup(req))?.id || null, roles = input.roles || {};
       return send(res, 200, await refinePiece(input.packet, input.piece, {
         reviewer: roleModel('reviewer', roles.reviewer, owner, url.pathname),
-        writer: roleModel('writer', roles.writer, owner, url.pathname),
+        writer: roleModel('writer', writerFor(roles, input.piece?.format), owner, url.pathname),
         judge: roleModel('judge', roles.judge, owner, url.pathname),
       }));
     }

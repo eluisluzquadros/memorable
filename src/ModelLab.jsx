@@ -145,13 +145,35 @@ export function ModelLab() {
       <section className="r-panel">
         <h2>Laboratório de modelos</h2>
         <p>Cada modelo escreve o mesmo texto, com as mesmas fontes e instruções. Juízes cegos de outras famílias dão notas de 1 a 5 em clareza, evidência, voz e utilidade, sem saber quem escreveu. Um modelo é qualificado com nota média ≥ {num(floor.mean, 1)}, nenhuma evidência abaixo de {floor.evidence} e pelo menos {floor.minItems} textos avaliados.</p>
-        <p className="field-help">Redator: {view === "Geral" ? "todos os tipos de conteúdo juntos" : `só ${view}`}. O melhor modelo pode mudar com o formato, por isso cada tipo tem ranking e perfis próprios.</p>
+        <p className="field-help">Redator: {view === "Geral" ? "todos os tipos de conteúdo juntos, só como referência" : `só ${view}`}. O melhor modelo muda com o formato, por isso os perfis que valem na plataforma são os de cada tipo de conteúdo.</p>
         <div className="r-tabs lab-formats" role="tablist" aria-label="Tipo de conteúdo">
           {["Geral", ...formats].map((name) => <button key={name} type="button" role="tab" aria-selected={view === name} onClick={() => setView(name)}>{name}</button>)}
         </div>
       </section>
       {rows.length ? (
         <>
+          {view === "Geral" ? (
+            <section className="r-panel">
+              <h3>Perfis por tipo de conteúdo</h3>
+              <p className="field-help">São estes que a plataforma usa (Configurações › Quem faz o quê). A visão geral junta formatos diferentes e endurece o piso: uma única nota baixa em qualquer formato desqualifica o modelo em todos.</p>
+              <div className="lab-table-wrap">
+                <table className="lab-table">
+                  <thead><tr><th>Tipo de conteúdo</th>{PROFILES.map(([id, name]) => <th key={id}>{name}</th>)}</tr></thead>
+                  <tbody>
+                    {formats.map((fmt) => {
+                      const p = data.summary.byFormat[fmt]?.profiles?.[task];
+                      return (
+                        <tr key={fmt}>
+                          <th scope="row"><button type="button" className="text-button" onClick={() => setView(fmt)}>{fmt}</button></th>
+                          {p ? PROFILES.map(([id]) => <td key={id}>{short(p[id])}</td>) : <td colSpan={PROFILES.length}>Nenhum modelo passou no piso ainda</td>}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ) : (
           <div className="lab-profiles">
             {PROFILES.map(([id, name, rule]) => {
               const row = rows.find((r) => r.model === picks?.[id]);
@@ -165,6 +187,7 @@ export function ModelLab() {
               );
             })}
           </div>
+          )}
           <section className="r-panel">
             <h3>Nota × custo</h3>
             <details className="lab-howto">

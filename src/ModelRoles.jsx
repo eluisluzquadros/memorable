@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { AppContext } from "./context";
+import { profileWriters } from "./model-roles.mjs";
 
 const ROLES = [
   ["writer", "Redator", "Escreve as versões e aplica as recomendações do refino."],
@@ -7,6 +8,9 @@ const ROLES = [
   ["judge", "Juiz cego", "Compara a versão atual com a refinada sem saber quem escreveu."],
 ];
 const family = (id = "") => id.split("/")[0];
+const PROFILES = [["essencial", "Essencial"], ["equilibrado", "Equilibrado"], ["excelencia", "Excelência"]];
+const short = (id = "") => id.split("/").pop();
+const num = (v) => v.toFixed(2).replace(".", ",");
 const price = (m) => (m.input != null && m.output != null ? ` · US$ ${Number(m.input).toFixed(2)} / ${Number(m.output).toFixed(2)} por 1M tokens` : "");
 
 // Which model plays each role. The account's choice wins over the service defaults.
@@ -32,6 +36,20 @@ export function ModelRoles() {
   const change = (role, value) => {
     setState((s) => ({ ...s, modelRoles: { ...(s.modelRoles || {}), [role]: value || undefined } }));
     notify("Modelo da função atualizado. Vale para as próximas gerações e refinos.");
+  };
+  const inCatalog = (model) => catalog?.models?.some((m) => m.id === model && m.available !== false);
+  const setWriters = (writerByFormat, message) => {
+    setState((s) => ({ ...s, modelRoles: { ...(s.modelRoles || {}), writerByFormat } }));
+    notify(message);
+  };
+  const setFormatWriter = (format, model) => {
+    const next = { ...(roles.writerByFormat || {}) };
+    if (model) next[format] = model; else delete next[format];
+    setWriters(next, `Redator de ${format} atualizado. Vale para as próximas gerações.`);
+  };
+  const applyProfile = (id, name) => {
+    const next = profileWriters(lab.byFormat, id, inCatalog);
+    setWriters(next, `Perfil ${name} aplicado em ${Object.keys(next).length} formatos. Os demais usam o Redator geral.`);
   };
   return (
     <section className="r-panel mr-panel">
@@ -59,19 +77,38 @@ export function ModelRoles() {
           ))}
         </div>
       )}
-      {lab?.profiles?.redator && catalog?.modelChoice && (
+      {lab?.byFormat && catalog?.modelChoice && (
         <div className="mr-profiles">
-          <h3>Perfis medidos para o Redator</h3>
-          <p className="field-help">Do Laboratório: notas de juízes cegos e custo real por texto. Só entram modelos acima do piso de qualidade.</p>
+          <h3>Redator por tipo de conteúdo</h3>
+          <p className="field-help">Do Laboratório: o melhor redator muda com o formato, por isso cada tipo é medido e escolhido separado. Formato sem escolha usa o Redator acima. Só entram modelos acima do piso de qualidade.</p>
+          <div className="mr-apply">
+            {PROFILES.map(([id, name]) => (
+              <button key={id} type="button" className="button secondary" disabled={!admin} onClick={() => applyProfile(id, name)}>Aplicar {name} a todos</button>
+            ))}
+          </div>
           <ul>
-            {[["essencial", "Essencial"], ["equilibrado", "Equilibrado"], ["excelencia", "Excelência"]].map(([id, name]) => {
-              const model = lab.profiles.redator[id];
-              const row = lab.models.find((m) => m.task === "redator" && m.model === model);
-              const inUse = chosen("writer") === model;
+            {(lab.formats || []).map((format) => {
+              const picks = lab.byFormat[format]?.profiles?.redator;
+              const current = roles.writerByFormat?.[format] || "";
+              const options = picks ? [...new Set(PROFILES.map(([id]) => picks[id]))].filter(inCatalog) : [];
+              const row = (model) => lab.byFormat[format].models.find((m) => m.task === "redator" && m.model === model);
+              const label = (model) => {
+                const names = PROFILES.filter(([id]) => picks?.[id] === model).map(([, n]) => n).join(" e ");
+                const r = row(model);
+                return `${names} · ${short(model)}${r ? ` · nota ${num(r.mean)} · US$ ${r.cost.toFixed(4).replace(".", ",")} por texto` : ""}`;
+              };
               return (
-                <li key={id}>
-                  <span><b>{name}</b> · {model.split("/").pop()}{row ? ` · nota ${row.mean.toFixed(2).replace(".", ",")} · US$ ${row.cost.toFixed(4).replace(".", ",")} por texto` : ""}</span>
-                  <button type="button" className="text-button" disabled={!admin || inUse || !catalog.models.some((m) => m.id === model)} onClick={() => change("writer", model)}>{inUse ? "Em uso" : "Usar como redator"}</button>
+                <li key={format}>
+                  <span><b>{format}</b></span>
+                  {options.length ? (
+                    <select aria-label={`Redator de ${format}`} value={current} disabled={!admin} onChange={(e) => setFormatWriter(format, e.target.value)}>
+                      <option value="">Redator geral · {short(chosen("writer"))}</option>
+                      {current && !options.includes(current) && <option value={current}>{short(current)} (escolhido antes)</option>}
+                      {options.map((model) => <option key={model} value={model}>{label(model)}</option>)}
+                    </select>
+                  ) : (
+                    <small className="field-help">Nenhum modelo passou no piso ainda; usa o Redator geral.</small>
+                  )}
                 </li>
               );
             })}
