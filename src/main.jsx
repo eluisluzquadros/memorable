@@ -1167,11 +1167,7 @@ function Dashboard() {
           <b>{approved.length.toString().padStart(2, "0")}</b>
           <small>prontas para o próximo passo</small>
         </div>
-        <SpendTile fallback={<div>
-          <span>Custo estimado</span>
-          <b className="money-metric">{money(spent)}</b>
-          <small>valores demonstrativos</small>
-        </div>} />
+        <SpendTile />
       </div>
       <div className="dashboard-middle">
         <div className="attention-panel">

@@ -11,14 +11,21 @@ export const BUCKETS = { "": "Leituras e testes da conta", grupo: "Grupo (DNA e 
 // The period starts at 00:00 UTC on the 1st: read in local time it would show the day before.
 export const sinceLabel = (since, options = { day: "numeric", month: "short" }) => new Date(since).toLocaleDateString("pt-BR", { ...options, timeZone: "UTC" });
 
+// The last answer is kept for the whole visit, per account: screens that mount again (the dashboard, the group
+// view, settings) start from the last known usage and refresh it, so nothing flashes an empty or different value,
+// and signing in as someone else never shows the previous account's figures.
+let last = { user: null, data: undefined };
 export function usePlanUsage(refresh) {
-  const [usage, setUsage] = useState(undefined);
+  const { account } = useContext(AppContext);
+  const user = account?.id || null;
+  const [usage, setUsage] = useState(last.user === user ? last.data : undefined);
   useEffect(() => {
     let alive = true;
-    fetchWithRetry("/api/budget").then((r) => (r.ok ? r.json() : null)).then((d) => alive && setUsage(d)).catch(() => alive && setUsage(null));
+    const keep = (d) => { last = { user, data: d }; if (alive) setUsage(d); };
+    fetchWithRetry("/api/budget").then((r) => (r.ok ? r.json() : null)).then(keep).catch(() => keep(last.user === user ? (last.data ?? null) : null));
     return () => { alive = false; };
-  }, [refresh]);
-  return usage; // undefined while loading, null without an account
+  }, [refresh, user]);
+  return usage; // undefined while loading the first time, null without an account
 }
 
 // The lines outside the active brands (the group, reads without a brand, a brand archived since).
@@ -29,10 +36,17 @@ export function outsideBrands(usage, brandIds) {
 }
 
 // Dashboard tile: this brand's usage in the current period.
-export function SpendTile({ fallback }) {
+export function SpendTile() {
   const { state } = useContext(AppContext);
   const usage = usePlanUsage();
-  if (!usage) return fallback;
+  // Loading: the same card with a neutral dash, so the tile never shows another figure (or a demo one) first.
+  if (!usage) return (
+    <div aria-busy="true">
+      <span>Créditos usados</span>
+      <b className="money-metric">—</b>
+      <small>carregando…</small>
+    </div>
+  );
   return (
     <div>
       <span>Créditos usados</span>
