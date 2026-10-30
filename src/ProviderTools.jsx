@@ -178,7 +178,7 @@ export function ProviderTools({
           Conectar IA <span aria-hidden="true">→</span>
         </a>
       )}
-      {providers.length > 0 && (
+      {providers.filter((id) => id !== "server").length > 0 && (
         <details>
           <summary>Provedor e modelo</summary>
           <div className="field-pair">
@@ -247,9 +247,8 @@ export function ProviderTools({
         </p>
       )}
       <p className="field-help">
-        Endpoint, chave e modelo ficam no serviço, fora do navegador. Custos
-        reais dependem do provedor e não estão incluídos nas estimativas da
-        demo.
+        Cada geração consome créditos do seu plano. O uso por marca aparece em
+        Configurações › Plano e uso.
       </p>
     </section>
   );

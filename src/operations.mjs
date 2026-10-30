@@ -594,7 +594,7 @@ export function evaluateCouncil(state, piece) {
   const maxLine = Math.max(...text.split("\n").map((l) => l.length), 0);
   let timing=null, durationError='';
   try { const settings=productionSettings({...piece.brief,format:piece.format}); if(settings.video)timing=scriptTiming(text,{...piece.brief,format:piece.format}); } catch(error){durationError=error.message;}
-  const issues=editorialIssues({body:text,format:piece.format,brief:piece.brief,brand:{name:state.workspaces?.find(w=>w.id===piece.workspace)?.name},sources:sourceList});
+  const issues=editorialIssues({body:text,format:piece.format,brief:piece.brief,brand:(({name,aliases})=>({name,aliases}))(state.workspaces?.find(w=>w.id===piece.workspace)||{}),sources:sourceList});
   if(durationError)issues.push({code:'duration',message:durationError});
   const checks = [
     {

@@ -161,3 +161,12 @@ test("kanban drops map to workflow actions, and going back from approval needs c
   assert.throws(() => removePiece(state, "d"), /desdobramentos/);
   assert.throws(() => removePiece({ ...state, role: "Aprovador" }, "r"), /Editor/);
 });
+
+test("the send gate reads the brand with its other names, like generation does", () => {
+  const base = initialState();
+  const piece = { ...base.pieces[0], workspace: "w1", format: "LinkedIn", sourceIds: [], brief: { format: "LinkedIn", brandName: "Escritório de advocacia" }, body: "O Atlas mostra por que o intervalo entre a petição e a sentença decide quem cresce. ".repeat(6) };
+  const stateWith = (aliases) => ({ ...base, workspace: "w1", workspaces: [{ id: "w1", name: "Escritório de advocacia", aliases }], sources: [] });
+  const brandBlocked = (state) => evaluateCouncil(state, piece).checks.some((c) => c.blocker && /marca que está produzindo/.test(c.reason));
+  assert.equal(brandBlocked(stateWith([])), true, "without the other name the text does not mention the brand");
+  assert.equal(brandBlocked(stateWith(["Atlas"])), false, "the other name set on the brand counts");
+});

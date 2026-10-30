@@ -232,6 +232,8 @@ export function WritingStudio() {
             "Rascunho salvo com pendências. Corrija os pontos indicados antes de enviar.",
             true,
           );
+          // The checks sit below the text: bring them into view so the person sees what to fix.
+          setTimeout(() => document.querySelector(".r-council")?.scrollIntoView({ behavior: "smooth", block: "center" }), 150);
           return;
         }
         next = transition(next, id, "review");
