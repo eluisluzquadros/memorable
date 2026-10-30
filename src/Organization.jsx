@@ -7,6 +7,7 @@ import {Contributors} from './Contributors';
 import {GroupDNA} from './GroupDNA';
 import {Subtabs,Subpanel,useSubtab} from './Subtabs';
 import {useAiSpend,usd,sinceLabel} from './AiBudget';
+import {useCurrency} from './CurrencyControls';
 const reviewCount=pieces=>pieces.filter(p=>p.status==='Em revisão').length;
 
 function BrandRow({brand,state,setState,notify,onOpen}){
@@ -51,6 +52,7 @@ export function GroupOverview(){
   const {state,account,goto,changeWorkspace}=useContext(AppContext);
   const brands=workspaceList(state),ids=new Set(brands.map(w=>w.id)),pieces=state.pieces.filter(p=>ids.has(p.workspace));
   // Real AI spend of the whole account in the budget period; calls made before per-brand tracking (or without a brand) count only in the total.
+  useCurrency();
   const spend=useAiSpend(state.aiBudget?.amount),unassigned=spend?.byWorkspace?.['']||0;
   const spendHelp=spend?`desde ${sinceLabel(spend.since)} · real${unassigned>=0.005?` · ${usd(unassigned)} sem marca`:''}`:account?'carregando…':'disponível com conta';
   return <div className="organization-page"><div className="page-heading"><div><h1>{state.organizationName || 'Grupo BBMD'}</h1><p>Acompanhe todas as marcas. Abra uma delas para pesquisar, criar e revisar no contexto certo.</p></div><button className="button secondary" onClick={()=>goto('organizacao')}>Gerenciar marcas <ArrowRight size={16}/></button></div>

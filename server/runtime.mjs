@@ -21,6 +21,7 @@ import { PORT, HOST, APP_ORIGIN, ALLOWED_ORIGINS, clientAddress, canonicalRedire
 import { openDb, usingPostgres } from './sql.mjs';
 import { createTasks, bufferedRequest, capturedResponse } from './tasks.mjs';
 import { createLabStore, labView, canOpenRun, generationSetups, billCheck } from './lab.mjs';
+import { createFx } from './fx.mjs';
 import { writerFor } from '../src/model-roles.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // In the cloud this service also delivers the built screens (npm run build → dist/), so pages and API share one address.
@@ -69,6 +70,7 @@ async function budgetStatus(user) {
 }
 const BUDGET_ROUTES = new Set(["/api/squad", "/api/production", "/api/council", "/api/refine", "/api/video-scripts/generate", "/api/brand-dna", "/api/group-coherence", "/api/radar/analyse"]);
 const lab = createLabStore(path.join(dataDir, 'lab.sqlite'));
+const fx = createFx();
 // Each role can run on its own model: the account's choice first, then MEMORABLE_MODEL_<ROLE>, then the default.
 const ROLE_ENV = { writer: 'MEMORABLE_MODEL_WRITER', reviewer: 'MEMORABLE_MODEL_REVIEWER', judge: 'MEMORABLE_MODEL_JUDGE' };
 function roleModelName(role, requested) {
@@ -345,6 +347,8 @@ async function handle(req, res) {
       const configured = user ? (await integrations.status(user.id)).connections.filter(c => ['anthropic','openai','gemini'].includes(c.provider) && c.configured).map(c => c.provider) : [];
       return send(res,200,{authenticated:!!user, serverModel:providerReady()?serverModelName():null, modelChoice:modelChoice(), providers:[...(providerReady() ? ['server'] : []),...configured]});
     }
+    // Public: the dollar-to-real rate the screens use to show costs in reais.
+    if (req.method === 'GET' && url.pathname === '/api/fx') return send(res, 200, await fx());
     if (req.method === 'GET' && url.pathname === '/api/budget') {
       const user = await accounts.lookup(req);
       if (!user) return send(res, 401, { error: 'Entre na sua conta para ver o orçamento.' });

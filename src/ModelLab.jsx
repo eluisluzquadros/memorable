@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./lab.css";
+import { formatMoney, toDisplay, toUsd, rateNote } from "./currency.mjs";
+import { useCurrency } from "./CurrencyControls";
 
 // Model lab: which model does each job best for what it costs, measured by blind judges, and the
 // three profiles that come out of it. Method in docs/BENCHMARK_STRATEGY.md.
@@ -8,7 +10,8 @@ const PROFILES = [["essencial", "Essencial", "O modelo qualificado mais barato"]
 const STATUS = { done: "Concluída", running: "Em andamento", paused: "Pausada", awaiting_credit: "Aguardando crédito", failed: "Falhou" };
 // Numbers in Brazilian Portuguese: comma decimals.
 const num = (v, digits = 2) => (Number.isFinite(v) ? v.toLocaleString("pt-BR", { minimumFractionDigits: digits, maximumFractionDigits: digits }) : "—");
-const usd = (v, digits = 4) => (Number.isFinite(v) ? `US$ ${num(v, digits)}` : "—");
+// Costs arrive in dollars (what the providers charge) and are shown in the currency the person chose.
+const usd = (v, digits = 4) => formatMoney(v, digits);
 const short = (model) => model.split("/").pop();
 
 function QualityCostChart({ rows, picks, floor }) {
@@ -33,7 +36,7 @@ function QualityCostChart({ rows, picks, floor }) {
         <line className="lab-floor" x1={pad.l} x2={W - pad.r} y1={y(floor)} y2={y(floor)} />
         <text className="lab-axis lab-floor-label" x={W - pad.r} y={y(floor) - 6} textAnchor="end">piso {num(floor, 1)}</text>
         {ticks.map((t) => (
-          <text key={t} className="lab-axis" x={x(t)} y={H - pad.b + 18} textAnchor="middle">{`US$ ${num(t, t < 0.01 ? 3 : t < 0.1 ? 2 : 1)}`}</text>
+          <text key={t} className="lab-axis" x={x(t)} y={H - pad.b + 18} textAnchor="middle">{formatMoney(t, toDisplay(t) < 0.01 ? 3 : toDisplay(t) < 1 ? 2 : 1)}</text>
         ))}
         <text className="lab-axis" x={(W + pad.l) / 2} y={H - 6} textAnchor="middle">custo por texto (escala logarítmica)</text>
         {rows.filter((r) => r.cost > 0 && Number.isFinite(r.mean)).map((r) => {
@@ -68,6 +71,8 @@ function QualityCostChart({ rows, picks, floor }) {
 }
 
 function Simulator({ rows, picks }) {
+  const current = useCurrency();
+  // The budget is kept in dollars and shown in the chosen currency.
   const [budget, setBudget] = useState(20);
   const [period, setPeriod] = useState("mês");
   const [volume, setVolume] = useState(40);
@@ -78,7 +83,7 @@ function Simulator({ rows, picks }) {
     <section className="r-panel lab-sim">
       <h3>Quanto o seu orçamento compra</h3>
       <div className="field-pair">
-        <label>Orçamento (US$)<input type="number" min="0" step="1" value={budget} onChange={(e) => setBudget(Math.max(0, Number(e.target.value)))} /></label>
+        <label>Orçamento ({current.symbol})<input type="number" min="0" step="1" value={Math.round(toDisplay(budget) * 100) / 100} onChange={(e) => setBudget(Math.max(0, toUsd(Number(e.target.value))))} /></label>
         <label>Período<select value={period} onChange={(e) => setPeriod(e.target.value)}><option>semana</option><option>mês</option></select></label>
         <label>Textos no período<input type="number" min="1" step="1" value={volume} onChange={(e) => setVolume(Math.max(1, Number(e.target.value)))} /></label>
       </div>
@@ -201,6 +206,7 @@ function RunDetail({ id }) {
 }
 
 export function ModelLab() {
+  const current = useCurrency();
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const task = "redator";
@@ -233,6 +239,7 @@ export function ModelLab() {
         <div className="r-tabs lab-formats" role="tablist" aria-label="Tipo de conteúdo">
           {["Geral", ...formats].map((name) => <button key={name} type="button" role="tab" aria-selected={view === name} onClick={() => setView(name)}>{name}</button>)}
         </div>
+        <p className="field-help">Valores em {current.currency === "BRL" ? "reais" : "dólares"}; os provedores cobram em dólar. {rateNote(current)}.</p>
         {data.access === "public" && <p className="field-help lab-public">Benchmark público: notas, custos e tempos de cada modelo. Os textos ficam só com as contas que os produziram.</p>}
       </section>
       <BenchmarkStats stat={stat} delivered={delivered} view={view} />

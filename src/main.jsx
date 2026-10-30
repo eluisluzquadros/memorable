@@ -101,6 +101,7 @@ import { SourceMetadata,SourceRefresh, SourceDelete, PublicationControls, Result
 import { Campaigns, PieceLineage } from "./Campaigns";
 import { AccountRoot } from './Account';
 import { ThemeSwitch, ThemeSetting } from "./ThemeSwitch";
+import { CurrencySwitch, CurrencySetting } from "./CurrencyControls";
 import { StageRail } from "./StageRail";
 import { Subtabs, Subpanel, useSubtab } from "./Subtabs";
 import { RefinePanel } from "./RefinePanel";
@@ -781,6 +782,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
               </div>
               <div className="topbar-right">
                 <ThemeSwitch />
+                <CurrencySwitch />
                 <button className="tour-launcher" onClick={startTour} aria-label="Tour guiado" title="Repetir tour guiado"><Compass size={17}/><span>Tour guiado</span></button>
                 {account ? <><span className={syncStatus === "Salvo" ? "sr-only" : "account-sync"} role="status">{syncStatus}</span><button className="text-button" onClick={onLogout}>Sair da conta</button></> : <a className="text-button" href="#auth">Entrar / Criar conta</a>}
                 <span className="demo-indicator">
@@ -1940,6 +1942,7 @@ function Configuracoes() {
           <p>Claro em papel ou escuro como o estúdio da landing. Seguindo o sistema, a plataforma acompanha o modo do seu computador.</p>
         </div>
         <ThemeSetting />
+        <CurrencySetting />
       </section></Subpanel>}
       {tab === "conexoes" && <Subpanel id="conexoes"><Connections /></Subpanel>}
       {tab === "orcamento" && <Subpanel id="orcamento"><div className="settings-layout settings-single">

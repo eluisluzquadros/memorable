@@ -331,6 +331,10 @@ select option {
 .theme-switch:hover {
   background: var(--surface-3);
 }
+.currency-switch b {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
 
 /* Signature: the landing's step rail, here showing where a content piece stands */
 .stage-rail {
@@ -490,6 +494,10 @@ select option {
   }
   .theme-switch span {
     display: none;
+  }
+  .currency-switch b {
+    min-width: 24px;
+    text-align: center;
   }
   .app-topbar .demo-indicator {
     display: none;

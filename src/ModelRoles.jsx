@@ -1,6 +1,8 @@
 import React, { useContext, useEffect, useState } from "react";
 import { AppContext } from "./context";
 import { profileWriters } from "./model-roles.mjs";
+import { formatMoney } from "./currency.mjs";
+import { useCurrency } from "./CurrencyControls";
 
 const ROLES = [
   ["writer", "Redator", "Escreve as versões e aplica as recomendações do refino."],
@@ -11,11 +13,13 @@ const family = (id = "") => id.split("/")[0];
 const PROFILES = [["essencial", "Essencial"], ["equilibrado", "Equilibrado"], ["excelencia", "Excelência"]];
 const short = (id = "") => id.split("/").pop();
 const num = (v) => v.toFixed(2).replace(".", ",");
-const price = (m) => (m.input != null && m.output != null ? ` · US$ ${Number(m.input).toFixed(2)} / ${Number(m.output).toFixed(2)} por 1M tokens` : "");
+// Prices arrive in dollars per million tokens; shown in the chosen currency ("R$ 5,40 / 27,00 por 1M tokens").
+const price = (m) => (m.input != null && m.output != null ? ` · ${formatMoney(Number(m.input), 2)} / ${formatMoney(Number(m.output), 2).replace(/^[^d]+/, "")} por 1M tokens` : "");
 
 // Which model plays each role. The account's choice wins over the service defaults.
 export function ModelRoles() {
   const { state, setState, notify } = useContext(AppContext);
+  useCurrency();
   const [catalog, setCatalog] = useState(null);
   const [error, setError] = useState("");
   const [lab, setLab] = useState(null);
@@ -95,7 +99,7 @@ export function ModelRoles() {
               const label = (model) => {
                 const names = PROFILES.filter(([id]) => picks?.[id] === model).map(([, n]) => n).join(" e ");
                 const r = row(model);
-                return `${names} · ${short(model)}${r ? ` · nota ${num(r.mean)} · US$ ${r.cost.toFixed(4).replace(".", ",")} por texto` : ""}`;
+                return `${names} · ${short(model)}${r ? ` · nota ${num(r.mean)} · ${formatMoney(r.cost, 4)} por texto` : ""}`;
               };
               return (
                 <li key={format}>
