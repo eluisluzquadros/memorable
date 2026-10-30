@@ -102,6 +102,7 @@ import { Campaigns, PieceLineage } from "./Campaigns";
 import { AccountRoot } from './Account';
 import { ThemeSwitch, ThemeSetting } from "./ThemeSwitch";
 import { CurrencySwitch, CurrencySetting } from "./CurrencyControls";
+import { PlatformAdmin } from "./PlatformAdmin";
 import { StageRail } from "./StageRail";
 import { Subtabs, Subpanel, useSubtab } from "./Subtabs";
 import { RefinePanel } from "./RefinePanel";
@@ -128,7 +129,8 @@ const groupNavItems = [
   ["grupo", "Visão geral do grupo", LayoutDashboard],
   ["agentes", "Time de agentes", Users],
 ];
-const GROUP_ROUTES = ["grupo", "agentes", "configuracoes", "organizacao"];
+const adminNavItem = ["admin", "Admin Memorável", ShieldCheck];
+const GROUP_ROUTES = ["grupo", "agentes", "configuracoes", "organizacao", "admin"];
 const money = (n) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
     n || 0,
@@ -502,7 +504,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
   };
   const pageTitle =
     (groupScope && groupNavItems.find((i) => i[0] === route)?.[1]) ||
-    navItems.find((i) => i[0] === route)?.[1] || (route==='organizacao'?'Organização e marcas':'Configurações');
+    navItems.find((i) => i[0] === route)?.[1] || (route==='organizacao'?'Organização e marcas':route==='admin'?'Admin Memorável':'Configurações');
   const pieceTable = (list, compact = false) => (
     <div className="table-wrap">
       <table className="piece-table">
@@ -578,7 +580,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
   );
   const activeSource = sources.find((s) => s.id === selectedSource);
   const contentRoute = tourOpen ? tourOrigin.current : route;
-  const renderPage = page => page === 'grupo' ? <GroupOverview/> : page === 'organizacao' ? <OrganizationSettings/> : page === 'painel' ? <Dashboard/> : page === 'guardar' ? <Guardar/> : page === 'vigiar' ? <Radar/> : page === 'escrever' ? <Writer/> : page === 'campanhas' ? <Campaigns/> : page === 'kanban' ? <Kanban/> : page === 'resultados' ? <Results/> : page === 'portfolio' ? <Portfolio/> : page === 'agentes' ? <Squad/> : page === 'aprovar' ? <Aprovar/> : page === 'publicar' ? <Publicar/> : page === 'caderno' ? <Caderno/> : page === 'cerebro' ? <SecondBrain/> : <Configuracoes/>;
+  const renderPage = page => page === 'grupo' ? <GroupOverview/> : page === 'organizacao' ? <OrganizationSettings/> : page === 'painel' ? <Dashboard/> : page === 'guardar' ? <Guardar/> : page === 'vigiar' ? <Radar/> : page === 'escrever' ? <Writer/> : page === 'campanhas' ? <Campaigns/> : page === 'kanban' ? <Kanban/> : page === 'resultados' ? <Results/> : page === 'portfolio' ? <Portfolio/> : page === 'agentes' ? <Squad/> : page === 'admin' ? (account?.platformAdmin ? <PlatformAdmin/> : <Dashboard/>) : page === 'aprovar' ? <Aprovar/> : page === 'publicar' ? <Publicar/> : page === 'caderno' ? <Caderno/> : page === 'cerebro' ? <SecondBrain/> : <Configuracoes/>;
   useEffect(() => {
     let dismissed = tourDismissed.current;
     try { dismissed ||= sessionStorage.getItem(tourSessionKey) === 'true'; } catch {}
@@ -701,7 +703,7 @@ function App({ account, initialData, persist, syncStatus, onLogout }) {
             </button>
             <nav aria-label="Plataforma">
               {groupScope && <div className="nav-group-label">ACOMPANHAMENTO DO GRUPO</div>}
-              {(groupScope ? groupNavItems : navItems.filter(([id]) => id !== "grupo")).map(([id, name, Icon], i) => (
+              {[...(groupScope ? groupNavItems : navItems.filter(([id]) => id !== "grupo")), ...(account?.platformAdmin ? [adminNavItem] : [])].map(([id, name, Icon], i) => (
                 <React.Fragment key={id}>
                   {!groupScope && id === 'campanhas' && <div className="nav-group-label">PLANEJAMENTO</div>}
                   {id === 'guardar' && <div className="nav-group-label">PRODUÇÃO DE CONTEÚDO</div>}

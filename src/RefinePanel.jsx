@@ -37,7 +37,7 @@ export function RefinePanel({ piece, canEdit, onApplied }) {
       const response = await longFetch("/api/refine", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ packet: refinePacket(state, piece), piece: { title: piece.title, format: piece.format, body: piece.body }, roles: state.modelRoles || {} }),
+        body: JSON.stringify({ packet: refinePacket(state, piece), piece: { title: piece.title, format: piece.format, body: piece.body } }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Serviço de IA indisponível.");

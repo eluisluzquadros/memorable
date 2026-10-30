@@ -7,9 +7,7 @@ import { productionSettings, DURATION_OPTIONS, durationLabel, scriptTiming } fro
 import { BrandDNA } from "./BrandDNA";
 import { CampaignBrief } from "./Campaigns";
 import { SuggestionInbox } from "./SuggestionInbox";
-import { ModelRoles } from "./ModelRoles";
-import { ModelLab } from "./ModelLab";
-import { Subtabs, Subpanel, useSubtab } from "./Subtabs";
+import { Subpanel } from "./Subtabs";
 import React, { useContext, useEffect, useState } from "react";
 import {
   ArrowRight,
@@ -1350,20 +1348,17 @@ function Delivery({ data }) {
 export function Squad() {
   const { state, setState, notify } = useApp();
   const [config, setConfig] = useState(state.agentConfig);
-  const [tab, setTab] = useSubtab("agentes", ["time", "laboratorio"]);
   return (
     <>
       <Heading
         title="Um time de especialistas para a sua marca."
         text="Pesquisa, estratégia, redação, roteiro e revisão trabalham juntos, com as fontes, a voz e as decisões da sua marca."
       />
-      <Subtabs label="Time de agentes" items={[["time", "Time"], ["laboratorio", "Laboratório"]]} value={tab} onChange={setTab} />
-      {tab === "laboratorio" ? <Subpanel id="laboratorio"><ModelLab /></Subpanel> : <Subpanel id="time">
+      <Subpanel id="time">
       <Note>
         Em Escrever, o time usa a IA da plataforma (OpenRouter), sem conectar nada; Claude, OpenAI ou Gemini da sua conta são opcionais. O time compartilha fontes, contexto da marca e critérios validados. Imagens e vídeos são gerados separadamente no estúdio de mídia.
       </Note>
       <section className="r-panel agent-method"><h2>Como o time trabalha</h2><p>Pesquisa com intenção, contribuição própria, referências consistentes e revisão humana. Os métodos orientam os prompts usados pelos agentes.</p><div>{PLAYBOOKS.map(method=><article key={method.id}><h3>{method.title}</h3><p>{method.text}</p></article>)}</div></section>
-      <ModelRoles />
       <div className="r-phase-grid">
         {[1, 2, 3, 4].map((phase, i) => (
           <section className="r-phase" key={phase}>
@@ -1484,7 +1479,7 @@ export function Squad() {
           )}
         </section>
       </div>
-      </Subpanel>}
+      </Subpanel>
     </>
   );
 }

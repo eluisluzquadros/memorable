@@ -14,12 +14,14 @@ const PROFILES = [["essencial", "Essencial"], ["equilibrado", "Equilibrado"], ["
 const short = (id = "") => id.split("/").pop();
 const num = (v) => v.toFixed(2).replace(".", ",");
 // Prices arrive in dollars per million tokens; shown in the chosen currency ("R$ 5,40 / 27,00 por 1M tokens").
-const price = (m) => (m.input != null && m.output != null ? ` · ${formatMoney(Number(m.input), 2)} / ${formatMoney(Number(m.output), 2).replace(/^[^d]+/, "")} por 1M tokens` : "");
+const price = (m) => (m.input != null && m.output != null ? ` · ${formatMoney(Number(m.input), 2)} / ${formatMoney(Number(m.output), 2).replace(/^[^\d]+/, "")} por 1M tokens` : "");
 
 // Which model plays each role. The account's choice wins over the service defaults.
 export function ModelRoles() {
-  const { state, setState, notify } = useContext(AppContext);
+  const { notify } = useContext(AppContext);
   useCurrency();
+  // The policy is the platform's: one for every account, saved on the server (only administrators reach it).
+  const [policy, setPolicy] = useState(null);
   const [catalog, setCatalog] = useState(null);
   const [error, setError] = useState("");
   const [lab, setLab] = useState(null);
@@ -28,24 +30,32 @@ export function ModelRoles() {
     fetch("/api/lab").then((r) => (r.ok ? r.json() : null)).then((d) => setLab(d?.summary || null)).catch(() => {});
   }, []);
   useEffect(() => {
+    fetch("/api/platform/models").then((r) => r.json()).then((d) => setPolicy(d.policy || {})).catch(() => setError("Serviço local indisponível."));
+  }, []);
+  useEffect(() => {
     fetch("/api/models")
       .then((r) => r.json())
       .then(setCatalog)
       .catch(() => setError("Serviço local indisponível."));
   }, []);
-  const roles = state.modelRoles || {};
-  const admin = state.role === "Administrador";
+  const roles = policy || {};
+  const admin = policy !== null;
   const chosen = (role) => roles[role] || catalog?.roleDefaults?.[role] || catalog?.defaultModel;
   const sameFamily = catalog?.roleDefaults && family(chosen("judge")) === family(chosen("writer"));
-  const change = (role, value) => {
-    setState((s) => ({ ...s, modelRoles: { ...(s.modelRoles || {}), [role]: value || undefined } }));
-    notify("Modelo da função atualizado. Vale para as próximas gerações e refinos.");
+  const save = async (next, message) => {
+    try {
+      const response = await fetch("/api/platform/models", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ policy: next }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+      setPolicy(data.policy);
+      notify(message);
+    } catch (e) {
+      notify(e.message || "Não foi possível salvar.", true);
+    }
   };
+  const change = (role, value) => save({ ...roles, [role]: value || undefined }, "Modelo da função atualizado para todas as contas. Vale para as próximas gerações e refinos.");
   const inCatalog = (model) => catalog?.models?.some((m) => m.id === model && m.available !== false);
-  const setWriters = (writerByFormat, message) => {
-    setState((s) => ({ ...s, modelRoles: { ...(s.modelRoles || {}), writerByFormat } }));
-    notify(message);
-  };
+  const setWriters = (writerByFormat, message) => save({ ...roles, writerByFormat }, message);
   const setFormatWriter = (format, model) => {
     const next = { ...(roles.writerByFormat || {}) };
     if (model) next[format] = model; else delete next[format];
@@ -58,7 +68,7 @@ export function ModelRoles() {
   return (
     <section className="r-panel mr-panel">
       <h2>Quem faz o quê</h2>
-      <p>Cada função do time pode usar um modelo diferente. Quem escreve não deve ser quem avalia: compare qualidade, tempo e preço antes de trocar.</p>
+      <p>Cada função do time pode usar um modelo diferente, e a escolha vale para todas as contas: os clientes não escolhem modelo. Quem escreve não deve ser quem avalia: compare qualidade, tempo e preço antes de trocar.</p>
       {error && <p className="form-error">{error}</p>}
       {catalog && !catalog.roleDefaults && <p className="field-help">Configure um provedor de IA no serviço para escolher modelos.</p>}
       {catalog?.roleDefaults && (
@@ -121,7 +131,6 @@ export function ModelRoles() {
       )}
       {catalog?.roleDefaults && !catalog.modelChoice && <p className="field-help">O serviço usa Claude direto na Anthropic; a escolha por função exige o OpenRouter.</p>}
       {sameFamily && <p className="mr-warning">O juiz cego é da mesma família do redator ({family(chosen("writer"))}). Prefira outra família para que ele não favoreça o próprio estilo.</p>}
-      {!admin && <p className="field-help">Somente o papel Administrador altera os modelos.</p>}
     </section>
   );
 }

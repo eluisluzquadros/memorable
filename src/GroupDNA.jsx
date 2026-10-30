@@ -39,7 +39,6 @@ export function GroupDNA() {
             const dna = state.brandDNA?.[w.id];
             return { name: w.name, voice: state.voices?.[w.id] || {}, dna: dna ? { positioning: dna.positioning || "", revision: dna.revision } : null };
           }),
-          roles: state.modelRoles || {},
         }),
       });
       const data = await response.json().catch(() => ({}));

@@ -220,20 +220,15 @@ export function labSummary(items, runs, floor = FLOOR) {
   };
 }
 
-// Who sees what. Everyone sees the public benchmark: scores, costs and times per model and content type.
-// The texts, briefs and the reasons a piece left the totals stay with the accounts whose material the round
-// used (config.accounts), which can open each round.
-export const canOpenRun = (run, viewerId) => Boolean(viewerId) && (run?.config?.accounts || []).includes(viewerId);
-export function labView(items, runs, viewerId) {
+// What the platform team sees: every round with its texts, the totals and what the benchmark cost.
+// The benchmark is internal to Memorável (calibration, pricing, investors): the route that serves this
+// view is open only to platform administrators, so nothing here is trimmed for other readers.
+export function labView(items, runs) {
   const summary = labSummary(items, runs);
-  const mine = new Set(runs.filter((r) => canOpenRun(r, viewerId)).map((r) => r.id));
   const outputs = (id) => items.filter((i) => i.run_id === id).length;
   return {
-    access: mine.size ? "owner" : "public",
-    runs: runs.map((r) => mine.has(r.id)
-      ? { ...r, outputs: outputs(r.id), open: true }
-      : { id: r.id, experiment: r.experiment, title: r.title, task: r.task, status: r.status, spent_usd: r.spent_usd, budget_usd: r.budget_usd, created_at: r.created_at, outputs: outputs(r.id), open: false }),
-    summary: { ...summary, excluded: summary.excluded.filter((e) => mine.has(e.run)), excludedCount: summary.excluded.length },
+    runs: runs.map((r) => ({ ...r, outputs: outputs(r.id), open: true })),
+    summary: { ...summary, excludedCount: summary.excluded.length },
     stats: labStats(items, runs),
   };
 }

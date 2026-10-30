@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createLabStore, startRound, labSummary, labStats, labView, canOpenRun, transientError, generationSetups, billCheck } from "../server/lab.mjs";
+import { createLabStore, startRound, labSummary, labStats, labView, transientError, generationSetups, billCheck } from "../server/lab.mjs";
 import { createObservability } from "../server/observability.mjs";
 import os from "node:os";
 import fs from "node:fs";
@@ -122,23 +122,16 @@ test("benchmark stats: spending counts every paid call, quality only the ranked 
   assert.deepEqual(Object.keys(byFormat), ["LinkedIn"]);
 });
 
-test("the public benchmark shows numbers; texts, briefs and reasons stay with the accounts that produced them", () => {
-  const runs = [{ id: "r", experiment: "E", title: "Rodada", task: "redator", status: "done", spent_usd: 1, config: { accounts: ["dono"], briefs: [{ id: "a", title: "Pauta sigilosa", format: "LinkedIn" }, { id: "bad", format: "LinkedIn" }], excludedBriefs: [{ id: "bad", reason: "motivo interno" }] } }];
-  const items = [{ run_id: "r", brief_id: "a", role: "redator", model: "m", status: "done", mean: 4.2, cost_usd: 0.01, output: { body: "texto do cliente" } }];
-  const pub = labView(items, runs, "outra-conta");
-  assert.equal(pub.access, "public");
-  assert.equal(pub.runs[0].config, undefined);
-  assert.equal(pub.runs[0].open, false);
-  assert.deepEqual(pub.summary.excluded, []);
-  assert.equal(pub.summary.excludedCount, 1);
-  assert.ok(!JSON.stringify(pub).includes("texto do cliente") && !JSON.stringify(pub).includes("Pauta sigilosa") && !JSON.stringify(pub).includes("motivo interno"));
-  assert.equal(pub.summary.models[0].mean, 4.2, "the scores are public");
-  const own = labView(items, runs, "dono");
-  assert.equal(own.access, "owner");
-  assert.equal(own.runs[0].config.briefs[0].title, "Pauta sigilosa");
-  assert.equal(own.summary.excluded[0].reason, "motivo interno");
-  assert.equal(canOpenRun(runs[0], "dono"), true);
-  assert.equal(canOpenRun(runs[0], undefined), false);
+test("the lab view carries everything the platform team needs: rounds with their texts, totals, excluded pieces", () => {
+  const runs = [{ id: "r", experiment: "E", title: "Rodada", task: "redator", status: "done", spent_usd: 1, config: { briefs: [{ id: "a", title: "Pauta", format: "LinkedIn" }, { id: "bad", format: "LinkedIn" }], excludedBriefs: [{ id: "bad", reason: "motivo interno" }] } }];
+  const items = [{ run_id: "r", brief_id: "a", role: "redator", model: "m", status: "done", mean: 4.2, cost_usd: 0.01, output: { body: "texto" } }];
+  const view = labView(items, runs);
+  assert.equal(view.runs[0].open, true);
+  assert.equal(view.runs[0].config.briefs[0].title, "Pauta");
+  assert.equal(view.summary.excluded[0].reason, "motivo interno");
+  assert.equal(view.summary.excludedCount, 1);
+  assert.equal(view.summary.models[0].mean, 4.2);
+  assert.ok(view.stats.overall.spent > 0);
 });
 
 test("network drops and rate limits are always retried; a model's own failure is kept as a result", () => {

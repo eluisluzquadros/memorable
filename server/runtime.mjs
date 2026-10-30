@@ -20,8 +20,9 @@ import { ingestFile, ingestUrl, sourceKind } from './ingestion.mjs';
 import { PORT, HOST, APP_ORIGIN, ALLOWED_ORIGINS, clientAddress, canonicalRedirect } from "./config.mjs";
 import { openDb, usingPostgres } from './sql.mjs';
 import { createTasks, bufferedRequest, capturedResponse } from './tasks.mjs';
-import { createLabStore, labView, canOpenRun, generationSetups, billCheck } from './lab.mjs';
+import { createLabStore, labView, generationSetups, billCheck } from './lab.mjs';
 import { createFx } from './fx.mjs';
+import { createPlatform } from './platform.mjs';
 import { writerFor } from '../src/model-roles.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // In the cloud this service also delivers the built screens (npm run build → dist/), so pages and API share one address.
@@ -111,6 +112,8 @@ async function catalogWithPrices() {
 // Collected references and radar schedules: one JSON value in service_state (Postgres in the cloud,
 // .runtime/service.sqlite locally). The old monitoring.json is imported once.
 const serviceState = openDb(path.join(dataDir, "service.sqlite"), "PRAGMA journal_mode=WAL; CREATE TABLE IF NOT EXISTS service_state (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL);");
+const platform = createPlatform(serviceState);
+const isKnownModel = (id) => LLM_CATALOG.some((m) => m.id === id);
 const legacyMonitoring = path.join(dataDir, "monitoring.json");
 let db = { schedules: {}, sources: [], runs: [] };
 let savedMonitoring;
@@ -158,7 +161,10 @@ async function read(req) {
     if (Buffer.byteLength(text) > (req.url === '/api/account/state' ? 9 * 1024 * 1024 : req.url === '/api/ingest/file' ? 36 * 1024 * 1024 : 500000))
       throw new Error("Requisição excede o limite de tamanho.");
   }
-  return JSON.parse(text || "{}");
+  const input = JSON.parse(text || "{}");
+  // Customers do not choose models: whatever the browser sends is replaced by the platform's own policy.
+  if (input && typeof input === "object" && !Array.isArray(input)) input.roles = await platform.modelPolicy();
+  return input;
 }
 async function run(workspace, sources,ownerId=null) {
   const key=scopeKey(workspace,ownerId);
@@ -318,7 +324,7 @@ async function handle(req, res) {
     }
     if (url.pathname.startsWith('/api/auth/') || url.pathname.startsWith('/api/account/')) {
       const user=await accounts.lookup(req);
-      if(req.method==='GET' && url.pathname==='/api/auth/session') return send(res,200,{user});
+      if(req.method==='GET' && url.pathname==='/api/auth/session') return send(res,200,{user:user&&{...user,platformAdmin:await platform.isAdmin(user)}});
       if(url.pathname==='/api/account/backup') {
         if(!user)return send(res,401,{error:'Entre na sua conta para acessar a cópia.'});
         return send(res,200,{backup:await accounts.backup(user)});
@@ -330,7 +336,7 @@ async function handle(req, res) {
       }
       if(req.method==='POST' && ['/api/auth/login','/api/auth/register'].includes(url.pathname)) {
         const result=await accounts.authenticate(await read(req),url.pathname.endsWith("/register"),clientAddress(req));
-        await accounts.revoke(req);res.setHeader('Set-Cookie',sessionCookie(result.token));return send(res,200,{user:result.user});
+        await accounts.revoke(req);res.setHeader('Set-Cookie',sessionCookie(result.token));return send(res,200,{user:{...result.user,platformAdmin:await platform.isAdmin(result.user)}});
       }
       if(req.method==='POST' && url.pathname==='/api/auth/logout') {await accounts.revoke(req);res.setHeader('Set-Cookie',sessionCookie(''));return send(res,200,{ok:true});}
       return send(res,405,{error:'Método indisponível.'});
@@ -354,23 +360,25 @@ async function handle(req, res) {
       if (!user) return send(res, 401, { error: 'Entre na sua conta para ver o orçamento.' });
       return send(res, 200, await budgetStatus(user));
     }
-    // Model lab: platform-wide benchmark results, read by signed-in accounts.
-    if (req.method === 'GET' && (url.pathname === '/api/lab' || url.pathname === '/api/lab/run')) {
-      // The public benchmark needs no account; a round's texts open only for the accounts that produced them.
+    // The platform's own area (benchmark, models, costs): only the team that runs Memorável.
+    if (url.pathname.startsWith('/api/lab') || url.pathname === '/api/models' || url.pathname.startsWith('/api/platform/')) {
       const viewer = await accounts.lookup(req);
+      if (!viewer) return send(res, 401, { error: 'Entre na sua conta.' });
+      if (!(await platform.isAdmin(viewer))) return send(res, 403, { error: 'Esta área é da equipe da Memorável.' });
+    }
+    if (req.method === 'GET' && (url.pathname === '/api/lab' || url.pathname === '/api/lab/run')) {
       if (url.pathname === '/api/lab/run') {
         const run = await lab.run(url.searchParams.get('id') || '');
         if (!run) return send(res, 404, { error: 'Rodada não encontrada.' });
-        if (!canOpenRun(run, viewer?.id)) return send(res, 403, { error: 'Os textos desta rodada ficam com a conta que os produziu. O benchmark público mostra só notas, custos e tempos.' });
         return send(res, 200, { run, items: await lab.items(run.id) });
       }
-      const runs = await lab.runs(), view = labView(await lab.allItems(), runs, viewer?.id);
-      // Whole generations on the platform (last 30 days), grouped by the models used: public, no account data.
+      const runs = await lab.runs(), view = labView(await lab.allItems(), runs);
+      // Whole generations on the platform (last 30 days), grouped by the models used.
       const generations = generationSetups(await observability.generations({ since: new Date(Date.now() - 30 * 86400000).toISOString() }));
-      // The check against OpenRouter's bill is for the accounts that own the benchmark.
-      const bill = view.access === 'owner' ? billCheck(await providerUsage(), runs, await observability.recorded()) : null;
+      const bill = billCheck(await providerUsage(), runs, await observability.recorded());
       return send(res, 200, { ...view, generations, bill, prices: await catalogWithPrices() });
     }
+    if (req.method === 'GET' && url.pathname === '/api/platform/models') return send(res, 200, { policy: await platform.modelPolicy() });
     if (req.method === 'GET' && url.pathname === '/api/models') return send(res,200,{ modelChoice:modelChoice(), defaultModel:providerReady()?serverModelName():null, roleDefaults:roleDefaults(), models:await catalogWithPrices() });
     if (req.method === 'GET' && url.pathname === '/api/observability') {
       const user = await accounts.lookup(req);
@@ -406,10 +414,11 @@ async function handle(req, res) {
       if (input.provider && input.provider !== 'server') {
         if (!user) return send(res,401,{error:'Entre na sua conta e conecte Claude, OpenAI ou Gemini em Configurações.'});
         writer = await integrations.writer(user.id,input.provider,input.model);
-      } else if (providerReady()) writer = serverModel(roleModelName('writer', input.model || writerFor(input.roles, input.packet?.brief?.format)));
+      } else if (providerReady()) writer = serverModel(roleModelName('writer', writerFor(input.roles, input.packet?.brief?.format)));
       if (writer) writer = observability.instrument(writer, { owner:user?.id || null, route:url.pathname, provider:input.provider || 'server' });
     }
     if (url.pathname === '/api/radar/analyse') return send(res,200,await analyseRadar(input.packet,writer));
+    if (url.pathname === '/api/platform/models') return send(res, 200, { policy: await platform.setModelPolicy(input.policy, isKnownModel) });
     if (url.pathname === "/api/collected/remove") {
       const ownerId=await workspaceOwner(req,input.workspace);
       if (typeof input.id !== "string" || !/^web-[a-f0-9]{20}$/.test(input.id))

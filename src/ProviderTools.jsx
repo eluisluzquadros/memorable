@@ -120,7 +120,6 @@ export function ProviderTools({
           // The text-model field belongs to connected providers; the service picks its own (by role) otherwise.
           model: provider === "server" ? undefined : model,
           variant,
-          roles: state.modelRoles || {},
           threshold: state.agentConfig.threshold,
           maxRounds: state.agentConfig.maxRounds,
         }),

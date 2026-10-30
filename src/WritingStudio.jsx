@@ -144,7 +144,7 @@ export function WritingStudio() {
     if (!draft || draft.mode !== "provider" || draft.visual || settings.video) return;
     setPreparing(true); setPrepError("");
     try {
-      const response = await longFetch("/api/production", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ packet, version: draft, provider: draft.writer?.provider || "server", model: draft.writer?.model, roles: state.modelRoles || {} }) });
+      const response = await longFetch("/api/production", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ packet, version: draft, provider: draft.writer?.provider || "server", model: draft.writer?.model }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Não foi possível preparar a produção.");
       setGenerated((items) => items.map((v, i) => (i === selected ? { ...v, ...data } : v)));
