@@ -92,6 +92,25 @@ function Simulator({ rows, picks }) {
   );
 }
 
+// What the benchmark itself cost and reached in the current view, and what the platform delivers with the
+// Equilibrado profile of each content type.
+function BenchmarkStats({ stat, delivered, view }) {
+  if (!stat) return null;
+  return (
+    <section className="r-panel lab-stats" aria-label="Resumo deste benchmark">
+      <h3>{view === "Geral" ? "Este benchmark" : `Este benchmark · ${view}`}</h3>
+      <div className="lab-stat-grid">
+        <div><small className="label">Gasto</small><b>{usd(stat.spent, 2)}</b><span>{stat.calls} chamadas pagas: planos, redatores e juízes</span></div>
+        <div><small className="label">Textos avaliados</small><b>{stat.judged}</b><span>{stat.writers} modelos, 2 juízes cegos por texto{stat.failures ? ` · ${stat.failures} falha${stat.failures > 1 ? "s" : ""}` : ""}</span></div>
+        <div><small className="label">Qualidade média</small><b>{num(stat.mean)}</b><span>de 5, todos os modelos avaliados</span></div>
+        <div><small className="label">Custo médio por texto</small><b>{usd(stat.costPerText)}</b><span>só o redator</span></div>
+        <div><small className="label">Velocidade</small><b>{Number.isFinite(stat.p50) ? `${Math.round(stat.p50)} s` : "—"}</b><span>tempo mediano por texto</span></div>
+      </div>
+      {delivered && <p className="lab-delivered">Com o perfil Equilibrado{view === "Geral" ? " de cada tipo de conteúdo" : ` (${short(delivered.model)})`}, a plataforma entrega <b>nota {num(delivered.mean)}</b> a <b>{usd(delivered.cost)} por texto</b>{Number.isFinite(delivered.p50) ? <> em <b>{Math.round(delivered.p50)} s</b></> : null}{view === "Geral" ? `, média de ${delivered.formats} tipos` : ""}.</p>}
+    </section>
+  );
+}
+
 function RunDetail({ id }) {
   const [data, setData] = useState(null);
   const [reveal, setReveal] = useState(false);
@@ -140,6 +159,12 @@ export function ModelLab() {
   const picks = scope?.profiles?.[task];
   const formats = data.summary.formats || [];
   const maxCost = Math.max(...rows.map((r) => r.cost || 0));
+  const balancedOf = (fmt) => { const sum = data.summary.byFormat?.[fmt]; const m = sum?.profiles?.[task]?.equilibrado; return m ? sum.models.find((r) => r.task === task && r.model === m) : null; };
+  const avgOf = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
+  const delivered = view === "Geral"
+    ? (() => { const list = formats.map(balancedOf).filter(Boolean); return list.length ? { mean: avgOf(list.map((r) => r.mean)), cost: avgOf(list.map((r) => r.cost)), p50: Math.round(avgOf(list.map((r) => r.p50).filter(Number.isFinite))), formats: list.length } : null; })()
+    : balancedOf(view);
+  const stat = view === "Geral" ? data.stats?.overall : data.stats?.byFormat?.[view];
   return (
     <div className="lab">
       <section className="r-panel">
@@ -149,7 +174,9 @@ export function ModelLab() {
         <div className="r-tabs lab-formats" role="tablist" aria-label="Tipo de conteúdo">
           {["Geral", ...formats].map((name) => <button key={name} type="button" role="tab" aria-selected={view === name} onClick={() => setView(name)}>{name}</button>)}
         </div>
+        {data.access === "public" && <p className="field-help lab-public">Benchmark público: notas, custos e tempos de cada modelo. Os textos ficam só com as contas que os produziram.</p>}
       </section>
+      <BenchmarkStats stat={stat} delivered={delivered} view={view} />
       {rows.length ? (
         <>
           {view === "Geral" ? (
@@ -231,9 +258,11 @@ export function ModelLab() {
         <ul className="lab-runs">
           {data.runs.map((r) => (
             <li key={r.id}>
-              <button type="button" className="text-button" aria-expanded={open === r.id} onClick={() => setOpen(open === r.id ? null : r.id)}>
-                <b>{r.id}</b> · {r.title}
-              </button>
+              {r.open ? (
+                <button type="button" className="text-button" aria-expanded={open === r.id} onClick={() => setOpen(open === r.id ? null : r.id)}>
+                  <b>{r.id}</b> · {r.title}
+                </button>
+              ) : <span><b>{r.id}</b> · {r.title}</span>}
               <span>{STATUS[r.status] || r.status} · {usd(r.spent_usd, 2)}{r.budget_usd != null ? ` de ${usd(r.budget_usd, 2)}` : ""} · {r.outputs} saídas{r.config?.summary === false ? " · fora dos totais" : ""}</span>
               {r.notes && <small>{r.notes}</small>}
               {(r.config?.excludedBriefs || []).map((e) => <small key={e.id}>Fora dos totais: {(r.config.briefs || []).find((b) => b.id === e.id)?.title || e.id}. {e.reason}</small>)}

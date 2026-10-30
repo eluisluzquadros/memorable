@@ -312,3 +312,13 @@ test("the brand can be mentioned by any of its other names", () => {
   const withAlias = editorialIssues({ body, format: "LinkedIn", brief, brand: { name: "Esfera Legal", aliases: ["Esfera"] }, sources: [] });
   assert.ok(!withAlias.some((i) => /não conecta o tema à marca/.test(i.message)));
 });
+
+test("a spoken line starts a line: 'com a fala:' inside the visual direction is not read as speech", async () => {
+  const { contentSections } = await import("../src/editorial-quality.mjs");
+  const { scriptTiming } = await import("../src/production.mjs");
+  const body = "CENA 1 · 6s\nFala: Das 9h às 18h55, palestras, painéis e networking.\nDireção: Três linhas aparecem em sequência com a fala: 'Palestras', 'Painéis', 'Networking'.\n\nCENA 2 · 4s\nFala: Qual dúvida você gostaria de esclarecer?\nDireção: Logo no centro.";
+  assert.deepEqual(contentSections(body, "Reels"), ["Das 9h às 18h55, palestras, painéis e networking.", "Qual dúvida você gostaria de esclarecer?"]);
+  assert.equal(scriptTiming(body, { format: "Reels", durationSeconds: 10 }).wordCount, 14, "only the two spoken lines are timed (8 + 6 words)");
+  const brief = { format: "Reels", video: true, durationSeconds: 10, scriptMode: "spoken", brandName: "Esfera Legal" };
+  assert.ok(!editorialIssues({ body, format: "Reels", brief, brand: { name: "Esfera Legal" } }).some((i) => i.code === "repetition"));
+});

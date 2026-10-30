@@ -2,7 +2,8 @@ import { editorialIssues } from "../src/editorial-quality.mjs";
 import { productionSettings, scriptTiming } from "../src/production.mjs";
 export const BRAND_WRITING =
   "O anunciante é packet.brand.name, nunca o veículo da referência. Escreva marketing original para esse cliente: problema do público, ponto de vista ou benefício relevante da marca e próximo passo. Fontes externas fundamentam fatos; não repita seu título, não promova seus produtos e não transforme o post numa resenha da fonte. Use packet.brandKnowledge e packet.voice para afirmações sobre a marca. Quando houver packet.group, suas regras valem acima da voz da marca e a peça fala só pela própria marca, sem prometer ou oferecer o que é de outra marca do grupo. packet.approvedExamples são conteúdos já aprovados pela equipe: siga sua voz e ritmo sem copiá-los e nunca os use como fonte de fatos; packet.insights e packet.lessons registram o que a equipe aprendeu e devem orientar as escolhas. Sem evidência da capacidade ou da oferta, não invente benefícios, números, cases nem promessas. Atribuições factuais podem aparecer de forma discreta, sem ocupar a chamada principal. Não copie blocos da fonte. Cada parágrafo, tela ou cena deve desenvolver uma ideia nova; falas devem ter frases completas, naturais e caber na duração. Carrossel: 4 a 10 telas numeradas TELA 1 etc., com abertura, desenvolvimento concreto e fechamento. Artigo e newsletter: desenvolvimento, exemplos sustentados e conclusão. Retorne sourceIds válidos, incluindo a referência selecionada; fatos com {sourceId,excerpt} literal quando usados. Sem instruções internas nem placeholders no texto final.";
-export function validateGenerated(packet, variant) {
+// `flagged`: issue codes already reported to the person as warnings, so they do not discard the draft.
+export function validateGenerated(packet, variant, { flagged = [] } = {}) {
   const brief = {
     ...packet.brief,
     brandName: packet.brand?.name || packet.brief.brandName,
@@ -14,7 +15,7 @@ export function validateGenerated(packet, variant) {
     brief: { ...brief, ...settings },
     brand: packet.brand,
     sources: packet.sources,
-  });
+  }).filter((i) => !flagged.includes(i.code));
   const allowed = new Set(
     [...(packet.sources || []), ...(packet.brandKnowledge || [])].map(
       (s) => s.id,

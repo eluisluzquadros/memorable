@@ -95,3 +95,24 @@ test('Roteiro: um formato quebrado ganha uma correção antes de ser descartado'
   assert.equal(calls.length, 2);
   assert.match(calls[1], /voltou com problemas de formato/);
 });
+
+test('Roteiro: a marca precisa ser dita; sem ela o roteiro ganha uma correção e, se não vier, segue sinalizado', async () => {
+  const silent = { topicId:'t', title:'Tema', strategy:'a', hook:'Pergunta', technique:'Exemplo', trigger:'Curiosidade', cta:'Pergunte', body:'Contexto', scenes:speeches.map(speech=>({duration:10,speech,visual:'Logo da Esfera Legal na tela final.'})), sourceIds:['s'], warnings:[] };
+  const said = { ...silent, scenes: silent.scenes.map((c, i) => i === silent.scenes.length - 1 ? { ...c, speech: 'Na Esfera, a gente explica o que muda para o seu escritório.' } : c) };
+  const packet = { brand:{ name:'Esfera Legal', aliases:['Esfera'] }, brief:{ versionCount:1, durationSeconds:30 }, sources:[{id:'s',text:'Fonte'}], calibration:[] };
+  const asked = [];
+  const fixedOnce = await generateVideoScripts(packet, [{id:'t',title:'Tema',sourceId:'s'}], async (system, data) => {
+    asked.push(data?.problemas || null);
+    return /voltou com problemas/.test(system) ? said : { scripts: [structuredClone(silent)] };
+  }, { committee: false });
+  assert.match(fixedOnce.scripts[0].scenes.at(-1).speech, /Esfera/);
+  assert.equal(asked.length, 2);
+  assert.match(asked[1].join(' '), /não é dita em nenhuma fala/);
+  // The repair does not come back with the brand: the paid draft is kept, not thrown away.
+  const kept = await generateVideoScripts(packet, [{id:'t',title:'Tema',sourceId:'s'}], async (system) => /voltou com problemas/.test(system) ? silent : { scripts: [structuredClone(silent)] }, { committee: false });
+  assert.equal(kept.scripts.length, 1);
+  assert.match(kept.scripts[0].warnings.join(" "), /marca não é dita/);
+  // A repair that breaks a well-formed script is ignored.
+  const broken = await generateVideoScripts(packet, [{id:'t',title:'Tema',sourceId:'s'}], async (system) => /voltou com problemas/.test(system) ? { scenes: [] } : { scripts: [structuredClone(silent)] }, { committee: false });
+  assert.equal(broken.scripts[0].scenes.length, silent.scenes.length);
+});

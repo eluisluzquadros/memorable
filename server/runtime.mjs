@@ -20,7 +20,7 @@ import { ingestFile, ingestUrl, sourceKind } from './ingestion.mjs';
 import { PORT, HOST, APP_ORIGIN, ALLOWED_ORIGINS, clientAddress, canonicalRedirect } from "./config.mjs";
 import { openDb, usingPostgres } from './sql.mjs';
 import { createTasks, bufferedRequest, capturedResponse } from './tasks.mjs';
-import { createLabStore, labSummary } from './lab.mjs';
+import { createLabStore, labView, canOpenRun } from './lab.mjs';
 import { writerFor } from '../src/model-roles.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // In the cloud this service also delivers the built screens (npm run build → dist/), so pages and API share one address.
@@ -352,15 +352,15 @@ async function handle(req, res) {
     }
     // Model lab: platform-wide benchmark results, read by signed-in accounts.
     if (req.method === 'GET' && (url.pathname === '/api/lab' || url.pathname === '/api/lab/run')) {
-      if (!(await accounts.lookup(req))) return send(res, 401, { error: 'Entre na sua conta para ver o laboratório.' });
+      // The public benchmark needs no account; a round's texts open only for the accounts that produced them.
+      const viewer = await accounts.lookup(req);
       if (url.pathname === '/api/lab/run') {
         const run = await lab.run(url.searchParams.get('id') || '');
-        return run ? send(res, 200, { run, items: await lab.items(run.id) }) : send(res, 404, { error: 'Rodada não encontrada.' });
+        if (!run) return send(res, 404, { error: 'Rodada não encontrada.' });
+        if (!canOpenRun(run, viewer?.id)) return send(res, 403, { error: 'Os textos desta rodada ficam com a conta que os produziu. O benchmark público mostra só notas, custos e tempos.' });
+        return send(res, 200, { run, items: await lab.items(run.id) });
       }
-      const runs = await lab.runs();
-      const items = await lab.allItems();
-      const counts = Object.fromEntries(runs.map((r) => [r.id, items.filter((i) => i.run_id === r.id).length]));
-      return send(res, 200, { runs: runs.map((r) => ({ ...r, outputs: counts[r.id] })), summary: labSummary(items, runs), prices: await catalogWithPrices() });
+      return send(res, 200, { ...labView(await lab.allItems(), await lab.runs(), viewer?.id), prices: await catalogWithPrices() });
     }
     if (req.method === 'GET' && url.pathname === '/api/models') return send(res,200,{ modelChoice:modelChoice(), defaultModel:providerReady()?serverModelName():null, roleDefaults:roleDefaults(), models:await catalogWithPrices() });
     if (req.method === 'GET' && url.pathname === '/api/observability') {

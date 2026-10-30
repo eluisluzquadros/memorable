@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createLabStore, startRound, labSummary } from "../server/lab.mjs";
+import { createLabStore, startRound, labSummary, labStats, labView, canOpenRun, transientError } from "../server/lab.mjs";
 
 const quiet = () => {};
 
@@ -96,4 +96,48 @@ test("a rerun keeps the decisions recorded on the round (excluded and flagged br
   assert.equal(after.config.excludedBriefs[0].reason, "fonte de outra marca");
   assert.equal(after.config.flaggedBriefs[0].id, "b");
   assert.deepEqual(after.config.writers, ["x"]);
+});
+
+test("benchmark stats: spending counts every paid call, quality only the ranked texts", () => {
+  const runs = [{ id: "r", task: "redator", config: { briefs: [{ id: "a", format: "LinkedIn" }, { id: "bad", format: "LinkedIn" }], excludedBriefs: [{ id: "bad", reason: "outra marca" }] } }];
+  const items = [
+    { run_id: "r", brief_id: "a", role: "plano", model: "p", status: "done", cost_usd: 0.01 },
+    { run_id: "r", brief_id: "a", role: "redator", model: "m1", status: "done", mean: 4.5, cost_usd: 0.02, seconds: 10 },
+    { run_id: "r", brief_id: "a", role: "redator", model: "m2", status: "done", mean: 3.5, cost_usd: 0.04, seconds: 30 },
+    { run_id: "r", brief_id: "a", role: "redator", model: "m3", status: "failed", cost_usd: 0.005 },
+    { run_id: "r", brief_id: "a", role: "juiz", model: "j", status: "done", cost_usd: 0.05 },
+    { run_id: "r", brief_id: "bad", role: "redator", model: "m1", status: "done", mean: 1, cost_usd: 0.03, seconds: 99 },
+  ];
+  const { overall, byFormat } = labStats(items, runs);
+  assert.ok(Math.abs(overall.spent - 0.155) < 1e-9, "the excluded piece was paid for, so it is spent");
+  assert.equal(overall.texts, 3);
+  assert.equal(overall.failures, 1);
+  assert.equal(overall.mean, 4, "the excluded piece does not lower the quality");
+  assert.ok(Math.abs(overall.costPerText - 0.03) < 1e-9);
+  assert.equal(overall.judgeCalls, 1);
+  assert.deepEqual(Object.keys(byFormat), ["LinkedIn"]);
+});
+
+test("the public benchmark shows numbers; texts, briefs and reasons stay with the accounts that produced them", () => {
+  const runs = [{ id: "r", experiment: "E", title: "Rodada", task: "redator", status: "done", spent_usd: 1, config: { accounts: ["dono"], briefs: [{ id: "a", title: "Pauta sigilosa", format: "LinkedIn" }, { id: "bad", format: "LinkedIn" }], excludedBriefs: [{ id: "bad", reason: "motivo interno" }] } }];
+  const items = [{ run_id: "r", brief_id: "a", role: "redator", model: "m", status: "done", mean: 4.2, cost_usd: 0.01, output: { body: "texto do cliente" } }];
+  const pub = labView(items, runs, "outra-conta");
+  assert.equal(pub.access, "public");
+  assert.equal(pub.runs[0].config, undefined);
+  assert.equal(pub.runs[0].open, false);
+  assert.deepEqual(pub.summary.excluded, []);
+  assert.equal(pub.summary.excludedCount, 1);
+  assert.ok(!JSON.stringify(pub).includes("texto do cliente") && !JSON.stringify(pub).includes("Pauta sigilosa") && !JSON.stringify(pub).includes("motivo interno"));
+  assert.equal(pub.summary.models[0].mean, 4.2, "the scores are public");
+  const own = labView(items, runs, "dono");
+  assert.equal(own.access, "owner");
+  assert.equal(own.runs[0].config.briefs[0].title, "Pauta sigilosa");
+  assert.equal(own.summary.excluded[0].reason, "motivo interno");
+  assert.equal(canOpenRun(runs[0], "dono"), true);
+  assert.equal(canOpenRun(runs[0], undefined), false);
+});
+
+test("network drops and rate limits are always retried; a model's own failure is kept as a result", () => {
+  for (const e of ["read ECONNRESET", "terminated", "O provedor de IA limitou as requisições por agora.", "HTTP 503", "connect ETIMEDOUT 1.2.3.4:443"]) assert.equal(transientError(e), true, e);
+  for (const e of ["O provedor retornou um formato incompatível com o contrato JSON.", "O roteiro voltou incompleto mesmo após uma correção: faltam os campos technique."]) assert.equal(transientError(e), false, e);
 });

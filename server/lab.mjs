@@ -48,6 +48,10 @@ export function createLabStore(filename) {
 // The budget counts what this round already spent, including earlier attempts.
 // retryFailed=false keeps a model's own failure as data instead of giving it another try (fairness:
 // a retry would hide how often that model breaks the format).
+// Network drops, rate limits and timeouts say nothing about the model: they are always tried again. A model's
+// own failure (broken JSON, missing fields) is a result and stays recorded when retryFailed is off.
+export const transientError = (message = "") => /ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|fetch failed|terminated|socket hang up|limitou as requisições|tempo esgotado|timed? ?out|\b(429|502|503|504)\b/i.test(String(message));
+
 export async function startRound(store, run, { log = console.log, retryFailed = true } = {}) {
   const existing = await store.run(run.id);
   // The stored configuration is kept and the new one merged over it: decisions recorded on the round
@@ -62,7 +66,7 @@ export async function startRound(store, run, { log = console.log, retryFailed = 
       const stored = await store.item(fullKey);
       if (stored?.status === "done") { log(`  ${role.padEnd(8)} ${model.padEnd(32)} (já salvo)`); return stored; }
       // A judge that timed out is a transient problem and is asked again; a writer failure is data.
-      if (stored?.status === "failed" && !retryFailed && role !== "juiz") { log(`  ${role.padEnd(8)} ${model.padEnd(32)} (falha registrada, mantida)`); return null; }
+      if (stored?.status === "failed" && !retryFailed && role !== "juiz" && !transientError(stored.error)) { log(`  ${role.padEnd(8)} ${model.padEnd(32)} (falha registrada, mantida)`); return null; }
       if (state.budget_usd != null && state.spent_usd >= state.budget_usd) {
         state.status = "paused"; await save();
         throw Object.assign(new Error(`Teto de US$ ${state.budget_usd} da rodada atingido antes de ${role} (${model}). Nada foi perdido: a rodada retoma daqui.`), { budget: true });
@@ -153,7 +157,9 @@ function summarize(items, runs, floor = FLOOR) {
 // The overall view and one view per content type (LinkedIn, Carrossel, Reels…): the best writer can change
 // with the format, so each format gets its own ranking and profiles. Briefs a round marks as excluded
 // (e.g. a source of another brand) stay in the history and out of every total.
-export function labSummary(items, runs, floor = FLOOR) {
+// Which items count in the totals (briefs excluded or under review stay in the history only) and the
+// content type of each item.
+function scope(items, runs) {
   const formatOf = new Map(), excluded = [];
   for (const r of runs) {
     for (const b of r.config?.briefs || []) formatOf.set(`${r.id}|${b.id}`, b.format);
@@ -161,13 +167,65 @@ export function labSummary(items, runs, floor = FLOOR) {
     for (const e of r.config?.flaggedBriefs || []) excluded.push({ run: r.id, ...e, reason: `Em revisão: ${e.reason}` });
   }
   const out = new Set(excluded.map((e) => `${e.run}|${e.id}`));
-  const kept = items.filter((i) => !out.has(`${i.run_id}|${i.brief_id}`));
-  const format = (i) => formatOf.get(`${i.run_id}|${i.brief_id}`) || "Outros";
+  const counted = new Set(runs.filter((r) => r.config?.summary !== false).map((r) => r.id));
+  return {
+    excluded,
+    kept: items.filter((i) => !out.has(`${i.run_id}|${i.brief_id}`)),
+    counts: (i) => counted.has(i.run_id) && !out.has(`${i.run_id}|${i.brief_id}`),
+    format: (i) => formatOf.get(`${i.run_id}|${i.brief_id}`) || "Outros",
+  };
+}
+
+// What the benchmark itself cost and reached, overall and per content type. Spending counts every paid call
+// (plans, writers, judges), including pieces later left out of the totals: that money was spent. Quality,
+// cost per text and speed count only the texts in the ranking, so they agree with it.
+export function labStats(items, runs) {
+  const { counts, format } = scope(items, runs);
+  const median = (xs) => { const v = xs.filter(Number.isFinite).sort((a, b) => a - b); return v.length ? v[Math.floor(v.length / 2)] : null; };
+  const stat = (list) => {
+    const texts = list.filter((i) => i.role === "redator" && counts(i));
+    const done = texts.filter((i) => i.status === "done");
+    const judged = done.filter((i) => Number.isFinite(i.mean));
+    return {
+      spent: list.reduce((n, i) => n + (Number.isFinite(i.cost_usd) ? i.cost_usd : 0), 0),
+      calls: list.filter((i) => i.status === "done").length,
+      texts: texts.length, judged: judged.length, failures: texts.length - done.length,
+      judgeCalls: list.filter((i) => i.role === "juiz" && i.status === "done").length,
+      mean: avg(judged.map((i) => i.mean)),
+      costPerText: avg(done.map((i) => i.cost_usd).filter(Number.isFinite)),
+      p50: median(done.map((i) => i.seconds)),
+      writers: new Set(done.map((i) => i.model)).size,
+    };
+  };
+  const formats = [...new Set(items.filter((i) => i.role === "redator").map(format))];
+  return { overall: stat(items), byFormat: Object.fromEntries(formats.map((f) => [f, stat(items.filter((i) => format(i) === f))])) };
+}
+
+export function labSummary(items, runs, floor = FLOOR) {
+  const { excluded, kept, format } = scope(items, runs);
   const formats = [...new Set(kept.filter((i) => i.role !== "plano" && i.role !== "juiz").map(format))];
   return {
     ...summarize(kept, runs, floor),
     excluded,
     formats,
     byFormat: Object.fromEntries(formats.map((fmt) => [fmt, summarize(kept.filter((i) => format(i) === fmt), runs, floor)])),
+  };
+}
+
+// Who sees what. Everyone sees the public benchmark: scores, costs and times per model and content type.
+// The texts, briefs and the reasons a piece left the totals stay with the accounts whose material the round
+// used (config.accounts), which can open each round.
+export const canOpenRun = (run, viewerId) => Boolean(viewerId) && (run?.config?.accounts || []).includes(viewerId);
+export function labView(items, runs, viewerId) {
+  const summary = labSummary(items, runs);
+  const mine = new Set(runs.filter((r) => canOpenRun(r, viewerId)).map((r) => r.id));
+  const outputs = (id) => items.filter((i) => i.run_id === id).length;
+  return {
+    access: mine.size ? "owner" : "public",
+    runs: runs.map((r) => mine.has(r.id)
+      ? { ...r, outputs: outputs(r.id), open: true }
+      : { id: r.id, experiment: r.experiment, title: r.title, task: r.task, status: r.status, spent_usd: r.spent_usd, budget_usd: r.budget_usd, created_at: r.created_at, outputs: outputs(r.id), open: false }),
+    summary: { ...summary, excluded: summary.excluded.filter((e) => mine.has(e.run)), excludedCount: summary.excluded.length },
+    stats: labStats(items, runs),
   };
 }

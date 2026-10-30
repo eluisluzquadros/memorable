@@ -10,10 +10,12 @@ const normalize = (value) =>
     .replace(/\s+/g, " ")
     .trim();
 const words = (value) => normalize(value).split(" ").filter(Boolean);
+// A spoken line starts a line ("Fala: …"); "com a fala: …" inside the visual direction is not one.
+const SPOKEN = /(?:^|\n)Fala:/i;
 export function contentSections(body, format) {
-  if (/Fala:/i.test(body))
+  if (SPOKEN.test(body))
     return [
-      ...body.matchAll(/Fala:\s*([\s\S]*?)(?=\nDireção:|\nCENA\s+\d|$)/gi),
+      ...body.matchAll(/(?:^|\n)Fala:\s*([\s\S]*?)(?=\nDireção:|\nCENA\s+\d|$)/gi),
     ].map((m) => m[1].trim());
   if (format === "Carrossel")
     return body
@@ -124,7 +126,7 @@ export function editorialIssues({
           `Há repetição entre os blocos ${i + 1} e ${j + 1}; cada bloco precisa acrescentar algo.`,
         );
     }
-  if (/Fala:/i.test(body) && brief.scriptMode !== "outline") {
+  if (SPOKEN.test(body) && brief.scriptMode !== "outline") {
     if (
       sections.some(
         (s) =>

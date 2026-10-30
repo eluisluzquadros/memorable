@@ -209,7 +209,7 @@ export async function generateVideoScripts(
       "Cada pauta precisa de uma identificação única e uma fonte presente no contexto.",
     );
   const result = await model(
-    `${COPY_METHOD} ${PRODUCTION_METHOD} ${BRAND_WRITING} ${formatGuide(packet.brief?.format)} Você é roteirista profissional. Produza exatamente ${settings.versionCount} versão(ões) por pauta, mantendo topicId. Planeje ${settings.durationSeconds} segundos por roteiro (${settings.durationCategory}). ${settings.scriptMode === "outline" ? "Entregue pauta por blocos: perguntas abertas, assuntos, evidências e orientações de condução. Os tempos são janelas de discussão, não tempo de leitura." : `Entregue falas completas, cerca de ${settings.targetWords} palavras por roteiro a 132 palavras/minuto; a soma das cenas deve se aproximar do tempo pedido. Para episódios longos desenvolva todos os capítulos sem repetir texto para preencher tempo. Se as fontes não sustentarem essa duração, falhe com uma explicação em warnings e não invente.`} Declare gancho, técnica narrativa, gatilho e CTA informativo; cenas com duração em segundos e direção visual. Respeite público, objetivo e formato do briefing. Use apenas fontes, identidade e memória editorial fornecidas. Não imite nem atribua falas a pessoas reais. Não invente fatos, normas, resultados, números ou conformidade legal. Sinalize limites em warnings. Retorne {scripts:[{topicId,title,strategy,hook,technique,trigger,cta,body,scenes:[{duration:number,speech,visual}],sourceIds:string[],warnings:string[]}]}. Use de uma a 24 cenas/blocos; para 10–15s prefira uma única mensagem completa, com estratégias distintas quando houver mais de uma versão. A soma das durações deve ficar dentro de 10% de ${settings.durationSeconds}s.`,
+    `${COPY_METHOD} ${PRODUCTION_METHOD} ${BRAND_WRITING} ${formatGuide(packet.brief?.format)} Você é roteirista profissional. Produza exatamente ${settings.versionCount} versão(ões) por pauta, mantendo topicId. Planeje ${settings.durationSeconds} segundos por roteiro (${settings.durationCategory}). ${settings.scriptMode === "outline" ? "Entregue pauta por blocos: perguntas abertas, assuntos, evidências e orientações de condução. Os tempos são janelas de discussão, não tempo de leitura." : `Entregue falas completas, cerca de ${settings.targetWords} palavras por roteiro a 132 palavras/minuto; a soma das cenas deve se aproximar do tempo pedido. Para episódios longos desenvolva todos os capítulos sem repetir texto para preencher tempo. Se as fontes não sustentarem essa duração, falhe com uma explicação em warnings e não invente.`} Declare gancho, técnica narrativa, gatilho e CTA informativo; diga o nome da marca (packet.brand.name ou um de packet.brand.aliases) em pelo menos uma fala, de forma natural, por exemplo no CTA: assinatura só na tela não basta; cenas com duração em segundos e direção visual. Respeite público, objetivo e formato do briefing. Use apenas fontes, identidade e memória editorial fornecidas. Não imite nem atribua falas a pessoas reais. Não invente fatos, normas, resultados, números ou conformidade legal. Sinalize limites em warnings. Retorne {scripts:[{topicId,title,strategy,hook,technique,trigger,cta,body,scenes:[{duration:number,speech,visual}],sourceIds:string[],warnings:string[]}]}. Use de uma a 24 cenas/blocos; para 10–15s prefira uma única mensagem completa, com estratégias distintas quando houver mais de uma versão. A soma das durações deve ficar dentro de 10% de ${settings.durationSeconds}s.`,
     { packet, selectedTopics, settings },
   );
   const scripts = result.scripts;
@@ -249,16 +249,22 @@ export async function generateVideoScripts(
         if (!Array.isArray(x.warnings) || x.warnings.some((w) => typeof w !== "string")) p.push("warnings precisa ser uma lista de textos (pode ser vazia)");
         return p;
       };
+      // A spoken script must say the brand: an on-screen signature alone fails the platform's brand check
+      // (EXP-308, Reels). It gets the same one repair; if still missing, the draft is kept and flagged.
+      const brandUnsaid = (x) => settings.scriptMode === "spoken" && Array.isArray(x.scenes) && Boolean(packet.brand?.name || packet.brief?.brandName) &&
+        editorialIssues({ body: scriptBody(x), brief: { brandName: packet.brand?.name || packet.brief?.brandName }, brand: packet.brand }).some((i) => i.code === "brand");
+      const brandNote = () => `a marca (${[packet.brand?.name || packet.brief?.brandName, ...(packet.brand?.aliases || [])].filter(Boolean).join(" ou ")}) não é dita em nenhuma fala: diga o nome dela em pelo menos uma fala, de forma natural (por exemplo no CTA), sem mudar o restante`;
       let problems = problemsOf(s);
-      if (problems.length) {
+      if (problems.length || brandUnsaid(s)) {
         // One chance to fix the format before the paid draft is given up.
         const fixed = await model(
-          `Você é roteirista profissional. O roteiro abaixo voltou com problemas de formato. Corrija apenas o que está apontado, sem mudar o conteúdo que já está certo, usando só as fontes do pacote. Retorne o roteiro completo no mesmo formato: {topicId,title,strategy,hook,technique,trigger,cta,body,scenes:[{duration:number,speech,visual}],sourceIds:string[],warnings:string[]}.`,
-          { packet: { brand: packet.brand, brief: packet.brief, sources: packet.sources.map((x) => ({ id: x.id, title: x.title })), brandKnowledge: (packet.brandKnowledge || []).map((x) => ({ id: x.id, title: x.title })) }, roteiro: s, problemas: problems },
+          `Você é roteirista profissional. O roteiro abaixo voltou com problemas de formato ou de marca. Corrija apenas o que está apontado, sem mudar o conteúdo que já está certo, usando só as fontes do pacote. Retorne o roteiro completo no mesmo formato: {topicId,title,strategy,hook,technique,trigger,cta,body,scenes:[{duration:number,speech,visual}],sourceIds:string[],warnings:string[]}.`,
+          { packet: { brand: packet.brand, brief: packet.brief, sources: packet.sources.map((x) => ({ id: x.id, title: x.title })), brandKnowledge: (packet.brandKnowledge || []).map((x) => ({ id: x.id, title: x.title })) }, roteiro: s, problemas: [...problems, ...(brandUnsaid(s) ? [brandNote()] : [])] },
         ).catch(() => null);
         if (fixed && typeof fixed === "object") {
-          Object.assign(s, { ...fixed, topicId: s.topicId });
-          problems = problemsOf(s);
+          const candidate = { ...s, ...fixed, topicId: s.topicId };
+          // A repair asked only for the brand must not break a script that was already well formed.
+          if (problems.length || !problemsOf(candidate).length) { Object.assign(s, candidate); problems = problemsOf(s); }
         }
       }
       if (problems.length)
@@ -273,10 +279,13 @@ export async function generateVideoScripts(
           spokenWords(s) > settings.durationSeconds * 3)
       )
         s.warnings.push(`As falas têm ${spokenWords(s)} palavras para ${settings.durationSeconds}s; o ritmo pede entre ${Math.round(settings.durationSeconds * 1.3)} e ${settings.durationSeconds * 3}.`);
+      const unsaid = brandUnsaid(s);
+      if (unsaid) s.warnings.push("A marca não é dita em nenhuma fala. Inclua o nome dela, por exemplo no CTA, antes de enviar.");
       Object.assign(s, settings);
       if (validate) validateGenerated(
         { ...packet, brief: { format: "Roteiro de vídeo", ...packet.brief } },
         { ...s, body: scriptBody(s) },
+        { flagged: unsaid ? ["brand"] : [] },
       );
     }
   }

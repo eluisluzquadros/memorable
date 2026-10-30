@@ -52,7 +52,7 @@ export function scriptTiming(body, brief) {
   const settings = productionSettings(brief);
   if (!settings.video) return null;
   const plannedSeconds = [...body.matchAll(/CENA\s+\d+\s*·\s*(\d+(?:\.\d+)?)s/gi)].reduce((sum,m) => sum + Number(m[1]), 0);
-  const speeches = [...body.matchAll(/Fala:\s*([\s\S]*?)(?=\nDireção:|$)/gi)].map(m => m[1]).join(' ');
+  const speeches = [...body.matchAll(/(?:^|\n)Fala:\s*([\s\S]*?)(?=\nDireção:|$)/gi)].map(m => m[1]).join(' ');
   const wordCount = speeches.trim().split(/\s+/).filter(Boolean).length;
   const estimatedSeconds = Math.round(wordCount / 2.2);
   const incomplete = /\[Desenvolver /i.test(speeches);

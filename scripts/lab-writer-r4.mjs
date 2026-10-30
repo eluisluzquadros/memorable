@@ -62,7 +62,7 @@ const obs = createObservability(path.resolve(".runtime"));
 const model = (name) => obs.instrument(benchmarkModel(name), { route: "lab", runTag: RUN.id, provider: "server" });
 // --no-retry keeps earlier model failures as they were (only transient errors deserve another try).
 const retryFailed = !process.argv.includes("--no-retry");
-const round = AUDIT ? null : await startRound(store, { ...RUN, budget_usd: budget, config: { writers: WRITERS, judges: JUDGES, planner: PLANNER, routing: routingPolicy(), briefs: BRIEFS.map(({ id, title, format }) => ({ id, title, format })), criterion: "piso 4,0; nota ≥ Opus − 0,3 a ≤ 50% do custo", floor: 4.0 } }, { retryFailed });
+const round = AUDIT ? null : await startRound(store, { ...RUN, budget_usd: budget, config: { accounts: [...new Set(BRIEFS.map((b) => b.account))], writers: WRITERS, judges: JUDGES, planner: PLANNER, routing: routingPolicy(), briefs: BRIEFS.map(({ id, title, format }) => ({ id, title, format })), criterion: "piso 4,0; nota ≥ Opus − 0,3 a ≤ 50% do custo", floor: 4.0 } }, { retryFailed });
 const shuffle = (list) => list.map((v) => [Math.random(), v]).sort((a, b) => a[0] - b[0]).map(([, v]) => v);
 const writerSystem = (format) => `Atue como Copywriter/Ghostwriter. ${COPY_METHOD} ${BRAND_WRITING} ${formatGuide(format)} Retorne {title,body,hook,strategy,sourceIds:string[],facts:[{sourceId,excerpt,verified:false}]}. Use packet.sources e packet.brandKnowledge para sustentar afirmações factuais.`;
 
