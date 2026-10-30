@@ -39,3 +39,16 @@ test("the handler reads the buffered body and its answer is captured", async () 
   res.end(JSON.stringify({ error: "conflito" }));
   assert.deepEqual(await done, { status: 409, data: { error: "conflito" } });
 });
+
+test("a task named by the screen is joined, not run twice, when the request is resent", async () => {
+  const tasks = createTasks();
+  const id = "3f1c2b8e-1d2a-4b5c-9e7f-0a1b2c3d4e5f";
+  let runs = 0;
+  const run = () => { runs++; return new Promise(() => {}); };
+  assert.equal(tasks.start("ana", "/api/squad", run, id), id);
+  assert.equal(tasks.start("ana", "/api/squad", run, id), id);
+  await settle();
+  assert.equal(runs, 1, "the resend joins the running generation");
+  assert.throws(() => tasks.start("rui", "/api/squad", run, id), (e) => e.status === 409, "another account cannot claim it");
+  assert.notEqual(tasks.start("ana", "/api/squad", run, "not-a-uuid"), "not-a-uuid", "anything else gets a fresh id");
+});

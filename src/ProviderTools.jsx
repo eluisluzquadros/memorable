@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState, useContext } from "react";
 import { AppContext } from "./context";
 import { assertEditor } from "./operations.mjs";
 import { defaultTextModel, textProviderLabel } from "./text-providers.mjs";
-import { longFetch } from "./long-fetch.mjs";
+import { longFetch, fetchWithRetry } from "./long-fetch.mjs";
+import { startGeneration, pendingGeneration, finishGeneration } from "./pending-generation.mjs";
 export function ProviderTools({
   packet,
   variant,
@@ -10,25 +11,28 @@ export function ProviderTools({
   onCouncil,
   onBusy,
 }) {
-  const { state, notify } = useContext(AppContext);
+  const { state, notify, brief, setBrief } = useContext(AppContext);
   const [providers, setProviders] = useState([]);
   const [provider, setProvider] = useState("");
   const [model, setModel] = useState(defaultTextModel("anthropic"));
-  const [connectionError, setConnectionError] = useState("");
+  // null while checking, "ok" once the service answered, "failed" when it could not be reached.
+  const [check, setCheck] = useState(null);
   const [error, setError] = useState("");
   const ready = providers.includes(provider);
   const [busy, setBusy] = useState("");
   const controller = useRef(null);
   const alive = useRef(true);
   const currentContext = useRef("");
+  const currentBrief = useRef(brief);
+  currentBrief.current = brief;
   currentContext.current = JSON.stringify({
     packet,
     variant,
     role: state.role,
   });
-  useEffect(() => {
-    alive.current = true;
-    fetch("/api/text/status")
+  function loadStatus() {
+    setCheck(null);
+    fetchWithRetry("/api/text/status")
       .then((r) => {
         if (!r.ok) throw new Error("Serviço indisponível.");
         return r.json();
@@ -40,19 +44,54 @@ export function ProviderTools({
             (d.providers || []).includes(p) ? p : d.providers?.[0] || "",
           );
           setModel(defaultTextModel(d.providers?.[0]));
+          setCheck("ok");
         }
       })
       .catch(() => {
-        if (alive.current)
-          setConnectionError(
-            "Serviço de escrita indisponível. Confira se a plataforma local está iniciada.",
-          );
+        if (alive.current) setCheck("failed");
       });
+  }
+  useEffect(() => {
+    alive.current = true;
+    loadStatus();
     return () => {
       alive.current = false;
+      // A generation keeps running in the service; only a refinement in progress is dropped.
       controller.current?.abort();
     };
   }, []);
+  // Coming back to this screen (or after a reload) picks up the generation still running for this brand.
+  useEffect(() => {
+    const job = pendingGeneration(state.workspace);
+    if (job) follow(job);
+  }, [state.workspace]);
+  async function follow(job) {
+    setBusy("squad");
+    onBusy?.(true);
+    setError("");
+    const result = await job.promise;
+    // Left the screen again: the result waits for the next visit.
+    if (!alive.current || job.handled) return;
+    job.handled = true;
+    finishGeneration(job, result);
+    onBusy?.(false);
+    setBusy("");
+    if (!result.ok || !Array.isArray(result.data.versions)) {
+      const message = result.data.error || `A geração não foi concluída (HTTP ${result.status}).`;
+      setError(message);
+      notify(message, true);
+      return;
+    }
+    // The versions answer the brief they were asked with; if the form changed (or the page reloaded), bring it back.
+    if (JSON.stringify(job.brief) !== JSON.stringify(currentBrief.current))
+      setBrief((b) => ({ ...job.brief, handoffKey: b.handoffKey }));
+    onGenerated(result.data.versions.map((v) => ({ ...v, writer: job.writer })));
+    notify(
+      job.resumed
+        ? "A geração que estava em andamento terminou. Confira fontes e conteúdo."
+        : "Pacote produzido pelo provedor de IA. Confira fontes e conteúdo.",
+    );
+  }
   async function call(kind) {
     try {
       setError("");
@@ -72,14 +111,9 @@ export function ProviderTools({
           state.budgets[state.workspace]
       )
         throw new Error("Teto estimado atingido nesta marca.");
-      setBusy(kind);
-      onBusy?.(true);
-      const requestedContext = currentContext.current;
-      controller.current = new AbortController();
-      const r = await longFetch("/api/" + kind, {
+      const request = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        signal: controller.current.signal,
         body: JSON.stringify({
           packet,
           provider,
@@ -90,7 +124,15 @@ export function ProviderTools({
           threshold: state.agentConfig.threshold,
           maxRounds: state.agentConfig.maxRounds,
         }),
-      });
+      };
+      // The Media step later asks the same provider for the production plan of the chosen version.
+      if (kind === "squad")
+        return await follow(startGeneration(state.workspace, brief, "/api/squad", request, { provider, model: provider === "server" ? undefined : model }));
+      setBusy(kind);
+      onBusy?.(true);
+      const requestedContext = currentContext.current;
+      controller.current = new AbortController();
+      const r = await longFetch("/api/" + kind, { ...request, signal: controller.current.signal });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error);
       if (!alive.current) return;
@@ -98,14 +140,8 @@ export function ProviderTools({
         throw new Error(
           "O briefing ou a versão mudou durante a execução. O retorno não foi aplicado; execute novamente com o contexto atual.",
         );
-      // The Media step later asks the same provider for the production plan of the chosen version.
-      if (kind === "squad") onGenerated(data.versions.map((v) => ({ ...v, writer: { provider, model: provider === "server" ? undefined : model } })));
-      else onCouncil(data);
-      notify(
-        kind === "squad"
-          ? "Pacote produzido pelo provedor de IA. Confira fontes e conteúdo."
-          : "Refino concluído. Confira as notas e a síntese.",
-      );
+      onCouncil(data);
+      notify("Refino concluído. Confira as notas e a síntese.");
     } catch (e) {
       if (alive.current) {
         setError(
@@ -125,16 +161,20 @@ export function ProviderTools({
     <section className="r-provider" aria-label="Geração com IA">
       <h3>Gerar com IA</h3>
       <p>
-        {ready
+        {ready || check !== "ok"
           ? "Planejamento, redação e revisão editorial usam o contexto da sua marca e as referências escolhidas."
-          : "Conecte Claude, OpenAI ou Gemini uma vez para os agentes escreverem o conteúdo. Escolher uma ideia não inicia a geração."}
+          : "A IA da plataforma não está ativa neste serviço. Conecte Claude, OpenAI ou Gemini para os agentes escreverem o conteúdo."}
       </p>
-      {connectionError && (
+      {check === null && !ready && <p role="status">Conferindo o serviço de escrita…</p>}
+      {check === "failed" && (
         <p role="alert" className="form-error">
-          {connectionError}
+          Não foi possível falar com o serviço de escrita agora.{" "}
+          <button type="button" className="text-button" onClick={loadStatus}>
+            Tentar de novo
+          </button>
         </p>
       )}
-      {!ready && (
+      {check === "ok" && !ready && (
         <a className="button primary" href="#app/configuracoes/conexoes">
           Conectar IA <span aria-hidden="true">→</span>
         </a>
@@ -203,8 +243,8 @@ export function ProviderTools({
       </div>
       {busy && (
         <p role="status">
-          A execução pode levar alguns minutos. Os resultados só aparecem após a
-          resposta do provedor.
+          A execução pode levar alguns minutos. Pode abrir outras telas: a
+          geração continua e aparece aqui quando você voltar.
         </p>
       )}
       <p className="field-help">

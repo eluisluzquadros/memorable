@@ -2,7 +2,10 @@ import React, { useContext, useEffect, useState } from "react";
 import { AppContext } from "./context";
 
 // Real AI spend (what the providers charged, from the cost log) against the account's own budget.
-const usd = (v) => `US$ ${(Number(v) || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+export const usd = (v) => `US$ ${(Number(v) || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+// The period starts at 00:00 UTC on the 1st (or on Monday): read in local time it would show the day before.
+export const sinceLabel = (since, options = { day: "numeric", month: "short" }) => new Date(since).toLocaleDateString("pt-BR", { ...options, timeZone: "UTC" });
 
 export function useAiSpend(refresh) {
   const [status, setStatus] = useState(undefined);
@@ -24,7 +27,7 @@ export function SpendTile({ fallback }) {
     <div>
       <span>Gasto com IA</span>
       <b className="money-metric">{usd(brand)}</b>
-      <small>nesta marca desde {new Date(status.since).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })} · real</small>
+      <small>nesta marca desde {sinceLabel(status.since)} · real</small>
     </div>
   );
 }
@@ -46,7 +49,7 @@ export function AiBudgetSettings() {
         <>
           <div className="budget-summary">
             <b>{usd(status.total)}</b>
-            <span>{status.budget ? `de ${usd(status.budget.amount)} por ${status.budget.period}` : `desde ${new Date(status.since).toLocaleDateString("pt-BR")} · sem teto definido`}</span>
+            <span>{status.budget ? `de ${usd(status.budget.amount)} por ${status.budget.period}` : `desde ${sinceLabel(status.since, {})} · sem teto definido`}</span>
           </div>
           {status.budget && <div className="budget-track"><i style={{ width: `${Math.min(100, (share || 0) * 100)}%` }} /></div>}
           {share >= 1 ? <p className="form-error" role="alert">O teto foi atingido. Novas gerações pedem confirmação.</p> : share >= 0.8 ? <p className="mr-warning" role="status">{Math.round(share * 100)}% do teto já foi usado neste {status.budget.period}.</p> : null}

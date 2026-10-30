@@ -32,6 +32,7 @@ import { ProviderTools } from "./ProviderTools";
 import { MediaStudio } from "./Connections";
 import { CouncilReport } from "./Advanced";
 import { longFetch } from "./long-fetch.mjs";
+import { pendingGeneration } from "./pending-generation.mjs";
 import "./writing.css";
 
 export function WritingStudio() {
@@ -73,6 +74,14 @@ export function WritingStudio() {
       setSavedId(null);
     }
   }, [brief.handoffKey]);
+  // A generation still running for this brand (left the screen or reloaded the page): show its brief
+  // and the generation step, where the result is picked up.
+  useEffect(() => {
+    const job = pendingGeneration(state.workspace);
+    if (!job) return;
+    if (JSON.stringify(job.brief) !== JSON.stringify(brief)) setBrief((b) => ({ ...job.brief, handoffKey: b.handoffKey }));
+    setStage("setup");
+  }, [state.workspace]);
   const allowedDurations = durationsFor(brief.format);
   const activeBrief = {
     ...brief,

@@ -4,7 +4,9 @@ import { Brand } from './Landing';
 import { accountWriter as makeAccountWriter } from './account-persistence.mjs';
 import { isClassicHash } from './routes.mjs';
 import ContributePage from './Contribute';
-async function api(url, options) { const response=await fetch(url,options);let data;try{data=await response.json();}catch{throw new Error('Serviço local indisponível. Execute npm run dev:full.');}if(!response.ok)throw new Error(data.error || 'Não foi possível concluir.');return data; }
+import { fetchWithRetry, networkFailure, OFFLINE_MESSAGE } from './long-fetch.mjs';
+// Reads and sign-out are safe to resend after a dropped connection; saves are not (the revision check would refuse the copy).
+async function api(url, options) { const resend=!options?.method||options.method==='GET'||url==='/api/auth/logout';let response;try{response=await (resend?fetchWithRetry(url,options):fetch(url,options));}catch(e){throw networkFailure(e)?new Error(OFFLINE_MESSAGE):e;}let data;try{data=await response.json();}catch{throw new Error('O serviço não respondeu como esperado. Tente de novo em instantes.');}if(!response.ok)throw new Error(data.error || 'Não foi possível concluir.');return data; }
 export const accountWriter = (revision,report,userId) => makeAccountWriter(revision,report,userId,api);
 export function AccountRoot({ Component }) {
  const [route,setRoute]=useState(location.hash),[session,setSession]=useState(null),[checking,setChecking]=useState(true),[status,setStatus]=useState('Salvo');

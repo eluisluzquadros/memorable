@@ -221,7 +221,7 @@ const server = http.createServer(async (req, res) => {
         const captured = capturedResponse();
         await handle(bufferedRequest(req, body), captured.res);
         return captured.done;
-      });
+      }, req.headers['x-memoravel-task']);
       return send(res, 202, { task: id });
     }
   } catch (e) {

@@ -1360,7 +1360,7 @@ export function Squad() {
       <Subtabs label="Time de agentes" items={[["time", "Time"], ["laboratorio", "Laboratório"]]} value={tab} onChange={setTab} />
       {tab === "laboratorio" ? <Subpanel id="laboratorio"><ModelLab /></Subpanel> : <Subpanel id="time">
       <Note>
-        Em Escrever, escolha o modo local ou os agentes com Claude, OpenAI ou Gemini conectados. O time compartilha fontes, contexto da marca e critérios validados. Imagens e vídeos são gerados separadamente no estúdio de mídia.
+        Em Escrever, o time usa a IA da plataforma (OpenRouter), sem conectar nada; Claude, OpenAI ou Gemini da sua conta são opcionais. O time compartilha fontes, contexto da marca e critérios validados. Imagens e vídeos são gerados separadamente no estúdio de mídia.
       </Note>
       <section className="r-panel agent-method"><h2>Como o time trabalha</h2><p>Pesquisa com intenção, contribuição própria, referências consistentes e revisão humana. Os métodos orientam os prompts usados pelos agentes.</p><div>{PLAYBOOKS.map(method=><article key={method.id}><h3>{method.title}</h3><p>{method.text}</p></article>)}</div></section>
       <ModelRoles />

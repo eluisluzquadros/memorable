@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // Long AI requests (2–3 minutes) do not fit in one HTTP exchange behind Cloudflare, which closes the
 // connection at 100 s. They run here in the background and the screen polls /api/tasks/<id>.
 // The registry lives in memory: one service instance; a restart loses the running work and its result,
@@ -13,14 +15,24 @@ export function createTasks({ keepMs = 30 * 60000, perOwner = 4 } = {}) {
   setInterval(sweep, 60000).unref();
   return {
     // run() resolves to { status, data } exactly as the route would have answered.
-    start(owner, route, run) {
+    // The screen may name the task itself (requestedId, a UUID) so that resending a request whose answer
+    // was lost on the way back joins the generation already running instead of paying for a second one.
+    start(owner, route, run, requestedId) {
+      const named = typeof requestedId === "string" && UUID.test(requestedId) ? requestedId.toLowerCase() : null;
+      const existing = named && tasks.get(named);
+      if (existing) {
+        if (existing.owner === owner && existing.route === route) return named;
+        const error = new Error("Identificador de geração já usado.");
+        error.status = 409;
+        throw error;
+      }
       const running = [...tasks.values()].filter((t) => t.owner === owner && !t.finishedAt).length;
       if (running >= perOwner) {
         const error = new Error("Há gerações demais em andamento. Aguarde uma terminar e tente de novo.");
         error.status = 429;
         throw error;
       }
-      const id = randomUUID();
+      const id = named || randomUUID();
       const task = { id, owner, route, startedAt: Date.now(), finishedAt: null, status: null, data: null };
       tasks.set(id, task);
       Promise.resolve()

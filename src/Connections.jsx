@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './connections.css';
+import { fetchWithRetry } from './long-fetch.mjs';
 
 const providers = [
   { id: 'higgsfield', name: 'Higgsfield (MCP)', detail: 'Imagens e vídeos pelas ferramentas disponíveis na sua conta MCP.' },
@@ -25,9 +26,17 @@ export function Connections() {
   const [connections, setConnections] = useState([]), [error, setError] = useState('');
   async function refresh() { try { const result = await api('/api/integrations'); setConnections(result.connections || []); setError(''); } catch (e) { setError(e.message); } }
   useEffect(() => { refresh(); }, []);
-  return <section className="r-panel cx-panel"><h2>Do roteiro à imagem. Da imagem ao vídeo.</h2><p>Conecte suas contas para executar ferramentas reais. Cada geração ou ação utiliza o plano e os créditos do provedor escolhido.</p><Feedback error={error} /><div className="cx-provider-grid">{providers.map(provider => <ConnectionCard key={provider.id} provider={provider} connection={connections.find(c => c.provider === provider.id)} onChanged={refresh} />)}</div><p className="field-help">As chaves são enviadas ao serviço da plataforma. Elas não aparecem nos roteiros, no acervo nem nos resultados das ferramentas.</p></section>;
+  return <section className="r-panel cx-panel"><h2>Do roteiro à imagem. Da imagem ao vídeo.</h2><p>Conecte suas contas para executar ferramentas reais. Cada geração ou ação utiliza o plano e os créditos do provedor escolhido.</p><Feedback error={error} /><div className="cx-provider-grid"><PlatformAI />{providers.map(provider => <ConnectionCard key={provider.id} provider={provider} connection={connections.find(c => c.provider === provider.id)} onChanged={refresh} />)}</div><p className="field-help">As chaves são enviadas ao serviço da plataforma. Elas não aparecem nos roteiros, no acervo nem nos resultados das ferramentas.</p></section>;
 }
 export default Connections;
+
+// The platform's own AI (OpenRouter, paid by the platform) writes, reviews and judges without any key from the account.
+function PlatformAI() {
+  const [status, setStatus] = useState(undefined);
+  useEffect(() => { fetchWithRetry('/api/text/status').then(r => r.ok ? r.json() : null).then(setStatus).catch(() => setStatus(null)); }, []);
+  const active = !!status?.serverModel;
+  return <article className="cx-card"><div className="cx-card-title"><h3>OpenRouter · IA da plataforma</h3><span className={active ? 'cx-status is-ready' : 'cx-status'}>{status === undefined ? 'Conferindo…' : status === null ? 'Sem resposta' : active ? 'Ativa' : 'Não configurada'}</span></div><p>{active ? 'Planejamento, redação, revisão e juiz usam os modelos do catálogo pelo OpenRouter, com a chave da Memorável. Não é preciso conectar nada: o gasto aparece no orçamento de IA da conta.' : 'Quando ativa, a escrita usa os modelos do catálogo pelo OpenRouter, com a chave da Memorável, sem conectar nada.'}</p>{active && <p><a href="#app/agentes/time">Escolher o modelo de cada função</a></p>}</article>;
+}
 
 function ConnectionCard({ provider, connection, onChanged }) {
   const [key, setKey] = useState(''), [busy, setBusy] = useState(''), [error, setError] = useState(''), [message, setMessage] = useState(''), [authUrl, setAuthUrl] = useState('');
