@@ -53,7 +53,9 @@ export function WritingStudio() {
   const [stage, setStage] = useState(
     generated ? "edit" : brief.handoffKey ? "setup" : "idea",
   );
-  const [tab, setTab] = useState("selected"),
+  // Drafts already generated but not yet sent to review (a blocked send leaves a piece here): the way back to them.
+  const drafts = state.pieces.filter((p) => p.workspace === state.workspace && ["Rascunho", "Em conferência", "Ajustes"].includes(p.status));
+  const [tab, setTab] = useState(() => (drafts.length ? "drafts" : "selected")),
     [selected, setSelected] = useState(0),
     [audit, setAudit] = useState(null),
     [busy, setBusy] = useState(false),
@@ -332,6 +334,12 @@ export function WritingStudio() {
               Selecionadas <span>{queue.length}</span>
             </button>
             <button
+              aria-pressed={tab === "drafts"}
+              onClick={() => setTab("drafts")}
+            >
+              Em andamento <span>{drafts.length}</span>
+            </button>
+            <button
               aria-pressed={tab === "suggested"}
               onClick={() => setTab("suggested")}
             >
@@ -339,12 +347,27 @@ export function WritingStudio() {
             </button>
           </div>
           <p className="ws-description">
-            {tab === "selected"
-              ? "Referências que você escolheu em Pesquisar ou Vigiar com “Criar a partir daqui”."
-              : "Oportunidades sugeridas pelo Radar a partir do acervo. Ainda precisam da sua escolha."}
+            {tab === "drafts"
+              ? "Conteúdos já gerados que ainda não foram enviados para revisão. Abra um para ajustar e enviar."
+              : tab === "selected"
+                ? "Referências que você escolheu em Pesquisar ou Vigiar com “Criar a partir daqui”."
+                : "Oportunidades sugeridas pelo Radar a partir do acervo. Ainda precisam da sua escolha."}
           </p>
           <div className="ws-ideas">
-            {(tab === "selected" ? queue : suggestions).map((item) => {
+            {tab === "drafts" && drafts.map((p) => (
+              <article key={p.id}>
+                <small className="label">{p.format} · {p.status === "Em conferência" ? "não passou na checagem" : p.status === "Ajustes" ? "ajustes pedidos" : "rascunho"}</small>
+                <h2>{p.title}</h2>
+                <p>{(p.body || "").replace(/[*#]/g, "").slice(0, 180)}</p>
+                <div>
+                  <button className="button secondary" onClick={() => setSelectedPiece(p.id)}>
+                    Abrir e enviar para revisão <ArrowRight size={16} />
+                  </button>
+                </div>
+              </article>
+            ))}
+            {tab === "drafts" && !drafts.length && <p className="field-help">Nenhum conteúdo em andamento nesta marca.</p>}
+            {(tab === "drafts" ? [] : tab === "selected" ? queue : suggestions).map((item) => {
               const source = sources.find((s) => s.id === item.sourceId);
               return (
                 <article key={item.id}>
@@ -393,7 +416,7 @@ export function WritingStudio() {
               );
             })}
           </div>
-          {!(tab === "selected" ? queue : suggestions).length && (
+          {tab !== "drafts" && !(tab === "selected" ? queue : suggestions).length && (
             <div className="ws-empty">
               <Bookmark size={28} />
               <h2>

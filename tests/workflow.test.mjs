@@ -170,3 +170,18 @@ test("the send gate reads the brand with its other names, like generation does",
   assert.equal(brandBlocked(stateWith([])), true, "without the other name the text does not mention the brand");
   assert.equal(brandBlocked(stateWith(["Atlas"])), false, "the other name set on the brand counts");
 });
+
+test("send to review is one step: it checks again, and a blocked piece shows what to fix", async () => {
+  const { submitForReview } = await import("../src/review-submit.mjs");
+  const base = initialState();
+  const piece = { ...base.pieces[0], status: "Em conferência", council: undefined, brief: { format: base.pieces[0].format, brandName: "Escritório de advocacia" } };
+  const stateWith = (aliases) => ({ ...base, role: "Editor", pieces: [piece, ...base.pieces.slice(1)], workspaces: [{ id: piece.workspace, name: "Escritório de advocacia", aliases }] });
+  const blocked = submitForReview(stateWith([]), piece.id);
+  assert.equal(blocked.passed, false);
+  assert.equal(blocked.state.pieces[0].status, "Em conferência", "a blocked piece stays where it is");
+  assert.ok(blocked.council.checks.some((c) => c.blocker && /marca que está produzindo/.test(c.reason)), "and carries the reason");
+  const sent = submitForReview(stateWith(["conversa"]), piece.id);
+  assert.equal(sent.passed, true);
+  assert.equal(sent.state.pieces[0].status, "Em revisão", "the same piece goes to review once the brand is recognised");
+  assert.throws(() => submitForReview(stateWith([]), "inexistente"), /não encontrado/);
+});

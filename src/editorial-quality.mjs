@@ -144,7 +144,7 @@ export function editorialIssues({
   if (name && brief.brandName && !names.some((n) => normalize(copy).includes(n)))
     add(
       "brand",
-      "A mensagem não conecta o tema à marca que está produzindo o conteúdo. A fonte é referência, não o anunciante.",
+      "A mensagem não conecta o tema à marca que está produzindo o conteúdo. A fonte é referência, não o anunciante. Cite o nome da marca no texto ou cadastre outro nome dela em Organização › Outros nomes.",
     );
   for (const source of sources.filter(
     (s) => !["owned", "product"].includes(s.editorialRole),

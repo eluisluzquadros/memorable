@@ -108,6 +108,7 @@ import { Subtabs, Subpanel, useSubtab } from "./Subtabs";
 import { RefinePanel } from "./RefinePanel";
 import { longFetch } from "./long-fetch.mjs";
 import { SpendTile, PlanUsageSettings } from "./PlanUsage";
+import { submitForReview } from "./review-submit.mjs";
 
 const navItems = [
   ["painel", "Visão geral", LayoutDashboard],
@@ -2407,6 +2408,18 @@ function PieceDetail({
   const issues = blockers(state, piece);
   const canApprove = ["Aprovador", "Administrador"].includes(state.role);
   const canEdit = ["Editor", "Administrador"].includes(state.role);
+  // Checks the piece again and sends it to review in one step; a piece that does not pass shows what to fix.
+  function sendForReview() {
+    try {
+      const result = submitForReview(state, piece.id);
+      setState(result.state);
+      if (!result.passed) { notify("A checagem encontrou pontos a ajustar. Confira os critérios abaixo.", true); return; }
+      notify("Conteúdo enviado para revisão.");
+      onClose();
+    } catch (e) {
+      notify(e.message, true);
+    }
+  }
   return (
     <Dialog
       title={editing ? "Editar conteúdo" : "Revisão de conteúdo"}
@@ -2498,10 +2511,6 @@ function PieceDetail({
                   ? `Versão ${piece.approvedRevision} aprovada por ${piece.approver}.`
                   : "A fonte apoia a revisão. A conferência dos fatos e do contexto é humana."}
               </p>
-            </div>
-            <div className="piece-cost">
-              <span>Custo estimado</span>
-              <b>{money(piece.cost)}</b>
             </div>
           </aside>
         </div>
@@ -2611,11 +2620,11 @@ function PieceDetail({
                 Editar conteúdo
               </button>
               <div>
-                {["Rascunho", "Ajustes"].includes(piece.status) && (
+                {["Rascunho", "Ajustes", "Em conferência"].includes(piece.status) && (
                   <button
                     className="button primary"
                     disabled={!canEdit || issues.length > 0}
-                    onClick={() => doAction(piece.id, "review")}
+                    onClick={sendForReview}
                   >
                     Enviar para revisão <Send size={16} />
                   </button>

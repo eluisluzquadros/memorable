@@ -28,6 +28,7 @@ import {
   Bookmark,
   Network,
   ChevronRight,
+  AlertTriangle,
 } from "lucide-react";
 import { AppContext } from "./context";
 import {
@@ -1211,8 +1212,18 @@ export function CouncilReport({ audit }) {
         </b>}
       </div>
       <p>{audit.summary}</p>
+      {/* What blocks the send comes first and in plain words; the checks that passed follow. */}
+      {audit.mode === "local" && audit.checks.some((c) => c.blocker) && (
+        <div className="validation-warning" role="alert">
+          <AlertTriangle size={19} />
+          <div>
+            <b>O que precisa mudar</b>
+            {audit.checks.filter((c) => c.blocker).map((c) => <p key={c.name}>{c.reason}</p>)}
+          </div>
+        </div>
+      )}
       <div className="r-council-checks">
-        {audit.checks.map((c) => (
+        {[...audit.checks].sort((a, b) => Number(!!b.blocker) - Number(!!a.blocker)).map((c) => (
           <div key={c.name}>
             <span className={c.blocker ? "form-error" : "r-success"}>
               {audit.mode==='local' ? c.blocker?'Pendente':'Checado' : `${c.score}/5`}
