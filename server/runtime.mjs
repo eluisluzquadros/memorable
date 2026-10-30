@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { collectSources } from "./collector.mjs";
 import { extractBrand } from "./brand.mjs";
-import { generateSquad, generateProduction, generateVideoScripts, councilAI, providerReady, serverModelName, serverModel, allowedServerModel, analyseRadar } from "./ai.mjs";
+import { generateSquad, generateProduction, generateVideoScripts, councilAI, providerReady, serverModelName, serverModel, allowedServerModel, analyseRadar, providerUsage } from "./ai.mjs";
 import { nextRadarRun, validateRadar } from "../src/operations.mjs";
 import { createAccounts, sessionCookie } from './accounts.mjs';
 import { createSuggestions, contributorCookie, suggestionStatus } from './suggestions.mjs';
@@ -20,7 +20,7 @@ import { ingestFile, ingestUrl, sourceKind } from './ingestion.mjs';
 import { PORT, HOST, APP_ORIGIN, ALLOWED_ORIGINS, clientAddress, canonicalRedirect } from "./config.mjs";
 import { openDb, usingPostgres } from './sql.mjs';
 import { createTasks, bufferedRequest, capturedResponse } from './tasks.mjs';
-import { createLabStore, labView, canOpenRun } from './lab.mjs';
+import { createLabStore, labView, canOpenRun, generationSetups, billCheck } from './lab.mjs';
 import { writerFor } from '../src/model-roles.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // In the cloud this service also delivers the built screens (npm run build → dist/), so pages and API share one address.
@@ -360,7 +360,12 @@ async function handle(req, res) {
         if (!canOpenRun(run, viewer?.id)) return send(res, 403, { error: 'Os textos desta rodada ficam com a conta que os produziu. O benchmark público mostra só notas, custos e tempos.' });
         return send(res, 200, { run, items: await lab.items(run.id) });
       }
-      return send(res, 200, { ...labView(await lab.allItems(), await lab.runs(), viewer?.id), prices: await catalogWithPrices() });
+      const runs = await lab.runs(), view = labView(await lab.allItems(), runs, viewer?.id);
+      // Whole generations on the platform (last 30 days), grouped by the models used: public, no account data.
+      const generations = generationSetups(await observability.generations({ since: new Date(Date.now() - 30 * 86400000).toISOString() }));
+      // The check against OpenRouter's bill is for the accounts that own the benchmark.
+      const bill = view.access === 'owner' ? billCheck(await providerUsage(), runs, await observability.recorded()) : null;
+      return send(res, 200, { ...view, generations, bill, prices: await catalogWithPrices() });
     }
     if (req.method === 'GET' && url.pathname === '/api/models') return send(res,200,{ modelChoice:modelChoice(), defaultModel:providerReady()?serverModelName():null, roleDefaults:roleDefaults(), models:await catalogWithPrices() });
     if (req.method === 'GET' && url.pathname === '/api/observability') {

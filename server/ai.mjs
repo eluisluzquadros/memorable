@@ -29,6 +29,19 @@ export const providerReady = () =>
 export const serverModelName = () =>
   claudeReady() ? process.env.MEMORABLE_CLAUDE_MODEL || DEFAULT_TEXT_MODELS.anthropic : env("MODEL");
 const isOpenRouter = () => { try { return new URL(env("URL")).hostname === "openrouter.ai"; } catch { return false; } };
+// What OpenRouter charged this key (all time, today, this week and month, UTC), to check the platform's
+// own records against the bill. Asked at most every 5 minutes; null without OpenRouter or on failure.
+let usageCache = { at: 0, value: null };
+export async function providerUsage() {
+  if (!isOpenRouter() || !env("KEY")) return null;
+  if (Date.now() - usageCache.at < 300000) return usageCache.value;
+  try {
+    const response = await fetch(new URL("/api/v1/key", env("URL")), { headers: { Authorization: `Bearer ${env("KEY")}` }, signal: AbortSignal.timeout(10000) });
+    const d = response.ok ? (await response.json()).data : null;
+    usageCache = { at: Date.now(), value: d ? { total: d.usage, today: d.usage_daily, week: d.usage_weekly, month: d.usage_monthly, checkedAt: new Date().toISOString() } : null };
+  } catch { usageCache = { at: Date.now(), value: null }; }
+  return usageCache.value;
+}
 // Browser input may only pick a model from the curated catalog (or the configured default).
 export function allowedServerModel(requested) {
   if (!requested) return serverModelName();

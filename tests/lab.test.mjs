@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createLabStore, startRound, labSummary, labStats, labView, canOpenRun, transientError } from "../server/lab.mjs";
+import { createLabStore, startRound, labSummary, labStats, labView, canOpenRun, transientError, generationSetups, billCheck } from "../server/lab.mjs";
+import { createObservability } from "../server/observability.mjs";
+import os from "node:os";
+import fs from "node:fs";
+import path from "node:path";
 
 const quiet = () => {};
 
@@ -140,4 +144,58 @@ test("the public benchmark shows numbers; texts, briefs and reasons stay with th
 test("network drops and rate limits are always retried; a model's own failure is kept as a result", () => {
   for (const e of ["read ECONNRESET", "terminated", "O provedor de IA limitou as requisições por agora.", "HTTP 503", "connect ETIMEDOUT 1.2.3.4:443"]) assert.equal(transientError(e), true, e);
   for (const e of ["O provedor retornou um formato incompatível com o contrato JSON.", "O roteiro voltou incompleto mesmo após uma correção: faltam os campos technique."]) assert.equal(transientError(e), false, e);
+});
+
+test("spend: a text reused from an earlier round is paid once; the overall spend is what the rounds paid", () => {
+  const runs = [
+    { id: "r1", task: "redator", spent_usd: 0.12, config: { briefs: [{ id: "a", format: "LinkedIn" }] } },
+    { id: "r2", task: "redator", spent_usd: 0.05, config: { briefs: [{ id: "a", format: "LinkedIn" }] } },
+  ];
+  const items = [
+    { run_id: "r1", brief_id: "a", role: "redator", model: "m", status: "done", mean: 4, cost_usd: 0.1 },
+    { run_id: "r2", brief_id: "a", role: "redator", model: "m", status: "done", mean: 4, cost_usd: 0.1, checks: { reusedFrom: "r1" } },
+    { run_id: "r2", brief_id: "a", role: "redator", model: "n", status: "done", mean: 4, cost_usd: 0.05 },
+  ];
+  const { overall, byFormat } = labStats(items, runs);
+  assert.ok(Math.abs(byFormat.LinkedIn.spent - 0.15) < 1e-9, "the reused text is not paid again");
+  assert.equal(byFormat.LinkedIn.calls, 2);
+  assert.ok(Math.abs(overall.spent - 0.17) < 1e-9, "the rounds paid 0.17 (a plan outside the items included)");
+  assert.ok(Math.abs(overall.unassigned - 0.02) < 1e-9);
+  assert.ok(Math.abs(overall.costPerText - (0.25 / 3)) < 1e-9, "cost per text still uses every text's own cost");
+});
+
+test("whole generations are read from the call sequence and checked against the provider's bill", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "obs-"));
+  const obs = createObservability(dir);
+  const at = (s) => new Date(Date.parse("2026-10-30T03:55:00Z") + s * 1000).toISOString();
+  const calls = [
+    // generation 1 (Sonnet writes, Argon reviews); generation 2 starts 22 s later with its own script writer
+    [0, "Roteirista", "anthropic/claude-sonnet-5.5", 0.05], [10, "Comitê de roteiro", "google/gemini-4-argon", 0.01], [20, "Editor crítico", "google/gemini-4-argon", 0.02],
+    [42, "Roteirista", "google/gemini-4-argon", 0.02], [50, "Editor crítico", "google/gemini-4-argon", 0.02],
+    // an attempt that stopped before the editor
+    [900, "Planejador", "anthropic/claude-opus-5.5", 0.13],
+  ];
+  for (const [s, role, model, cost] of calls)
+    await obs.instrument(Object.assign(async (system, data, observe) => { observe({ cost }); return {}; }, { modelName: model }), { owner: "ana", route: "/api/squad" })(role === "Roteirista" ? "Você é roteirista" : role === "Planejador" ? "Content Planner" : role === "Editor crítico" ? "Você é editor crítico" : "Revise o lote pela perspectiva", {});
+  // The calls are recorded back to back, so the split comes from the first step of each generation.
+  const list = await obs.generations({ since: "1970-01-01" });
+  assert.deepEqual(list.map((g) => [g.calls, g.complete, g.writers[0]]), [
+    [3, true, "anthropic/claude-sonnet-5.5"], [2, true, "google/gemini-4-argon"], [1, false, "anthropic/claude-opus-5.5"],
+  ]);
+  assert.ok(Math.abs(list[0].cost - 0.08) < 1e-9);
+  const setups = generationSetups([
+    { at: at(0), cost: 0.08, calls: 3, seconds: 20, complete: true, writers: ["anthropic/claude-sonnet-5.5"], reviewers: ["google/gemini-4-argon"] },
+    { at: at(42), cost: 0.04, calls: 2, seconds: 8, complete: true, writers: ["google/gemini-4-argon"], reviewers: ["google/gemini-4-argon"] },
+    { at: at(60), cost: 0.06, calls: 2, seconds: 8, complete: true, writers: ["google/gemini-4-argon"], reviewers: ["google/gemini-4-argon"] },
+    { at: at(900), cost: 0.13, calls: 1, seconds: 30, complete: false, writers: ["anthropic/claude-opus-5.5"], reviewers: [] },
+  ]);
+  assert.equal(setups.setups.length, 2);
+  const argon = setups.setups.find((s) => s.writers[0] === "google/gemini-4-argon");
+  assert.deepEqual([argon.count, argon.minCost, argon.maxCost], [2, 0.04, 0.06]);
+  assert.deepEqual(setups.attempts, { count: 1, cost: 0.13 });
+  const bill = billCheck({ total: 22.37, checkedAt: "x" }, [{ spent_usd: 12.68 }], { lab: 12.13, accounts: 3.46, unowned: 4.78 });
+  assert.ok(Math.abs(bill.recorded - 20.92) < 1e-9);
+  assert.ok(Math.abs(bill.unrecorded - 1.45) < 1e-9, "what the bill has beyond the records is shown, not hidden");
+  assert.equal(billCheck(null, [], {}), null);
+  obs.close();
 });

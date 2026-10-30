@@ -78,6 +78,32 @@ export function createObservability(dir, { context = () => null } = {}) {
     for (const r of rows) byWorkspace[r.workspace || ""] = (byWorkspace[r.workspace || ""] || 0) + (r.cost || 0);
     return { total: rows.reduce((s, r) => s + (r.cost || 0), 0), calls: rows.length, byWorkspace };
   }
+  // What one whole generation cost (plan or script, committee, writer, editor and rewrites), not one call.
+  // Calls carry no request id, so a generation is read from the sequence of one account on one route: it
+  // starts with the Planner or the Script writer (always the first step), or after 10 minutes of silence.
+  // A generation that never reached the critical editor was an attempt that stopped (an error, a closed tab).
+  async function generations({ since, route = "/api/squad" } = {}) {
+    const rows = await db.all("SELECT owner, at, ms, role, model, cost, ok FROM llm_calls WHERE route = ? AND at >= ? ORDER BY owner, at", route, since);
+    const list = [];
+    let current = null;
+    for (const r of rows) {
+      const end = new Date(r.at).getTime(), start = end - (r.ms || 0);
+      if (!current || current.owner !== r.owner || ["Planejador", "Roteirista"].includes(r.role) || start - current.end > 600000) {
+        current = { owner: r.owner, start, end, cost: 0, calls: 0, models: {}, edited: false };
+        list.push(current);
+      }
+      current.end = Math.max(current.end, end);
+      current.cost += r.cost || 0;
+      current.calls++;
+      if (r.ok && r.role === "Editor crítico") current.edited = true;
+      (current.models[r.role] ||= new Set()).add(r.model);
+    }
+    const pick = (g, roles) => [...new Set(roles.flatMap((role) => [...(g.models[role] || [])]))];
+    return list.map((g) => ({
+      at: new Date(g.start).toISOString(), cost: g.cost, calls: g.calls, seconds: Math.round((g.end - g.start) / 1000), complete: g.edited,
+      writers: pick(g, ["Planejador", "Roteirista", "Redator"]), reviewers: pick(g, ["Comitê de roteiro", "Editor crítico"]),
+    }));
+  }
   async function summary({ owner = null, days = 30, runTag } = {}) {
     const since = new Date(Date.now() - days * 86400000).toISOString();
     const where = ["at >= ?"], params = [since];
@@ -101,5 +127,11 @@ export function createObservability(dir, { context = () => null } = {}) {
       recent: rows.slice(0, 40).map((r) => ({ at: r.at, role: r.role, model: r.model, ms: r.ms, inputTokens: r.input_tokens, outputTokens: r.output_tokens, cost: r.cost, ok: !!r.ok, error: r.error, route: r.route, runTag: r.run_tag })),
     };
   }
-  return { instrument, summary, spend, close: () => db.close() };
+  // Everything recorded since a moment, split by where it came from (for the check against the provider's bill).
+  async function recorded(since = "1970-01-01T00:00:00.000Z") {
+    const rows = await db.all("SELECT route, owner, cost FROM llm_calls WHERE at >= ?", since);
+    const sum = (f) => rows.filter(f).reduce((n, r) => n + (r.cost || 0), 0);
+    return { lab: sum((r) => r.route === "lab"), accounts: sum((r) => r.route !== "lab" && r.owner), unowned: sum((r) => r.route !== "lab" && !r.owner), calls: rows.length };
+  }
+  return { instrument, summary, spend, generations, recorded, close: () => db.close() };
 }

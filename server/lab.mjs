@@ -182,13 +182,16 @@ function scope(items, runs) {
 export function labStats(items, runs) {
   const { counts, format } = scope(items, runs);
   const median = (xs) => { const v = xs.filter(Number.isFinite).sort((a, b) => a - b); return v.length ? v[Math.floor(v.length / 2)] : null; };
+  // A text a later round reused from an earlier one (checks.reusedFrom) keeps its cost for cost per text,
+  // but that money was paid once: it counts in the round that produced it.
+  const paid = (i) => !i.checks?.reusedFrom;
   const stat = (list) => {
     const texts = list.filter((i) => i.role === "redator" && counts(i));
     const done = texts.filter((i) => i.status === "done");
     const judged = done.filter((i) => Number.isFinite(i.mean));
     return {
-      spent: list.reduce((n, i) => n + (Number.isFinite(i.cost_usd) ? i.cost_usd : 0), 0),
-      calls: list.filter((i) => i.status === "done").length,
+      spent: list.filter(paid).reduce((n, i) => n + (Number.isFinite(i.cost_usd) ? i.cost_usd : 0), 0),
+      calls: list.filter((i) => i.status === "done" && paid(i)).length,
       texts: texts.length, judged: judged.length, failures: texts.length - done.length,
       judgeCalls: list.filter((i) => i.role === "juiz" && i.status === "done").length,
       mean: avg(judged.map((i) => i.mean)),
@@ -198,7 +201,12 @@ export function labStats(items, runs) {
     };
   };
   const formats = [...new Set(items.filter((i) => i.role === "redator").map(format))];
-  return { overall: stat(items), byFormat: Object.fromEntries(formats.map((f) => [f, stat(items.filter((i) => format(i) === f))])) };
+  // Each round also adds up every call it paid for, including attempts that were retried and replaced and
+  // plans kept outside the items: the overall spend is that sum, which is what the provider charged.
+  const overall = stat(items);
+  const charged = runs.reduce((n, r) => n + (Number(r.spent_usd) || 0), 0);
+  if (charged > overall.spent) Object.assign(overall, { unassigned: charged - overall.spent, spent: charged });
+  return { overall, byFormat: Object.fromEntries(formats.map((f) => [f, stat(items.filter((i) => format(i) === f))])) };
 }
 
 export function labSummary(items, runs, floor = FLOOR) {
@@ -227,5 +235,41 @@ export function labView(items, runs, viewerId) {
       : { id: r.id, experiment: r.experiment, title: r.title, task: r.task, status: r.status, spent_usd: r.spent_usd, budget_usd: r.budget_usd, created_at: r.created_at, outputs: outputs(r.id), open: false }),
     summary: { ...summary, excluded: summary.excluded.filter((e) => mine.has(e.run)), excludedCount: summary.excluded.length },
     stats: labStats(items, runs),
+  };
+}
+
+// Whole generations on the platform grouped by the models that ran them (writer side | review side):
+// what a content costs end to end, next to the writer-only cost the benchmark measures. Attempts that
+// stopped before the editor are counted apart (real spend, no content).
+export function generationSetups(list = []) {
+  const median = (xs) => { const v = [...xs].sort((a, b) => a - b), m = Math.floor(v.length / 2); return !v.length ? null : v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2; };
+  const groups = new Map();
+  for (const g of list.filter((g) => g.complete)) {
+    const key = `${g.writers.join(" + ")}|${g.reviewers.join(" + ")}`;
+    const group = groups.get(key) || { writers: g.writers, reviewers: g.reviewers, costs: [], seconds: [], last: g.at };
+    group.costs.push(g.cost); group.seconds.push(g.seconds);
+    if (g.at > group.last) group.last = g.at;
+    groups.set(key, group);
+  }
+  const stopped = list.filter((g) => !g.complete);
+  return {
+    setups: [...groups.values()].map(({ costs, seconds, last, ...g }) => ({ ...g, count: costs.length, medianCost: median(costs), minCost: Math.min(...costs), maxCost: Math.max(...costs), medianSeconds: median(seconds), lastDay: last.slice(0, 10) }))
+      .sort((a, b) => b.lastDay.localeCompare(a.lastDay) || b.count - a.count),
+    attempts: { count: stopped.length, cost: stopped.reduce((n, g) => n + g.cost, 0) },
+  };
+}
+
+// The platform's records against what OpenRouter charged the key: the benchmark counts what each round paid,
+// the rest is every recorded call of the accounts and of reads without an account. What is left was charged
+// without a detailed record (scripts that called the models directly before the record existed, the local
+// app, which keeps its own record on the developer's machine).
+export function billCheck(usage, runs, all) {
+  if (!usage || !Number.isFinite(usage.total)) return null;
+  const benchmark = runs.reduce((n, r) => n + (Number(r.spent_usd) || 0), 0);
+  const recorded = benchmark + all.accounts + all.unowned;
+  return {
+    charged: usage.total, benchmark, accounts: all.accounts, unowned: all.unowned, recorded,
+    unrecorded: Math.max(0, usage.total - recorded),
+    checkedAt: usage.checkedAt,
   };
 }
