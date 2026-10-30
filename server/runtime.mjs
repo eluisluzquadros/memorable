@@ -22,7 +22,7 @@ import { openDb, usingPostgres } from './sql.mjs';
 import { createTasks, bufferedRequest, capturedResponse } from './tasks.mjs';
 import { createLabStore, labView, generationSetups, billCheck } from './lab.mjs';
 import { createFx } from './fx.mjs';
-import { createPlatform } from './platform.mjs';
+import { createPlatform, toCredits } from './platform.mjs';
 import { writerFor } from '../src/model-roles.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // In the cloud this service also delivers the built screens (npm run build → dist/), so pages and API share one address.
@@ -56,18 +56,26 @@ const activeBrands = doc => (doc?.workspaces || []).filter(w => !w.archived);
 // The brand of the request being served travels with it, so every AI call is recorded under that brand.
 const requestContext = new AsyncLocalStorage();
 const observability = createObservability(dataDir, { context: () => requestContext.getStore() });
-// The account AI budget (state.aiBudget = { amount in US$, period "semana" or "mês" }) against real spend.
-const periodStart = (period) => {
-  const now = new Date();
-  if (period === "semana") { const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())); d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7)); return d.toISOString(); }
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
-};
-async function budgetStatus(user) {
-  const doc = (await accounts.read(user)).state;
-  const budget = doc.aiBudget && Number(doc.aiBudget.amount) > 0 ? { amount: Number(doc.aiBudget.amount), period: doc.aiBudget.period === "semana" ? "semana" : "mês" } : null;
-  const since = periodStart(budget?.period || "mês");
+// What an account has used of its plan this month, in credits (never dollars: the provider's cost is the
+// platform's, the customer has an allowance). Every call carries a brand, so the brands' credits always add
+// up to the total: calls that belong to no single brand sit in their own named lines ("" and "grupo").
+const monthStart = () => { const now = new Date(); return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString(); };
+async function planUsage(user) {
+  const plan = await platform.planFor(user);
+  const reset = await platform.usageSince(user.id);
+  const start = monthStart(), since = reset && reset > start ? reset : start;
   const spend = await observability.spend(user.id, since);
-  return { budget, since, ...spend, share: budget ? spend.total / budget.amount : null };
+  const { byWorkspace, used } = toCredits(spend.byWorkspace, plan.creditsPerUsd);
+  return { period: "mês", since, allowance: plan.allowance, used, calls: spend.calls, byWorkspace, share: plan.allowance ? used / plan.allowance : null };
+}
+// Calls without a brand in the request (reading a reference, the brand's DNA) belong to the brand the person
+// has open; the group's own checks go to the group. Never "no brand": the usage view has to add up.
+async function brandOf(req, input, pathname) {
+  if (pathname === "/api/group-coherence") return "grupo";
+  const given = input.packet?.workspace || input.workspace;
+  if (given) return given;
+  const user = await accounts.lookup(req);
+  return (user && (await accounts.peek(user.id))?.workspace) || null;
 }
 const BUDGET_ROUTES = new Set(["/api/squad", "/api/production", "/api/council", "/api/refine", "/api/video-scripts/generate", "/api/brand-dna", "/api/group-coherence", "/api/radar/analyse"]);
 const lab = createLabStore(path.join(dataDir, 'lab.sqlite'));
@@ -255,6 +263,7 @@ async function handle(req, res) {
     if (url.pathname.startsWith('/api/ingest/')) {
       if (req.method !== 'POST') return send(res,405,{error:'Método indisponível.'});
       const input = await read(req);
+      requestContext.enterWith({ workspace: await brandOf(req, input, url.pathname) });
       if (url.pathname === '/api/ingest/url') {
         const user = await accounts.lookup(req);
         const isInstagram = (() => { try { return sourceKind(input.url) === 'social'; } catch { return false; } })();
@@ -357,8 +366,8 @@ async function handle(req, res) {
     if (req.method === 'GET' && url.pathname === '/api/fx') return send(res, 200, await fx());
     if (req.method === 'GET' && url.pathname === '/api/budget') {
       const user = await accounts.lookup(req);
-      if (!user) return send(res, 401, { error: 'Entre na sua conta para ver o orçamento.' });
-      return send(res, 200, await budgetStatus(user));
+      if (!user) return send(res, 401, { error: 'Entre na sua conta para ver o uso do plano.' });
+      return send(res, 200, await planUsage(user));
     }
     // The platform's own area (benchmark, models, costs): only the team that runs Memorável.
     if (url.pathname.startsWith('/api/lab') || url.pathname === '/api/models' || url.pathname.startsWith('/api/platform/')) {
@@ -373,10 +382,15 @@ async function handle(req, res) {
         return send(res, 200, { run, items: await lab.items(run.id) });
       }
       const runs = await lab.runs(), view = labView(await lab.allItems(), runs);
-      // Whole generations on the platform (last 30 days), grouped by the models used.
-      const generations = generationSetups(await observability.generations({ since: new Date(Date.now() - 30 * 86400000).toISOString() }));
-      const bill = billCheck(await providerUsage(), runs, await observability.recorded());
-      return send(res, 200, { ...view, generations, bill, prices: await catalogWithPrices() });
+      return send(res, 200, { ...view, prices: await catalogWithPrices() });
+    }
+    if (req.method === 'GET' && url.pathname === '/api/platform/costs') {
+      const days = Math.min(365, Math.max(1, Number(url.searchParams.get('days')) || 30));
+      const since = new Date(Date.now() - days * 86400000).toISOString();
+      const [recent, all, generations] = await Promise.all([observability.ledger({ since }), observability.ledger(), observability.generations({ since })]);
+      const runs = await lab.runs();
+      const owners = await accounts.names(Object.keys(recent.byOwner));
+      return send(res, 200, { days, ledger: recent, owners, generations: generationSetups(generations), bill: billCheck(await providerUsage(), runs, await observability.recorded()), prices: null, allTime: all.total });
     }
     if (req.method === 'GET' && url.pathname === '/api/platform/models') return send(res, 200, { policy: await platform.modelPolicy() });
     if (req.method === 'GET' && url.pathname === '/api/models') return send(res,200,{ modelChoice:modelChoice(), defaultModel:providerReady()?serverModelName():null, roleDefaults:roleDefaults(), models:await catalogWithPrices() });
@@ -396,14 +410,14 @@ async function handle(req, res) {
     if (req.method !== "POST")
       return send(res, 404, { error: "Rota não encontrada." });
     const input = await read(req);
-    requestContext.enterWith({ workspace: input.packet?.workspace || input.workspace || null });
-    // Over the account AI budget, a new generation needs an explicit yes from the person.
+    requestContext.enterWith({ workspace: await brandOf(req, input, url.pathname) });
+    // Past the plan's monthly allowance, a new generation needs an explicit yes from the person.
     if (BUDGET_ROUTES.has(url.pathname) && !input.confirmOverBudget) {
       const user = await accounts.lookup(req);
       if (user) {
-        const status = await budgetStatus(user);
-        if (status.budget && status.total >= status.budget.amount) {
-          const error = new Error(`O orçamento de IA da conta (US$ ${status.budget.amount.toFixed(2)} por ${status.budget.period}) já foi usado: US$ ${status.total.toFixed(2)}. Confirme para gerar mesmo assim ou ajuste o orçamento em Configurações.`);
+        const usage = await planUsage(user);
+        if (usage.allowance && usage.used >= usage.allowance) {
+          const error = new Error(`Você já usou ${usage.used.toLocaleString("pt-BR")} dos ${usage.allowance.toLocaleString("pt-BR")} créditos do plano neste mês.`);
           throw Object.assign(error, { status: 402, code: "budget" });
         }
       }

@@ -1,12 +1,13 @@
 import React from "react";
 import { ModelLab } from "./ModelLab";
 import { ModelRoles } from "./ModelRoles";
+import { AdminCosts } from "./AdminCosts";
 import { Subtabs, Subpanel, useSubtab } from "./Subtabs";
 
 // The platform's own area, for the team that runs Memorável: the benchmark that calibrates models and
 // prices, and which model plays each role for every account. Customers never see it (the service refuses
 // them too).
-const TABS = [["laboratorio", "Laboratório"], ["modelos", "Quem faz o quê"]];
+const TABS = [["laboratorio", "Laboratório"], ["modelos", "Quem faz o quê"], ["custos", "Custos"]];
 
 export function PlatformAdmin() {
   const [tab, setTab] = useSubtab("admin", TABS.map(([id]) => id));
@@ -19,7 +20,7 @@ export function PlatformAdmin() {
         </div>
       </div>
       <Subtabs label="Administração da plataforma" items={TABS} value={tab} onChange={setTab} />
-      {tab === "modelos" ? <Subpanel id="modelos"><ModelRoles /></Subpanel> : <Subpanel id="laboratorio"><ModelLab /></Subpanel>}
+      {tab === "modelos" ? <Subpanel id="modelos"><ModelRoles /></Subpanel> : tab === "custos" ? <Subpanel id="custos"><AdminCosts /></Subpanel> : <Subpanel id="laboratorio"><ModelLab /></Subpanel>}
     </div>
   );
 }

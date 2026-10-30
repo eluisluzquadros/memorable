@@ -116,65 +116,6 @@ function BenchmarkStats({ stat, delivered, view }) {
   );
 }
 
-const day = (iso) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
-// The benchmark measures the writing step; a real generation also plans, goes through the committee, the
-// critical editor and up to two rewrites. These are real platform generations, grouped by the models used.
-function GenerationCosts({ generations }) {
-  if (!generations?.setups?.length) return null;
-  const { setups, attempts } = generations;
-  return (
-    <section className="r-panel" aria-label="Custo de uma geração completa">
-      <h3>Quanto custa um conteúdo na plataforma</h3>
-      <p className="field-help">O laboratório mede só a redação. Uma geração completa também planeja, passa pelo comitê, pelo editor crítico e por até duas reescritas. Gerações reais dos últimos 30 dias, por combinação de modelos.</p>
-      <div className="lab-table-wrap">
-        <table className="lab-table">
-          <thead><tr><th>Redação</th><th>Revisão</th><th>Gerações</th><th>Custo por conteúdo</th><th>Tempo</th><th>Última</th></tr></thead>
-          <tbody>
-            {setups.map((g) => (
-              <tr key={`${g.writers}|${g.reviewers}`}>
-                <td>{g.writers.map(short).join(" + ") || "—"}</td>
-                <td>{g.reviewers.map(short).join(" + ") || "—"}</td>
-                <td>{g.count}</td>
-                <td>{usd(g.medianCost, 2)}{g.count > 1 && g.maxCost - g.minCost >= 0.005 ? <small> ({usd(g.minCost, 2)} a {usd(g.maxCost, 2)})</small> : null}</td>
-                <td>{Number.isFinite(g.medianSeconds) ? `${g.medianSeconds} s` : "—"}</td>
-                <td>{day(g.lastDay)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {attempts.count > 0 && <p className="field-help">Além delas, {attempts.count} {attempts.count === 1 ? "tentativa parou" : "tentativas pararam"} antes do editor (erro ou geração interrompida): {usd(attempts.cost, 2)} gastos sem conteúdo.</p>}
-    </section>
-  );
-}
-
-// For the accounts that own the benchmark: what OpenRouter charged the platform key against what the
-// platform recorded, so every dollar is accounted for.
-function BillCheck({ bill }) {
-  if (!bill) return null;
-  const rows = [
-    ["Benchmark (rodadas do laboratório)", bill.benchmark],
-    ["Gerações e leituras das contas", bill.accounts],
-    ["Leituras e testes sem conta", bill.unowned],
-    ["Sem registro detalhado", bill.unrecorded],
-  ];
-  return (
-    <section className="r-panel" aria-label="Conferência com a OpenRouter">
-      <h3>Conferência com a OpenRouter</h3>
-      <p className="field-help">Só as contas donas do benchmark veem este quadro. É tudo o que a chave da plataforma pagou desde o início, comparado com o que a plataforma registrou.</p>
-      <div className="lab-table-wrap">
-        <table className="lab-table">
-          <tbody>
-            {rows.map(([label, value]) => <tr key={label}><th scope="row">{label}</th><td>{usd(value, 2)}</td></tr>)}
-            <tr><th scope="row"><b>Cobrado pela OpenRouter</b></th><td><b>{usd(bill.charged, 2)}</b></td></tr>
-          </tbody>
-        </table>
-      </div>
-      {bill.unrecorded >= 0.005 && <p className="field-help">Sem registro detalhado: chamadas feitas por scripts antes de o registro existir (a primeira rodada do benchmark) e pelo app local, que guarda o próprio registro no computador de desenvolvimento.</p>}
-    </section>
-  );
-}
-
 function RunDetail({ id }) {
   const [data, setData] = useState(null);
   const [reveal, setReveal] = useState(false);
@@ -240,11 +181,8 @@ export function ModelLab() {
           {["Geral", ...formats].map((name) => <button key={name} type="button" role="tab" aria-selected={view === name} onClick={() => setView(name)}>{name}</button>)}
         </div>
         <p className="field-help">Valores em {current.currency === "BRL" ? "reais" : "dólares"}; os provedores cobram em dólar. {rateNote(current)}.</p>
-        {data.access === "public" && <p className="field-help lab-public">Benchmark público: notas, custos e tempos de cada modelo. Os textos ficam só com as contas que os produziram.</p>}
       </section>
       <BenchmarkStats stat={stat} delivered={delivered} view={view} />
-      <GenerationCosts generations={data.generations} />
-      {view === "Geral" && <BillCheck bill={data.bill} />}
       {rows.length ? (
         <>
           {view === "Geral" ? (

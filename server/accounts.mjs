@@ -52,6 +52,12 @@ export function createAccounts(filename) {
  const documentOf = async userId => { const row=await db.get('SELECT document FROM account_state WHERE user_id=?',userId); return row?JSON.parse(row.document):null; };
  return {
   lookup, authenticate,
+  // Who the ids are (name and e-mail), for the platform team's cost views.
+  async names(ids) {
+   const list=[...new Set(ids)].filter(Boolean); if(!list.length) return {};
+   const rows=await db.all(`SELECT id,name,email FROM users WHERE id IN (${list.map(()=>'?').join(',')})`,...list);
+   return Object.fromEntries(rows.map(u=>[u.id,{name:u.name,email:u.email}]));
+  },
   async revoke(req) { await db.run('DELETE FROM sessions WHERE token_hash=?',digest(cookieToken(req))); },
   read(user) {
    return db.tx(async q=>{

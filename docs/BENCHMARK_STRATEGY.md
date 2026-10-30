@@ -92,16 +92,16 @@ Na rodada 4 do EXP-308 descobrimos dois erros que vinham desde o início. Primei
 
 ## 7. Base de testes: os 6 cases da landing
 
-| Case | Conta e contexto | Funções exercitadas |
-|---|---|---|
-| Um episódio, sete conteúdos | Podcast Bastidores, da BBMD (YouTube e Instagram) | transcrição, Redator multiformato, vídeo curto |
-| Uma operação, seis vozes | Grupo BBMD | DNA, voz por marca, coerência do grupo |
-| Do radar ao LinkedIn | Skyvidya | Radar, Redator com fonte, imagem |
-| Cinco anúncios UGC | conta de demonstração (loja) | imagem e vídeo, 5 ganchos |
-| Dúvida virou série | conta de demonstração (clínica) | série de roteiros de 15 s |
-| Constância sem equipe | marca pessoal do Isaac (quando existir) ou demonstração | calendário semanal |
+**Onde roda.** Benchmark, portfólio e testes rodam na **conta interna da Memorável** (Grupo Memoravel, `mktmemoravel@gmail.com`, administradora da plataforma), isolada das contas de clientes (Skyvidya e Grupo BBMD), que foram zeradas em 2026-10-30 (peças, execuções, campanhas e eventos; marcas, DNA e fontes ficaram). Cada case é uma marca dessa conta, e o custo real aparece em Admin Memorável > Custos. Clientes veem só créditos de plano; o benchmark e os custos em dinheiro são da equipe da plataforma (calibrar preço, margem e a conversa com investidores).
 
-Os cases resultantes são aprovados por uma pessoa antes de entrar no portfólio. Só os de contas reais podem ser mostrados como cases reais.
+| Case (landing) | Marca na conta interna | Funções exercitadas |
+|---|---|---|
+| Um episódio, sete conteúdos | Escritório de advocacia | transcrição, Redator multiformato, vídeo curto |
+| Uma rede inteira, uma só voz | Ecossistema de Inovação | DNA, voz por iniciativa, pautas e agenda por marca |
+| Do radar ao LinkedIn | Consultoria B2B | Radar, Redator com fonte, imagem |
+| Cinco anúncios UGC | Loja online | imagem e vídeo, 5 ganchos |
+| Dúvida virou série | Clínica | série de roteiros de 15 s |
+| Constância sem equipe | Criador de conteúdo | calendário semanal |
 
 ## 8. Painel
 

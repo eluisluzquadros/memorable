@@ -62,7 +62,7 @@ const ACTS = [
 
 const CASES = [
   { brand: "Escritório de advocacia", title: "Um episódio, sete conteúdos", from: "Podcast de 40 min", to: "Carrossel, Reels, artigo, newsletter e LinkedIn" },
-  { brand: "Grupo com seis marcas", title: "Uma operação, seis vozes", from: "DNA de cada marca", to: "Pautas, aprovação e agenda separadas por marca" },
+  { brand: "Ecossistema de Inovação", title: "Uma rede inteira, uma só voz", from: "Eventos, mentorias e casos de startups", to: "Pautas, aprovação e agenda para cada iniciativa da rede" },
   { brand: "Consultoria B2B", title: "Do radar ao LinkedIn", from: "Blog do setor monitorado", to: "Post com fonte citada, aprovado em um fluxo" },
   { brand: "Loja online", title: "Cinco anúncios UGC", from: "Uma foto do produto", to: "Cinco ganchos diferentes para testar" },
   { brand: "Clínica", title: "Dúvida virou série", from: "Perguntas do atendimento", to: "Série de Reels com roteiro de 15 s" },
@@ -340,8 +340,8 @@ function HeroCopy({ account }) {
       <p className="mx-lede">da pesquisa à publicação, em um só fluxo.</p>
       <p className="mx-signature">Memorável! O jeito certo de deixar sua marca no mundo.</p>
       <div className="mx-actions">
-        <a className="mx-cta" href="#app/painel">
-          Ver o fluxo funcionando <ArrowUpRight size={18} aria-hidden="true" />
+        <a className="mx-cta" href={account ? "#app/painel" : "#auth"}>
+          {account ? "Ver o fluxo funcionando" : "Começar agora"} <ArrowUpRight size={18} aria-hidden="true" />
         </a>
         <a className="mx-ghost" href={account ? "#app/painel" : "#auth"}>
           {account ? "Meu espaço" : "Criar conta"}
@@ -628,8 +628,8 @@ export default function LandingMotion({ account, onLogout }) {
           </h2>
           <div>
             <p>Sua próxima pauta pode estar no ar esta semana — revisada, aprovada e com a sua voz.</p>
-            <a className="mx-cta" href="#app/painel">
-              Ver o fluxo funcionando <ArrowUpRight size={18} aria-hidden="true" />
+            <a className="mx-cta" href="#auth">
+              Começar agora <ArrowUpRight size={18} aria-hidden="true" />
             </a>
           </div>
         </section>

@@ -133,5 +133,24 @@ export function createObservability(dir, { context = () => null } = {}) {
     const sum = (f) => rows.filter(f).reduce((n, r) => n + (r.cost || 0), 0);
     return { lab: sum((r) => r.route === "lab"), accounts: sum((r) => r.route !== "lab" && r.owner), unowned: sum((r) => r.route !== "lab" && !r.owner), calls: rows.length };
   }
-  return { instrument, summary, spend, generations, recorded, close: () => db.close() };
+  // The company's cost ledger since a moment, for the platform team: by origin, account, model and day.
+  // Costs are what the provider charged (dollars); nothing here is shown to customers.
+  async function ledger({ since = "1970-01-01T00:00:00.000Z" } = {}) {
+    const rows = await db.all("SELECT at, owner, workspace, route, model, cost, ok FROM llm_calls WHERE at >= ?", since);
+    const add = (map, key, row) => {
+      const g = (map[key] ||= { cost: 0, calls: 0, failed: 0 });
+      g.cost += row.cost || 0; g.calls++; g.failed += row.ok ? 0 : 1;
+    };
+    const total = { cost: 0, calls: 0, failed: 0 }, byOrigin = {}, byOwner = {}, byModel = {}, byDay = {};
+    for (const row of rows) {
+      const origin = row.route === "lab" ? "lab" : row.owner ? "accounts" : "unowned";
+      add(byOrigin, origin, row);
+      if (row.owner && origin === "accounts") add(byOwner, row.owner, row);
+      add(byModel, row.model || "desconhecido", row);
+      add(byDay, String(row.at).slice(0, 10), row);
+      total.cost += row.cost || 0; total.calls++; total.failed += row.ok ? 0 : 1;
+    }
+    return { since, total, byOrigin, byOwner, byModel, byDay };
+  }
+  return { instrument, summary, spend, generations, recorded, ledger, close: () => db.close() };
 }

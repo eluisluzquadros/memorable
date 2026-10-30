@@ -6,8 +6,7 @@ import './organization.css';
 import {Contributors} from './Contributors';
 import {GroupDNA} from './GroupDNA';
 import {Subtabs,Subpanel,useSubtab} from './Subtabs';
-import {useAiSpend,usd,sinceLabel} from './AiBudget';
-import {useCurrency} from './CurrencyControls';
+import {usePlanUsage,credits,sinceLabel,outsideBrands} from './PlanUsage';
 const reviewCount=pieces=>pieces.filter(p=>p.status==='Em revisão').length;
 
 function BrandRow({brand,state,setState,notify,onOpen}){
@@ -51,12 +50,12 @@ export function OrganizationSettings(){
 export function GroupOverview(){
   const {state,account,goto,changeWorkspace}=useContext(AppContext);
   const brands=workspaceList(state),ids=new Set(brands.map(w=>w.id)),pieces=state.pieces.filter(p=>ids.has(p.workspace));
-  // Real AI spend of the whole account in the budget period; calls made before per-brand tracking (or without a brand) count only in the total.
-  useCurrency();
-  const spend=useAiSpend(state.aiBudget?.amount),unassigned=spend?.byWorkspace?.['']||0;
-  const spendHelp=spend?`desde ${sinceLabel(spend.since)} · real${unassigned>=0.005?` · ${usd(unassigned)} sem marca`:''}`:account?'carregando…':'disponível com conta';
+  // Plan usage in credits: the brands' credits plus the lines outside any brand add up to the total.
+  const spend=usePlanUsage(),outside=outsideBrands(spend,ids);
+  const spendHelp=spend?`de ${credits(spend.allowance)} do plano · desde ${sinceLabel(spend.since)}`:account?'carregando…':'disponível com conta';
   return <div className="organization-page"><div className="page-heading"><div><h1>{state.organizationName || 'Grupo BBMD'}</h1><p>Acompanhe todas as marcas. Abra uma delas para pesquisar, criar e revisar no contexto certo.</p></div><button className="button secondary" onClick={()=>goto('organizacao')}>Gerenciar marcas <ArrowRight size={16}/></button></div>
-    <div className="group-metrics">{[[brands.length,'Marcas ativas','cada uma com contexto próprio'],[pieces.length,'Conteúdos','em todas as marcas ativas'],[reviewCount(pieces),'Em revisão','aguardando decisão humana'],[pieces.filter(p=>p.status==='Agendado').length,'Na agenda','agendamentos locais'],[spend?usd(spend.total):'—','Gasto com IA',spendHelp]].map(([value,label,help])=><div key={label}><span>{label}</span><b>{value}</b><small>{help}</small></div>)}</div>
-    <div className="group-brand-grid">{brands.map(brand=>{const own=pieces.filter(p=>p.workspace===brand.id);return <article className="group-brand-card" key={brand.id}><header><span className="workspace-avatar" style={{background:brand.color}}>{brand.initials}</span><h2>{brand.name}</h2></header><p>{state.voices[brand.id]?.audience || 'Defina o público desta marca no Segundo cérebro.'}</p><dl><div><dt>Conteúdos</dt><dd>{own.length}</dd></div><div><dt>Em revisão</dt><dd>{reviewCount(own)}</dd></div><div><dt>Fontes próprias</dt><dd>{state.sources.filter(s=>s.workspace===brand.id).length}</dd></div>{spend&&<div><dt>Gasto com IA</dt><dd>{usd(spend.byWorkspace?.[brand.id])}</dd></div>}</dl><div className="card-actions"><button className="button secondary" onClick={()=>{changeWorkspace(brand.id);goto('painel');}}>Abrir marca <ArrowRight size={16}/></button>{reviewCount(own)>0&&<button className="text-button" onClick={()=>{changeWorkspace(brand.id);goto('aprovar');}}>Conferir revisão →</button>}</div></article>;})}</div>
+    <div className="group-metrics">{[[brands.length,'Marcas ativas','cada uma com contexto próprio'],[pieces.length,'Conteúdos','em todas as marcas ativas'],[reviewCount(pieces),'Em revisão','aguardando decisão humana'],[pieces.filter(p=>p.status==='Agendado').length,'Na agenda','agendamentos locais'],[spend?credits(spend.used):'—','Créditos usados',spendHelp]].map(([value,label,help])=><div key={label}><span>{label}</span><b>{value}</b><small>{help}</small></div>)}</div>
+    <div className="group-brand-grid">{brands.map(brand=>{const own=pieces.filter(p=>p.workspace===brand.id);return <article className="group-brand-card" key={brand.id}><header><span className="workspace-avatar" style={{background:brand.color}}>{brand.initials}</span><h2>{brand.name}</h2></header><p>{state.voices[brand.id]?.audience || 'Defina o público desta marca no Segundo cérebro.'}</p><dl><div><dt>Conteúdos</dt><dd>{own.length}</dd></div><div><dt>Em revisão</dt><dd>{reviewCount(own)}</dd></div><div><dt>Fontes próprias</dt><dd>{state.sources.filter(s=>s.workspace===brand.id).length}</dd></div>{spend&&<div><dt>Créditos</dt><dd>{credits(spend.byWorkspace?.[brand.id])}</dd></div>}</dl><div className="card-actions"><button className="button secondary" onClick={()=>{changeWorkspace(brand.id);goto('painel');}}>Abrir marca <ArrowRight size={16}/></button>{reviewCount(own)>0&&<button className="text-button" onClick={()=>{changeWorkspace(brand.id);goto('aprovar');}}>Conferir revisão →</button>}</div></article>;})}</div>
+    {outside.length>0&&<p className="field-help">Além das marcas: {outside.map(([id,label,value])=>`${label} ${credits(value)}`).join(' · ')} créditos. O total do plano é a soma de tudo.</p>}
     <section className="r-panel gd-link"><div><h2>DNA do grupo</h2><p>As regras que valem para todas as marcas e a revisão de coerência entre elas.</p></div><button className="button secondary" onClick={()=>goto('organizacao/grupo')}>Abrir DNA do grupo <ArrowRight size={16}/></button></section><p className="field-help">Esta visão consolida o andamento. A geração e a aprovação continuam vinculadas à marca escolhida. {account?'Marcas arquivadas ficam fora dos totais ativos.':'Os dados deste grupo pertencem à demonstração BBMD.'}</p></div>;
 }

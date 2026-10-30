@@ -22,9 +22,12 @@ export function AccountRoot({ Component }) {
  }
  function exportRecovery(){const url=URL.createObjectURL(new Blob([JSON.stringify(recovery,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='memorable-recuperacao.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),500);}
  useEffect(()=>{const protect=e=>{if(session?.writer.isPending()){e.preventDefault();e.returnValue='';}};window.addEventListener('beforeunload',protect);return()=>window.removeEventListener('beforeunload',protect);},[session]);
+ useEffect(()=>{if(!checking&&!session&&route.startsWith('#app')){history.replaceState(null,'','#auth');setRoute('#auth');}},[checking,session,route]);
  if(route.startsWith('#sugerir'))return <ContributePage/>;
  if(checking)return <main className="account-loading"><Brand/><p role="status">Preparando seu espaço…</p></main>;
  const alerts=<>{notice&&<aside className="account-notice" role="alert">{notice}{session&&<button onClick={logout} disabled={leaving}>Tentar sair novamente</button>}</aside>}{recovery&&<aside className="account-notice">Cópia de recuperação de {recovery.name}.<button onClick={exportRecovery}>Exportar alterações não salvas</button></aside>}</>;
+ // There is no demo without an account: the app opens only for a signed-in person.
+ if(!session&&route.startsWith('#app'))return <>{alerts}<AuthPage onAuthenticated={login} user={null} onLogout={logout} leaving={leaving} request={api}/></>;
  if(route.startsWith('#auth'))return <>{alerts}<AuthPage onAuthenticated={login} user={session?.user} onLogout={logout} leaving={leaving} request={api}/></>;
  return <>{alerts}{session&&isClassicHash(route)&&<div className="account-sessionbar"><span>Conectado como <b>{session.user.name}</b></span><a href="#app/painel">Meu espaço</a><a href="#auth">Conta</a><button onClick={logout} disabled={leaving}>Sair da conta</button></div>}<Component key={session?.user.id || 'demo'} account={session?.user} initialData={session?.data.state} persist={session?.writer.enqueue} syncStatus={status} onLogout={logout}/></>;
 }

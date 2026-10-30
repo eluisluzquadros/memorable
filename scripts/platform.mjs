@@ -3,6 +3,9 @@
 //   node --env-file=.env scripts/platform.mjs admins                       → list administrators
 //   node --env-file=.env scripts/platform.mjs add-admin <email> [--cloud]
 //   node --env-file=.env scripts/platform.mjs remove-admin <email> [--cloud]
+//   node --env-file=.env scripts/platform.mjs plan [email] [--cloud]       → monthly allowance (default, or one account's)
+//   node --env-file=.env scripts/platform.mjs set-plan <credits> [creditsPerUsd] [--cloud]
+//   node --env-file=.env scripts/platform.mjs set-allowance <email> <credits> [--cloud]
 //   node --env-file=.env scripts/platform.mjs policy [--cloud]             → show the model policy
 //   node --env-file=.env scripts/platform.mjs policy-from-lab <essencial|equilibrado|excelencia> [--cloud] [--apply]
 //        builds the policy from the lab (the chosen profile for each content type, general writer = the best
@@ -31,7 +34,17 @@ try {
   if (command === "admins") console.log((await platform.admins()).join("\n") || "(nenhum administrador)");
   else if (command === "add-admin") console.log("Administrador adicionado:", await platform.addAdmin(value));
   else if (command === "remove-admin") { await platform.removeAdmin(value); console.log("Administrador removido:", value); }
-  else if (command === "policy") show(await platform.modelPolicy());
+  else if (command === "plan") {
+    const plan = await platform.planFor(value ? { email: value } : null);
+    console.log(`Franquia mensal${value ? ` de ${value}` : " padrão"}: ${plan.allowance.toLocaleString("pt-BR")} créditos · 1 dólar de custo = ${plan.creditsPerUsd.toLocaleString("pt-BR")} créditos`);
+  } else if (command === "set-plan") {
+    const [allowance, creditsPerUsd] = args.filter((a) => !a.startsWith("--")).slice(1);
+    console.log("Plano padrão:", JSON.stringify(await platform.setPlan({ allowance, creditsPerUsd })));
+  } else if (command === "set-allowance") {
+    const credits = args.filter((a) => !a.startsWith("--"))[2];
+    await platform.setAllowance(value, credits);
+    console.log(`Franquia de ${value}: ${Number(credits).toLocaleString("pt-BR")} créditos por mês.`);
+  } else if (command === "policy") show(await platform.modelPolicy());
   else if (command === "policy-from-lab") {
     const profile = value;
     if (!["essencial", "equilibrado", "excelencia"].includes(profile)) throw new Error("Informe o perfil: essencial, equilibrado ou excelencia.");

@@ -263,11 +263,11 @@ export default function Landing() {
               Memorável! O jeito certo de deixar sua marca no mundo.
             </p>
             <ul className="hero-outcomes"><li><Check size={17}/> Vigie canais e sites e receba pautas priorizadas.</li><li><Check size={17}/> Agentes escrevem cada formato com a voz da sua marca.</li><li><Check size={17}/> Você aprova; o trabalho vira portfólio de cases.</li></ul>
-            <a href="#app/painel" className="button primary hero-cta">
-              Ver o fluxo funcionando <ArrowUpRight size={19} />
+            <a href="#auth" className="button primary hero-cta">
+              Começar agora <ArrowUpRight size={19} />
             </a>
             <div className="hero-note">
-              Demonstração sem cadastro. Conecte Claude, OpenAI ou Gemini para os agentes escreverem.
+              Crie sua conta e comece com a IA da plataforma, sem conectar nada.
             </div>
           </div>
           <HeroSurface />
@@ -548,8 +548,8 @@ export default function Landing() {
                   ? "Escolha o fluxo, os formatos e o volume de produção. A assinatura acompanha sua necessidade, trabalhando sozinho ou em equipe. Implantação, conexões e acompanhamento têm escopo definido na proposta."
                   : "O Grupo BBMD pode iniciar um piloto com sua equipe e discutir uma parceria de desenvolvimento ou investimento. Objetivos, prioridades e direitos são definidos em proposta própria, com base na experiência de uso."}
               </p>
-              <a className="button primary" href="#app/painel">
-                Explorar demonstração <ArrowUpRight size={19} />
+              <a className="button primary" href="#auth">
+                Criar minha conta <ArrowUpRight size={19} />
               </a>
             </div>
             <ul>
@@ -585,7 +585,7 @@ export default function Landing() {
         </section>
         <section className="closing">
           <p>Sua próxima pauta pode virar um fluxo de produção.</p>
-          <a href="#app/painel">
+          <a href="#auth">
             Veja seu conteúdo
             <br />
             sair do papel.
@@ -593,14 +593,14 @@ export default function Landing() {
           </a>
           <div className="closing-foot">
             <span>MEMORÁVEL · AI-POWERED MARKETING</span>
-            <span>Demonstração disponível com o contexto Grupo BBMD.</span>
+            <span>Pilotos com equipes e grupos de marcas.</span>
           </div>
         </section>
       </main>
       <footer className="landing-footer">
         <Brand small />
         <p>Inteligência no processo. Pessoas na decisão.</p>
-        <a href="#app/painel">
+        <a href="#auth">
           Conhecer a plataforma <ArrowRight size={16} />
         </a>
       </footer>
