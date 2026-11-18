@@ -140,7 +140,7 @@ async function ingestAndJudge() {
       fs.writeFileSync(list, files.map((f) => `file '${f.replace(/\\/g, "/")}'`).join("\n"));
       ff(["-f", "concat", "-safe", "0", "-i", list, "-vf", "scale=720:-2,fps=24", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-an", joined]);
       const saved = await round.call({
-        key: `${BRIEF.id}|video|${entry.model}`, role: "video", model: entry.model, briefId: BRIEF.id, provider: "higgsfield",
+        key: `${BRIEF.id}|video|${entry.model}`, role: "video", model: entry.model, briefId: BRIEF.id, provider: entry.provider || "higgsfield",
         invoke: async (observe) => { observe({ credits: entry.credits ?? undefined }); return { path: `a/${slug}-unido.mp4`, files: entry.files, seconds: entry.seconds, via: entry.via, prompts: entry.prompts }; },
       });
       // The time that counts is the one the clips took to be made, not the time this ingest took.
@@ -174,7 +174,7 @@ async function ingestAndJudge() {
   const final = await store.items(RUN.id);
   console.log("\n===== RESULTADO =====");
   for (const i of final.filter((x) => x.role === "video").sort((a, b) => (b.mean ?? -1) - (a.mean ?? -1))) {
-    const cost = i.provider === "higgsfield" ? (Number.isFinite(i.credits) ? `${i.credits} créditos` : "custo a confirmar no console") : `US$ ${(i.cost_usd ?? 0).toFixed(4)}`;
+    const cost = i.provider === "claude-code" ? "sessão do Claude Code (sem custo por chamada)" : i.provider === "higgsfield" ? (Number.isFinite(i.credits) ? `${i.credits} créditos` : "custo a confirmar no console") : `US$ ${(i.cost_usd ?? 0).toFixed(4)}`;
     console.log(`${(i.model.split("/").pop()).padEnd(26)} nota ${i.mean == null ? "—" : i.mean.toFixed(2)} · ${cost} · ${i.seconds ?? "—"} s · ${Object.values(i.scores || {}).map((s) => `${s.aderencia}/${s.legibilidade}/${s.identidade}`).join(" ")}`);
   }
   fs.writeFileSync(path.join(DIR, "resultado.json"), JSON.stringify(final.filter((x) => x.role === "video").map(({ model, provider, mean, scores: s, cost_usd, credits, seconds, output }) => ({ model, provider, mean, scores: s, cost_usd, credits, seconds, output })), null, 2));
