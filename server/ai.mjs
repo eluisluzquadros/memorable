@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import {
   BRAND_WRITING,
+  plainText,
   reviewGenerated,
   validateGenerated,
 } from "./editorial.mjs";
@@ -443,7 +444,7 @@ export async function councilAI(
     );
     if (!refined.body?.trim())
       throw new Error("O redator não retornou a revisão.");
-    current = { ...current, body: refined.body };
+    current = { ...current, body: plainText(refined.body) };
   }
   return { variant: current, audit: { ...rounds.at(-1), rounds } };
 }
@@ -509,7 +510,7 @@ export async function generateSquad(packet, model = defaultModel, critic = model
         model(
           `Atue como Copywriter/Ghostwriter. ${COPY_METHOD} ${BRAND_WRITING} ${formatGuide(packet.brief.format)} Retorne {title,body,hook,strategy,sourceIds:string[],facts:[{sourceId,excerpt,verified:false}]}. Use packet.sources e packet.brandKnowledge para sustentar afirmações factuais.`,
           { packet, plan, strategy },
-        ).then((v) => ({ ...v, strategy })),
+        ).then((v) => ({ ...v, body: plainText(v.body), strategy })),
       ),
   );
   if (versions.some((v) => !v.body?.trim()))

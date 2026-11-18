@@ -116,3 +116,11 @@ test('Roteiro: a marca precisa ser dita; sem ela o roteiro ganha uma correção 
   const broken = await generateVideoScripts(packet, [{id:'t',title:'Tema',sourceId:'s'}], async (system) => /voltou com problemas/.test(system) ? { scenes: [] } : { scripts: [structuredClone(silent)] }, { committee: false });
   assert.equal(broken.scripts[0].scenes.length, silent.scenes.length);
 });
+
+test("plainText removes markdown marks the screens would show raw", async () => {
+  const { plainText } = await import("../server/editorial.mjs");
+  assert.equal(plainText("**O gargalo não está na petição.** Um encontro reuniu sócios."), "O gargalo não está na petição. Um encontro reuniu sócios.");
+  assert.equal(plainText("# Título\n\nTexto com __ênfase__ e **negrito** e snake_case_nome."), "Título\n\nTexto com ênfase e negrito e snake_case_nome.");
+  assert.equal(plainText("2 * 3 = 6, nota de rodapé*"), "2 * 3 = 6, nota de rodapé*", "a lone asterisk is not markup");
+  assert.equal(plainText(undefined), undefined);
+});
