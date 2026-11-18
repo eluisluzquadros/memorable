@@ -121,3 +121,24 @@ Em **Time de agentes > Laboratório**:
 4. **Cases de portfólio, parte de texto:** os 6 cases pelo fluxo real, com a tag Validação ou Demonstração.
 5. **Mídia:** imagem e vídeo de 60 s nos caminhos A, B e C, com custo por conteúdo completo, retomável quando faltar crédito.
 6. **Decisão humana:** as aprovações reais passam a calibrar as notas dos juízes.
+
+## 10. Custo de vídeo por canal (referência de 2026-11-18)
+
+Um clipe vertical de 5 s em 720p (Veo em 4 s, Hailuo em 6 s). A qualidade é do modelo, não do canal; o custo muda com o canal. MCP: créditos cotados pela própria Higgsfield, convertidos pelo preço do crédito em cada plano (Plus anual US$ 27 por 1.000 créditos/mês = US$ 0,027; Ultra anual US$ 50 por 3.000 = US$ 0,0167; pacote avulso US$ 0,08). API: preço de tabela por segundo em open.higgsfield.ai. OpenRouter: preço de lista por segundo, com áudio.
+
+| Modelo | MCP (créditos) | MCP Plus anual | MCP Ultra anual | API Higgsfield | OpenRouter |
+|---|---|---|---|---|---|
+| Grok Imagine 1.5 Lite | 5 | US$ 0,14 | US$ 0,08 | — | US$ 0,15 |
+| Veo 3.1 Lite (4 s) | 6 | US$ 0,16 | US$ 0,10 | — | US$ 0,20–0,32 |
+| Hailuo (6 s) | 6 | US$ 0,16 | US$ 0,10 | US$ 0,28 (2.3) | — |
+| Kling 3.0 Turbo | 7,5 | US$ 0,20 | US$ 0,13 | — | — |
+| Wan 3.0 | 8,75 | US$ 0,24 | US$ 0,15 | a partir de US$ 0,19 | US$ 0,50 |
+| Kling 3.0 | 10 | US$ 0,27 | US$ 0,17 | US$ 0,36 | US$ 0,63 (Std) |
+| Gemini Omni 1.2 Flash | 11,25 | US$ 0,30 | US$ 0,19 | — | US$ 0,52 |
+| Happy Horse 1.1 | 12,5 | US$ 0,34 | US$ 0,21 | US$ 0,70 | US$ 0,49 |
+| Kling 4.0 Flash | 15 | US$ 0,41 | US$ 0,25 | US$ 0,47 | — |
+| Veo 3.1 (4 s) | 16 | US$ 0,43 | US$ 0,27 | — | US$ 1,60 |
+| Seedance 2.0 | 22,5 | US$ 0,61 | US$ 0,38 | a partir de US$ 0,40 | por token |
+| Grok Video 1.5 | 22,5 | US$ 0,61 | US$ 0,38 | a partir de US$ 0,40 | US$ 0,70 |
+
+Leitura: com plano anual, o MCP sai de 1,5 a 6 vezes mais barato que API e OpenRouter para o mesmo modelo. Vale só se os créditos do mês forem usados: crédito parado encarece o custo efetivo. Rota por conta: quem tem plano Higgsfield conectado (MCP) gera por ele; quem não tem usa a API da Memorável, e Gemini Omni e Veo, que a API não oferece, vão pelo OpenRouter. Preços de plano exibidos com promoção ("compra até 19/11"); confirmar o plano real de cada conta.
